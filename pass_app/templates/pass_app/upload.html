@@ -1,0 +1,23 @@
+<!doctype html>
+<html>
+  <head>
+    <title>NPAIEngine Upload</title>
+  </head>
+  <body>
+    <p>Welcome to NPAIEngine's upload page!</p>
+    {% if form %}
+        <form enctype="multipart/form-data" action="/pass_app/upload/" method="post">
+            {% csrf_token %}
+            {{ form }}
+            <input type="submit" value="Submit">
+        </form>
+    {% else %}
+        <p>No form.</p>
+    {% endif %}
+    <!-- <form action="">
+      <label for="sdf">SDF:</label>
+      <input type="file" id="sdf" name="sdf"><br><br>
+      <input type="submit" value="Submit">
+    </form>  -->
+  </body>
+</html>
