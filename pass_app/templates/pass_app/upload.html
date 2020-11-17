@@ -9,15 +9,14 @@
         <form enctype="multipart/form-data" action="/pass_app/upload/" method="post">
             {% csrf_token %}
             {{ form }}
+            <br>
+            <progress id="progressBar" value="0" max="100" style="width:300px;"></progress>
+            <h3 id="status"></h3>
+            <p id="loaded_n_total"></p>
             <input type="submit" value="Submit">
         </form>
     {% else %}
         <p>No form.</p>
     {% endif %}
-    <!-- <form action="">
-      <label for="sdf">SDF:</label>
-      <input type="file" id="sdf" name="sdf"><br><br>
-      <input type="submit" value="Submit">
-    </form>  -->
   </body>
 </html>
