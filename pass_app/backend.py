@@ -93,6 +93,7 @@ def handle_uploaded_file(f):
     assert ret == 0
 
     # write PASS spectra to database 
+    write_PASS_hits_to_db(pass_out_file)
 
     return smart_str(pass_out_file)
 
