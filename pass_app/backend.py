@@ -3,7 +3,6 @@ import os
 
 from django.utils.encoding import smart_str
 
-
 from datetime import datetime
 
 from pymongo import MongoClient
@@ -65,6 +64,7 @@ def write_PASS_hits_to_db(
             else:
                 value = row[col]
             entry.update({col: value})
+        entry.update({"time": str(datetime.now()))
         records.append(entry)
 
     print ("inserting", len(records), "records")
