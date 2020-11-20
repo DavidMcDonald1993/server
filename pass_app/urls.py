@@ -9,7 +9,7 @@ urlpatterns = [
         name="upload"),
     path("success/", views.success, 
         name="success",),
-    path('<str:compound_name>/', 
-        views.compound_detail, 
-        name='compound_detail'),
+    # path('<str:compound_name>/', 
+    #     views.compound_detail, 
+    #     name='compound_detail'),
 ]

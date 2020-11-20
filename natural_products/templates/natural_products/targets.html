@@ -1,0 +1,40 @@
+<!doctype html>
+
+<!-- {% load static %} -->
+
+<html>
+  <head>
+    <title>NPAIEngine</title>
+    <!-- <link rel="stylesheet" type="text/css" href="{% static 'natural_products/style.css' %}"> -->
+  </head>
+
+  <body>
+    <p>Welcome to NPAIEngine!</p>
+    <p>Target selection page</p>
+    <form action="/natural_products/results/" method="get">
+      <label for="target">Target:</label>
+      <!-- <input type="text" id="target"  -->
+        <!-- name="target" value="Diarrhea"> -->
+      <select name="target" id="target">
+        <option value="">Please choose a target...</option>
+        {% for target, target_encoded in targets %}
+          <option value={{target_encoded}}>{{target}}</option>
+        {% endfor %}
+      </select>
+      <br>
+      <br>
+      <label for="threshold">Threshold:</label>
+      <!-- <input type="text" id="threshold"  -->
+        <!-- name="threshold" value="0.997"><br><br> -->
+      <select name="threshold" id="threshold">
+        <option value="">Please choose a threshold...</option>
+        {% for threshold in thresholds %}
+          <option value={{threshold}}>{{threshold}}</option>
+        {% endfor %}
+      </select>
+      <br>
+      <br>
+      <input type="submit" value="Submit">
+    </form> 
+  </body>
+</html>

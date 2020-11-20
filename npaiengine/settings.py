@@ -37,7 +37,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     # custom apps
-    "pass_app.apps.PassAppConfig"
+    "pass_app.apps.PassAppConfig",
+    "natural_products.apps.NaturalProductsConfig",
+    
 ]
 
 MIDDLEWARE = [

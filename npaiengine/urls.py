@@ -17,7 +17,11 @@ from django.contrib import admin
 from django.urls import path, include
 
 urlpatterns = [
-    path("", include("pass_app.urls")),
+    path("", #include("npaiengine.urls"))
+        include("pass_app.urls", )),
     path('admin/', admin.site.urls),
-    path("pass_app/", include("pass_app.urls"))
+    path("pass_app/", 
+        include("pass_app.urls")),
+    path("natural_products/", 
+        include("natural_products.urls")),
 ]

@@ -4,7 +4,8 @@
     <title>NPAIEngine</title>
   </head>
   <body>
-    <p>Welcome to NPAIEngine!</p>
+    <p>Welcome to NPAIEngine!</p><br>
+    <p>PASS Predictions</p>
     <!-- {% if latest_compound_list %}
         <p> Latest compounds: </p>
         <ul>
@@ -15,10 +16,15 @@
     {% else %}
         <p>No compounds are available.</p>
     {% endif %} -->
-    <form action="/upload/">
+    <form action="pass_app/upload/">
       <!-- <label for="sdf">SDF:</label> -->
       <!-- <input type="file" id="sdf" name="sdf"><br><br> -->
       <input type="submit" value="Go to SDF file upload">
     </form> 
+    <br>
+    <br>
+    <form action="natural_products/">
+      <input type="submit" value="Natural product library">
+  </form> 
   </body>
 </html>

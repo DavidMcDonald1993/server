@@ -38,9 +38,11 @@ def write_PASS_hits_to_db(
     collection="PASS_hits"):
     assert isinstance(pass_file, str)
     assert pass_file.endswith(".sdf")
+    print ("reading PASS hits from", pass_file,
+        "and extracting activitydata")
 
     pass_activities = LoadSDF(pass_file, 
-            smilesName='SMILES', molColName=None)
+        smilesName='SMILES', molColName=None)
 
     db = connect_to_db()
 
@@ -64,7 +66,7 @@ def write_PASS_hits_to_db(
             else:
                 value = row[col]
             entry.update({col: value})
-        entry.update({"time": str(datetime.now()))
+        entry.update({"time": str(datetime.now())})
         records.append(entry)
 
     print ("inserting", len(records), "records")
@@ -94,6 +96,9 @@ def handle_uploaded_file(f):
 
     # write PASS spectra to database 
     write_PASS_hits_to_db(pass_out_file)
+
+    print ("removing", temp_file)
+    os.remove(temp_file)
 
     return smart_str(pass_out_file)
 
