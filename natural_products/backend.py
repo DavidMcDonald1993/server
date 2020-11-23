@@ -19,6 +19,7 @@ def connect_to_db(host=HOST, port=PORT, db=DB):
     client = MongoClient(host, port)
     return client[db]
 
+
 def query_pass(
     target, 
     threshold,
@@ -51,6 +52,33 @@ def query_pass(
 
     return records
 
+def get_all_compounds():
+
+    print ("querying COCONUT database for info",
+        "about all compounds")
+
+    db = connect_to_db()
+
+    coconut_collection = db["uniqueNaturalProduct"]
+
+    query = {}
+    filter_ = {"_id": 0, "coconut_id": 1, 
+        "molecular_formula": 1, }
+
+    cursor = coconut_collection.find(query, filter_)\
+        .sort([("coconut_id", pymongo.ASCENDING)]) # descending
+    print ("performed query")
+
+    records = [
+        (record["coconut_id"], 
+            record["molecular_formula"])
+        for record in cursor
+    ]
+
+    db.client.close()
+
+    return records
+
 def get_compound_info(
     compound_id, ):
 
@@ -71,13 +99,13 @@ def get_compound_info(
     db.client.close()
 
     assert compound_info is not None, compound_id
-    assert pass_activities is not None
 
     return compound_info, pass_activities
 
 def draw_molecule(smiles, 
-        img_filename="natural_products/temp.png", 
-        static_dir="natural_products/static"):
+    static_dir="natural_products/static",
+    img_filename="natural_products/temp.png", 
+    ):
     mol = Chem.MolFromSmiles(smiles)
     img = MolToImage(mol)
 

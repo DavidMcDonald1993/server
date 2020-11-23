@@ -4,7 +4,7 @@ from django.shortcuts import render
 
 from django.http import HttpResponse
 
-from .backend import query_pass, get_compound_info, draw_molecule
+from .backend import query_pass, get_compound_info, draw_molecule, get_all_compounds
 
 import html
 import urllib.parse as urlparse
@@ -55,6 +55,16 @@ def results(request, ):
     return render(request,
         "natural_products/results.html", context)
 
+def all_compounds(request):
+
+    compounds = get_all_compounds()
+
+    # get compounds molecular formulas from database
+    context = {"compounds": compounds}
+
+    return render(request, 
+        "natural_products/all_compounds.html", context)
+
 def compound_info(request, compound_id):
 
     compound_id = "CNP" + compound_id
@@ -66,7 +76,6 @@ def compound_info(request, compound_id):
 
     assert isinstance(info, dict), type(info)
     assert "clean_smiles" in info
-    print (info["clean_smiles"])
 
     smiles = info["clean_smiles"]
     if smiles is not None:
@@ -79,18 +88,18 @@ def compound_info(request, compound_id):
             for k, v in info.items()
     ]
 
-    activities = [
-        (target, activities[target])
-            for target in pass_targets
-    ]
-    # sort activities by activity
-    activities = sorted(activities, 
-        key=lambda x: x[1], reverse=True)
+    if activities is not None:
+        activities = [
+            (target, activities[target])
+                for target in pass_targets
+        ]
+        # sort activities by activity
+        activities = sorted(activities, 
+            key=lambda x: x[1], reverse=True)
 
     context.update({
         "info": info,
         "activities": activities})
-
 
     return render(request,
         "natural_products/compound_info.html", context)

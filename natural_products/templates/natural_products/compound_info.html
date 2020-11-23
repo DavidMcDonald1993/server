@@ -14,7 +14,7 @@
       </form>
     </p>
     {% if img_filename %}
-      <img src="{% static . %}/{{img_filename}}" 
+      <img src="{% static img_filename %}" 
         style="width: 25%; height: 25%;" >
     {% endif %}
     <table style="width:100%;text-align:left">
@@ -30,18 +30,22 @@
       {% endfor %}
     </table>
     <br>
-    <p>Activities</p>
-    <table style="width:100%;text-align:center">
-      <tr>
-        <th>Target</th>
-        <th>Activity</th>
-      </tr>
-      {% for target, activity in activities %}
-      <tr>
-        <td>{{target}}</td>
-        <td>{{activity}}</td>
-      </tr>
-    {% endfor %}
-    </table>
+    {% if activities %}
+      <p>Activities</p>
+      <table style="width:100%;text-align:center">
+        <tr>
+          <th>Target</th>
+          <th>Activity</th>
+        </tr>
+        {% for target, activity in activities %}
+        <tr>
+          <td>{{target}}</td>
+          <td>{{activity}}</td>
+        </tr>
+      {% endfor %}
+      </table>
+    {% else %}
+      <p>No predicted activities</p>
+    {% endif %}
   </body>
 </html>

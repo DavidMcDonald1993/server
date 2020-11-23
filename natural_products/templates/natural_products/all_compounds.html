@@ -1,0 +1,27 @@
+<!doctype html>
+<html>
+  <head>
+    <title>NPAIEngine</title>
+  </head>
+  <body>
+    <p>Welcome to NPAIEngine!</p>
+
+    <table style="width:100%;text-align:center">
+
+        <tr>
+            <th>Coconut ID</th>
+            <th>Molecular Formula</th>
+        </tr>
+        {% for coconut_id, formula in compounds %}
+          <tr>
+            <td> <a href="/natural_products/compounds/{{coconut_id}}"> 
+            {{ coconut_id }} </a> </td>
+          <td>{{formula}}</td> 
+          </tr>
+        {% endfor %}
+
+    </table>
+    
+
+</body>
+</html>
