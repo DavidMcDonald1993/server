@@ -1,51 +1,161 @@
 <!doctype html>
-<html>
+<html lang="en">
+
   <head>
     {% load static %}
     <title>NPAIEngine</title>
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="http://cdn.datatables.net/1.10.2/css/jquery.dataTables.min.css">
   </head>
-  <body>
-    <p>Welcome to NPAIEngine!</p>
+
+  <body style="text-align: center;" onload="setTableVisible()">
+  
     <p>
-      Compound info page
+      <h1>Compound info page</h1>
       <form action="/natural_products">
         <input type="submit" 
           value="Return to compound library home">
       </form>
     </p>
+
     {% if img_filename %}
+    <p><b>Molecule:</b></p>
       <img src="{% static img_filename %}" 
         style="width: 25%; height: 25%;" >
     {% endif %}
-    <table style="width:100%;text-align:left">
+
+    <nav>
+      <div class="nav nav-tabs" id="nav-tab" role="tablist">
+        
+        <a class="nav-item nav-link active" id="nav-properties-tab" 
+          data-toggle="tab" href="#nav-properties" role="tab" 
+          aria-controls="nav-properties" aria-selected="true">
+          Properties
+        </a>
+      
+        <a class="nav-item nav-link" id="nav-activities-tab" 
+          data-toggle="tab" href="#nav-activities" role="tab" 
+          aria-controls="nav-activities" aria-selected="false">
+          Activities
+        </a>
+      
+        </div>
+    </nav>
+
+    <div class="tab-content" id="nav-tabContent">
+   
+      <div class="tab-pane active" id="nav-properties" 
+        role="tabpanel" aria-labelledby="nav-properties-tab">
+        
+        <h2>Molecule Properties:</h2>
+        <table class="display table"
+          style="width:100%;text-align:left">
+          <thead>
+          <tr>
+            <th>Property Name</th>
+            <th>Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for key, value in info %}
+            <tr>
+              <td>{{key}}</td>
+              <td>{{value}}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="tab-pane" id="nav-activities" 
+        role="tabpanel" aria-labelledby="nav-activities-tab">
+        
+        {% if activities %}
+          <h2>Molecular Activities:</h2>
+          <div class="table-responsive">
+          <table id="myTable" class="display table"
+            style="width:100%;text-align:center;display:none;">
+            <thead>
+            <tr>
+              <th>Target</th>
+              <th>Activity</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for target, activity in activities %}
+            <tr>
+              <td>{{target}}</td>
+              <td>{{activity}}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+          </table>
+          </div>
+        {% else %}
+          <p>No predicted activities</p>
+        {% endif %}
+
+      </div>
+
+    </div>
+
+<!-- 
+    <p><b>Molecule Properties:</b> </p>
+    <table class="display table"
+      style="width:100%;text-align:left">
+      <thead>
       <tr>
-        <th>Key</th>
+        <th>Property Name</th>
         <th>Value</th>
       </tr>
+    </thead>
+    <tbody>
       {% for key, value in info %}
         <tr>
           <td>{{key}}</td>
           <td>{{value}}</td>
         </tr>
       {% endfor %}
+      </tbody>
     </table>
+  </div>
+
     <br>
-    {% if activities %}
-      <p>Activities</p>
-      <table style="width:100%;text-align:center">
-        <tr>
-          <th>Target</th>
-          <th>Activity</th>
-        </tr>
-        {% for target, activity in activities %}
-        <tr>
-          <td>{{target}}</td>
-          <td>{{activity}}</td>
-        </tr>
-      {% endfor %}
-      </table>
-    {% else %}
-      <p>No predicted activities</p>
-    {% endif %}
+
+    <div>
+      {% if activities %}
+        <p><b>Molecular Activities:</b></p>
+        <div class="table-responsive">
+        <table id="myTable" class="display table"
+          style="width:100%;text-align:center;display:none;">
+          <thead>
+          <tr>
+            <th>Target</th>
+            <th>Activity</th>
+          </tr>
+          </thead>
+          <tbody>
+          {% for target, activity in activities %}
+          <tr>
+            <td>{{target}}</td>
+            <td>{{activity}}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+        </table>
+        </div>
+      {% else %}
+        <p>No predicted activities</p>
+      {% endif %}
+    </div> -->
+
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script type="text/javascript"  src="http://cdn.datatables.net/1.10.2/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript"  src="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+       
+
+    <script type="text/javascript" 
+      src="{% static 'natural_products/tables.js' %}"></script>
+
   </body>
 </html>

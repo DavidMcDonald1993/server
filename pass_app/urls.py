@@ -5,11 +5,10 @@ from . import views
 urlpatterns = [
     path('', views.index, 
         name='index'),
-    path("upload/", views.upload_file,
+    path('pass_app', views.index, 
+        name='index'),
+    path("pass_app/upload/", views.upload_file,
         name="upload"),
-    path("success/", views.success, 
+    path("pass_app/success/", views.success, 
         name="success",),
-    # path('<str:compound_name>/', 
-    #     views.compound_detail, 
-    #     name='compound_detail'),
 ]

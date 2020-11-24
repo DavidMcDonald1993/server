@@ -35,7 +35,7 @@ def target(request):
 
 def results(request, ):
 
-    target = request.GET["target"]
+    target = request.GET["target"] # get values of fields by id
     threshold = request.GET["threshold"]
     try:
         threshold = float(threshold)
@@ -80,7 +80,8 @@ def compound_info(request, compound_id):
     smiles = info["clean_smiles"]
     if smiles is not None:
         img_filename = draw_molecule(smiles)
-        context.update({"img_filename": img_filename})
+        if img_filename is not None:
+            context.update({"img_filename": img_filename})
 
     # convert to list of dicts for easy presentation
     info = [

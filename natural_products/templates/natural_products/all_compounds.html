@@ -1,27 +1,46 @@
 <!doctype html>
-<html>
+<html lang="en">
+
   <head>
+    {% load static %}
     <title>NPAIEngine</title>
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="http://cdn.datatables.net/1.10.2/css/jquery.dataTables.min.css">
   </head>
-  <body>
-    <p>Welcome to NPAIEngine!</p>
 
-    <table style="width:100%;text-align:center">
+  <body style="text-align: center;" onload="setTableVisible();">
 
+    <h1>All natural products</h1>
+    <div class="table-responsive" >
+    <table id="myTable" class="display table"
+      style="width:100%;text-align:center;display:none">
+
+      <thead>
         <tr>
             <th>Coconut ID</th>
+            <th>Name</th>
             <th>Molecular Formula</th>
         </tr>
-        {% for coconut_id, formula in compounds %}
+      </thead>
+      <tbody>
+        {% for coconut_id, name, formula in compounds %}
           <tr>
             <td> <a href="/natural_products/compounds/{{coconut_id}}"> 
             {{ coconut_id }} </a> </td>
-          <td>{{formula}}</td> 
+            <td>{{name}}</td> 
+            <td>{{formula}}</td> 
           </tr>
         {% endfor %}
-
+        </tbody>
     </table>
-    
+    </div>
+
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script type="text/javascript"  src="http://cdn.datatables.net/1.10.2/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript"  src="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+
+    <script type="text/javascript" 
+      src="{% static 'natural_products/tables.js' %}"></script>
 
 </body>
 </html>

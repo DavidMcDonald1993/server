@@ -3,28 +3,27 @@
   <head>
     <title>NPAIEngine</title>
   </head>
-  <body>
-    <p>Welcome to NPAIEngine!</p><br>
-    <p>PASS Predictions</p>
-    <!-- {% if latest_compound_list %}
-        <p> Latest compounds: </p>
-        <ul>
-        {% for compound in latest_compound_list %}
-            <li><a href="/pass_app/{{ compound.name }}/">{{ compound.name }}</a></li>
-        {% endfor %}
-        </ul>
-    {% else %}
-        <p>No compounds are available.</p>
-    {% endif %} -->
-    <form action="pass_app/upload/">
-      <!-- <label for="sdf">SDF:</label> -->
-      <!-- <input type="file" id="sdf" name="sdf"><br><br> -->
-      <input type="submit" value="Go to SDF file upload">
-    </form> 
+  <body style="text-align: center;">
+ 
+    <h1>Welcome to NPAIEngine!</h1>
+    <br>
+    <div>   
+       <h2>Compound activity Prediction</h2>
+
+      <form action="pass_app/upload/">
+        <input type="submit" value="Go to SDF file upload">
+      </form> 
+    </div>
+
     <br>
     <br>
-    <form action="natural_products/">
-      <input type="submit" value="Natural product library">
-  </form> 
+
+    <div>
+      <h2>Natural product library</h2>
+      <form action="natural_products/">
+        <input type="submit" value="Go to natural product library">
+    </form>
+
+  </div> 
   </body>
 </html>

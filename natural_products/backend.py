@@ -8,6 +8,8 @@ from pymongo import MongoClient
 from rdkit import Chem
 from rdkit.Chem.Draw import MolToImage
 
+import urllib.parse as urlparse
+
 HOST = "192.168.0.49"
 PORT = 27017
 DB = "COCONUT"
@@ -33,22 +35,35 @@ def query_pass(
     pass_collection = db[collection]
 
     query = {target: {"$gte": threshold}, }
-    filter_ = {"_id": 0, "coconut_id": 1, 
-        "molecular_formula": 1, target: 1}
+    filter_ = {
+        "_id": 0, 
+        "coconut_id": 1, 
+        "name": 1,
+        "molecular_formula": 1, 
+        target: 1
+    }
 
     cursor = pass_collection.find(query, filter_)\
         .sort([(target, pymongo.DESCENDING)]) # descending
+    cursor.batch_size(1000000)
+
     print ("performed query")
 
     print ("iterating over query")
 
     records = [
         (record["coconut_id"], 
-            record["molecular_formula"], record[target])
+            (urlparse.unquote(record["name"]).capitalize() 
+                if record["name"] is not None else "<NO NAME>"),
+            record["molecular_formula"], 
+            record[target])
         for record in cursor
     ]
 
     db.client.close()
+
+    print ("built records", len(records))
+
 
     return records
 
@@ -62,20 +77,32 @@ def get_all_compounds():
     coconut_collection = db["uniqueNaturalProduct"]
 
     query = {}
-    filter_ = {"_id": 0, "coconut_id": 1, 
-        "molecular_formula": 1, }
+    filter_ = {
+        "_id": 0, 
+        "coconut_id": 1, 
+        "name": 1,
+        "molecular_formula": 1, 
+    }
 
     cursor = coconut_collection.find(query, filter_)\
-        .sort([("coconut_id", pymongo.ASCENDING)]) # descending
+        .sort([("coconut_id", pymongo.ASCENDING)])
+    cursor.batch_size(1000000)
+
     print ("performed query")
+
+    print ("iterating over query")
 
     records = [
         (record["coconut_id"], 
+            (urlparse.unquote(record["name"]).capitalize() 
+                    if "name" in record else "<NO NAME>"),
             record["molecular_formula"])
-        for record in cursor
+        for record in cursor[:1000]
     ]
 
     db.client.close()
+
+    print ("built records", len(records))
 
     return records
 
@@ -106,10 +133,16 @@ def draw_molecule(smiles,
     static_dir="natural_products/static",
     img_filename="natural_products/temp.png", 
     ):
+
+    print ("SMILES", smiles)
+
     mol = Chem.MolFromSmiles(smiles)
-    img = MolToImage(mol)
+    if mol is not None:
+        img = MolToImage(mol)
 
-    img.save(os.path.join(static_dir,
-        img_filename))
+        img.save(os.path.join(static_dir,
+            img_filename))
 
-    return img_filename
+        return img_filename
+    else:
+        return None

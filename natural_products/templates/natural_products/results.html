@@ -1,32 +1,61 @@
 <!doctype html>
-<html>
+<html lang="en">
+
   <head>
+    {% load static %}
     <title>NPAIEngine</title>
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="http://cdn.datatables.net/1.10.2/css/jquery.dataTables.min.css">
   </head>
-  <body>
-    <p>Welcome to NPAIEngine!</p>
-    <p>Natural products:</p>
-    <form action="/natural_products/targets/">
-      <input type="submit" value="Return to target search">
-    </form>
-    <p>Looking at hits for target: {{target}}</p> 
-    <p>Using threshold: {{threshold}}</p> 
+
+  <body style="text-align: center;" onload="setTableVisible()">
+
+    <div>
+      <h1>Results</h1>
+
+      <form action="/natural_products/targets/">
+        <input type="submit" value="Return to target search">
+      </form>
+
+      <p>Looking at hits for target: {{target}}</p> 
+      <p>Using threshold: {{threshold}}</p> 
+ 
+    </div>
+
     <br>
     <br>
-    <table style="width:100%;text-align:center">
-      <tr>
-        <th>COCONUT ID</th>
-        <th>Molecular Formula</th>
-        <th>{{target}} Activity</th>
-      </tr>
-      {% for coconut_id, formula, activity in records %}
+ 
+    <div class="table-responsive">
+      <table id="myTable" class="display table"
+        style="width:100%;text-align:center;display:none;">
+        <thead>
         <tr>
-          <td> <a href="/natural_products/compounds/{{coconut_id}}"> 
-            {{ coconut_id }} </a> </td>
-          <td>{{formula}}</td> 
-          <td>{{activity}}</td>
+          <th>COCONUT ID</th>
+          <th>Name</th>
+          <th>Molecular Formula</th>
+          <th>{{target}} Activity</th>
         </tr>
-      {% endfor %}
-    </table>
+        </thead>
+        <tbody>
+        {% for coconut_id, name, formula, activity in records %}
+          <tr>
+            <td> <a href="/natural_products/compounds/{{coconut_id}}"> 
+              {{ coconut_id }} </a> </td>
+            <td>{{name}}</td>
+            <td>{{formula}}</td> 
+            <td>{{activity}}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script type="text/javascript"  src="http://cdn.datatables.net/1.10.2/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript"  src="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+       
+  <script type="text/javascript" 
+    src="{% static 'natural_products/tables.js' %}"></script>
+
   </body>
 </html>

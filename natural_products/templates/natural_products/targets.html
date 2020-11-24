@@ -8,9 +8,8 @@
     <!-- <link rel="stylesheet" type="text/css" href="{% static 'natural_products/style.css' %}"> -->
   </head>
 
-  <body>
-    <p>Welcome to NPAIEngine!</p>
-    <p>Target selection page</p>
+  <body style="text-align: center;">
+    <h1>Target selection page</h1>
     <form action="/natural_products/results/" method="get">
       <label for="target">Target:</label>
       <!-- <input type="text" id="target"  -->
@@ -21,19 +20,23 @@
           <option value={{target_encoded}}>{{target}}</option>
         {% endfor %}
       </select>
+      
       <br>
       <br>
-      <label for="threshold">Threshold:</label>
-      <!-- <input type="text" id="threshold"  -->
-        <!-- name="threshold" value="0.997"><br><br> -->
-      <select name="threshold" id="threshold">
+
+      <label for="threshold">Threshold (Pa-Pi):</label>
+      <input type="text" id="threshold" 
+        name="threshold" value="0."><br><br>
+      <!-- <select name="threshold" id="threshold">
         <option value="">Please choose a threshold...</option>
         {% for threshold in thresholds %}
           <option value={{threshold}}>{{threshold}}</option>
         {% endfor %}
-      </select>
+      </select> -->
+    
       <br>
       <br>
+
       <input type="submit" value="Submit">
     </form> 
   </body>
