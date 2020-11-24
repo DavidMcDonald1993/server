@@ -44,7 +44,7 @@ def query_pass(
     }
 
     cursor = pass_collection.find(query, filter_)\
-        .sort([(target, pymongo.DESCENDING)]) # descending
+        .sort([(target, pymongo.DESCENDING), ]) 
     cursor.batch_size(1000000)
 
     print ("performed query")

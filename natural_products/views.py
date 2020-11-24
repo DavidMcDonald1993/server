@@ -99,6 +99,7 @@ def compound_info(request, compound_id):
             key=lambda x: x[1], reverse=True)
 
     context.update({
+        "compound_id": compound_id,
         "info": info,
         "activities": activities})
 
