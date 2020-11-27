@@ -24,4 +24,7 @@ urlpatterns = [
         include("pass_app.urls")),
     path("natural_products/", 
         include("natural_products.urls")),
+    path("hit_optimisation/",
+        include("hit_optimisation.urls"))
+    
 ]

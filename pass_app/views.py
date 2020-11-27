@@ -52,3 +52,6 @@ def upload_file(request):
 
 def success(request):
     return HttpResponse("Success!")
+
+def favicon(request):
+    return HttpResponse("favicon")

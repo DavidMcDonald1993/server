@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     # custom apps
     "pass_app.apps.PassAppConfig",
     "natural_products.apps.NaturalProductsConfig",
+    "hit_optimisation.apps.HitOptimisationConfig",
     
 ]
 

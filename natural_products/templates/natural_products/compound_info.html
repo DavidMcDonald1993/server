@@ -3,13 +3,26 @@
 
   <head>
     {% load static %}
+
     <title>NPAIEngine</title>
-    <link rel="stylesheet" href="{% static 'natural_products/style.css' %}">
+
     <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
     <link rel="stylesheet" href="http://cdn.datatables.net/1.10.2/css/jquery.dataTables.min.css">
+  
+  
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script type="text/javascript"  src="http://cdn.datatables.net/1.10.2/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript"  src="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+
+    <script type="text/javascript" 
+      src="{% static 'natural_products/tables.js' %}"></script>
+
+    <script type="text/javascript" 
+      src="{% static 'natural_products/compounds.js' %}"></script>
+
   </head>
 
-  <body style="text-align: center;" onload="setTableVisible()">
+  <body style="text-align: center;" onload="setDataTablesVisible()">
   
     <p>
       <h1>{{compound_id}}</h1>
@@ -22,48 +35,42 @@
     {% if img_filename %}
     <h2>Molecule</h2>
       <img src="{% static img_filename %}" 
-        style="width: 35%; height: 35%;" >
+        style="width: 20%; height: 20%;" >
     {% endif %}
 
-    <!-- <nav class="navbar navbar-light bg-light"> -->
       <div class="nav nav-tabs" id="nav-tab" role="tablist">
-        
-        <!-- <ul class="navbar-nav mr-auto"> -->
-          <!-- <li class="nav-item active"> -->
-        <!-- <div> -->
-          <a class="nav-item nav-link active" id="nav-properties-tab" 
-            data-toggle="tab" href="#nav-properties" role="tab" 
-            aria-controls="nav-properties" aria-selected="true">
-            <b>Properties</b>
-          </a>
-      <!-- </div> -->
-        <!-- </li> -->
-        <!-- <div class="horizontalgap" style="width:10px"></div> -->
-          <!-- <hr> -->
-          &nbsp;
-          &nbsp;
-          &nbsp;
-          &nbsp;
-        <!-- <li class="nav-item"> -->
-        <!-- <div> -->
-          <a class="nav-item nav-link" id="nav-activities-tab" 
-            data-toggle="tab" href="#nav-activities" role="tab" 
-            aria-controls="nav-activities" aria-selected="false">
-            <b>Predicted Activities</b>
-          </a>
-      <!-- </div> -->
-        <!-- </li> -->
-        <!-- </ul> -->
       
-        </div>
-    <!-- </nav> -->
+        <!-- <a class="nav-item nav-link active" id="nav-properties-tab" 
+          data-toggle="tab" href="#nav-properties" role="tab" 
+          aria-controls="nav-properties" aria-selected="true">
+          <b>PROPERTIES</b>
+        </a> -->
+        <input type="button" onclick="showDiv(this)" value="PROPERTIES">
+
+        {% if activities %}
+          {% for category, category_activities in activities %}
+            &nbsp;
+            &nbsp;
+            &nbsp;
+            &nbsp;
+            <!-- <a class="nav-item nav-link" id="nav-{{category}}-tab" 
+              data-toggle="tab" href="#nav-{{category}}" role="tab" 
+              aria-controls="nav-{{category}}" aria-selected="false">
+              <b>{{category}}</b>
+            </a> -->
+            <input type="button" onclick="showDiv(this)" value={{category}}>
+            {% endfor %}
+        {% endif %}
+
+      </div>
 
     <div class="tab-content" id="nav-tabContent">
    
-      <div class="tab-pane active" id="nav-properties" 
-        role="tabpanel" aria-labelledby="nav-properties-tab">
+      <div class="tab-pane active" id="nav-PROPERTIES" 
+        role="tabpanel" aria-labelledby="nav-PROPERTIES-tab"
+        style="display: none;">
         
-        <h2>Molecule Properties</h2>
+        <h2>MOLECULE PROPERTIES</h2>
         <table class="display table"
           style="width:100%;text-align:left">
           <thead>
@@ -83,45 +90,45 @@
         </table>
       </div>
 
-      <div class="tab-pane" id="nav-activities" 
-        role="tabpanel" aria-labelledby="nav-activities-tab">
-        
-        {% if activities %}
-          <h2>Molecular Activities</h2>
-          <div class="table-responsive">
-          <table id="myTable" class="display table"
-            style="width:100%;text-align:center;display:none;">
-            <thead>
-            <tr>
-              <th>Target</th>
-              <th>Activity</th>
-            </tr>
-            </thead>
-            <tbody>
-            {% for target, activity in activities %}
-            <tr>
-              <td>{{target}}</td>
-              <td>{{activity}}</td>
-            </tr>
-          {% endfor %}
-          </tbody>
-          </table>
+      {% if activities %}
+      
+        {% for category, category_activities in activities %}
+
+          <div class="tab-pane active" id="nav-{{category}}" 
+            role="tabpanel" aria-labelledby="nav-{{category}}-tab"
+            style="display: none;">
+            
+              <h2>{{category}}</h2>
+              <div class="table-responsive">
+                <table id="{{category}}Table" class="display table data"
+                  style="width:100%;text-align:center;display:none;">
+                 
+                  <thead>
+                  <tr>
+                    <th>Target</th>
+                    <th>Pa</th>
+                    <th>Pi</th>
+                    <th>Pa - Pi</th>
+                  </tr>
+                  </thead>
+                 
+                  <tbody>
+                  {% for target, pa, pi, diff in category_activities %}
+                  <tr>
+                    <td>{{target}}</td>
+                    <td>{{pa}}</td>
+                    <td>{{pi}}</td>
+                    <td>{{diff}}</td>
+                  </tr>
+                {% endfor %}
+                </tbody>
+                </table>
+              </div>
+
           </div>
-        {% else %}
-          <p>No predicted activities</p>
-        {% endif %}
-
-      </div>
-
+        {% endfor %}
+      {% endif %}
     </div>
-
-    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
-    <script type="text/javascript"  src="http://cdn.datatables.net/1.10.2/js/jquery.dataTables.min.js"></script>
-    <script type="text/javascript"  src="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
-       
-
-    <script type="text/javascript" 
-      src="{% static 'natural_products/tables.js' %}"></script>
 
   </body>
 </html>

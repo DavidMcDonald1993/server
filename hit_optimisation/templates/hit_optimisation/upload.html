@@ -1,0 +1,32 @@
+<!doctype html>
+<html>
+  <head>
+    <title>NPAIEngine Upload</title>
+  </head>
+  <body style="text-align: center;">
+    <div>
+        <h1>Hit optimisation smiles upload page</h1>
+            <form enctype="multipart/form-data" action="/hit_optimisation/upload/" method="post">
+              {% csrf_token %}
+              <label for="target">Select target (PDB ID):</label>
+              <br>
+              <input type="text" id="target" 
+                 name="target" value="1AFS"> 
+              <!-- <input type="file" id="smiles"></input> -->
+              {{form}}
+              <br>
+              <input type="submit" value="Submit">
+            </form>
+      </div>
+
+      <br>
+      <br>
+
+      <div>
+        <form action="/">
+          <input id="backButton" type="submit" value="Return to home">
+        </form>
+
+      </div>
+  </body>
+</html>
