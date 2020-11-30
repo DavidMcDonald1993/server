@@ -111,7 +111,7 @@ def query_pass_activities(
         "coconut_id": 1, 
         "name": 1,
         "molecular_formula": 1, 
-        "SMILES": 1,
+        # "SMILES": 1,
         category_target: 1
     }
 
@@ -135,7 +135,7 @@ def query_pass_activities(
             (urlparse.unquote(record["name"]).capitalize() 
                 if record["name"] is not None else "<NO NAME>"),
             record["molecular_formula"], 
-            record["SMILES"], 
+            # record["SMILES"], 
             record[category][target]["Pa"], record[category][target]["Pi"], 
             record[category][target]["Pa"] - record[category][target]["Pi"])
         for record in cursor

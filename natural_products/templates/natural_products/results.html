@@ -50,13 +50,13 @@
         </tr>
         </thead>
         <tbody>
-        {% for coconut_id, name, formula, smiles, pa, pi, diff in records %}
+        {% for coconut_id, name, formula, pa, pi, diff in records %}
           <tr>
             <td> <a href="/natural_products/compounds/{{coconut_id}}"> 
               {{ coconut_id }} </a> </td>
             <td>{{name}}</td>
             <td>{{formula}}</td> 
-            <td>{{smiles}}</td>
+            <!-- <td>{{smiles}}</td> -->
             <td>{{pa}}</td>
             <td>{{pi}}</td>
             <td>{{diff}}</td>

@@ -1,19 +1,70 @@
 <!doctype html>
-<html>
+<html lang="en">
+
   <head>
+
+    {% load static %}
+
     <title>NPAIEngine Upload</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.12.6/css/selectize.bootstrap3.min.css" 
+    integrity="sha256-ze/OEYGcFbPRmvCnrSeKbRTtjG4vGLHXgOqsyLFTRjg=" crossorigin="anonymous" />
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.12.6/js/standalone/selectize.min.js" 
+      integrity="sha256-+C0A5Ilqmu4QcSPxrlGpaZxJ04VjsRjKu+G82kl5UJk=" crossorigin="anonymous"></script>
+
+    <script type="text/javascript" 
+    src="{% static 'hit_optimisation/options.js' %}"></script>
+
+    <script>
+      function setVisible() {
+        document.getElementById("hiddenDiv").style.cssText = "display: inline;";
+      }
+      </script>
   </head>
-  <body style="text-align: center;">
-    <div>
-        <h1>Hit optimisation smiles upload page</h1>
+
+  <body style="text-align: center;" onload="setVisible()">
+    <div id="hiddenDiv" class="hidden" style="display: none;">
+        <h1>Hit Optimisation</h1>
             <form enctype="multipart/form-data" action="/hit_optimisation/upload/" method="post">
               {% csrf_token %}
-              <label for="target">Select target (PDB ID):</label>
-              <br>
-              <input type="text" id="target" 
-                 name="target" value="1AFS"> 
-              <!-- <input type="file" id="smiles"></input> -->
+              <div>
+                <h2>Target Selection</h2>
+                <label for="target">Select target (PDB ID):</label>
+                <input type="text" id="target" 
+                  name="target" value="4DQY"> 
+                <br>
+                <!-- <select name=target id=target>
+                  <option value="">Please choose a target...</option>
+                  {% for target in targets %}
+                    <option value={{target}}>{{target}}</option>
+                  {% endfor %}
+                </select>  -->
+
+                <label for="chain">Chain</label>
+                <input type="text" id="chain" 
+                  name="chain" value="C"> 
+                <br>
+            </div>
+        
+            <div>
+              <h2>Seed Compounds</h2>
               {{form}}
+            </div>
+
+            <div>
+              <h2>Optimisation Settings</h2>
+              {% for setting, value in settings %}
+                <label for={{setting}}>{{setting}}:</label>
+                <input type="text" id={{setting}} 
+                  name={{setting}} value={{value}}> 
+                <br>
+              {% endfor %}
+            </div>
+
+
+
               <br>
               <input type="submit" value="Submit">
             </form>

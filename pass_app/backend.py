@@ -91,7 +91,6 @@ def handle_uploaded_file(f):
     print ("executing command:", cmd)
 
     ret = os.system(cmd)
-
     assert ret == 0
 
     # write PASS spectra to database 
