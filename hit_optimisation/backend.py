@@ -12,6 +12,8 @@ import scoria
 
 import shutil
 
+from email_module.utils import send_mail
+
 class ChainSelect(Select):
     
     def __init__(self, chain_id):
@@ -198,6 +200,8 @@ def determine_identifier(pdb_id, smiles_file):
         os.path.splitext(os.path.basename(smiles_file))[0])
 
 def hit_optimisation(
+    receiver_name, 
+    receiver_address,
     pdb_id, 
     smiles_file, 
     chain,
@@ -207,6 +211,8 @@ def hit_optimisation(
         "static", "hit_optimisation", "output"),
     archive_dir=os.path.join("hit_optimisation",
         "static", "hit_optimisation", "archives"),):
+
+    ''' will run as a process ''' 
 
     assert len(pdb_id) == 4 
 
@@ -268,7 +274,11 @@ def hit_optimisation(
     shutil.make_archive(archive_filename, 
         compression, output_dir)
 
-    return archive_filename + "." + compression
+    send_mail(receiver_name,
+        receiver_address,
+        attach_file_name=archive_filename + ".zip")
+
+    return 0
 
 if __name__ == "__main__":
 

@@ -6,5 +6,7 @@ hit_optimisation/autogrow4
 hit_optimisation/static/hit_optimisation/output
 hit_optimisation/static/hit_optimisation/archives
 
+email_credentials.json
+
 *.smi
 *.ico

@@ -9,7 +9,24 @@
         {% if form %}
             <form enctype="multipart/form-data" action="/pass_app/upload/" method="post">
                 {% csrf_token %}
-                {{ form }}
+
+                <div>
+                  <h2>User Details</h2>
+                    <label for="user_name">User name:</label>
+                    <input type="text" id="user_name" 
+                      name="user_name"> 
+                    <br>
+                    <label for="user_email">Desired email address:</label>
+                    <input type="text" id="user_email" 
+                      name="user_email"> 
+                    <br>
+                </div>
+          
+                <div>
+                  <h2>File upload</h2>
+                  {{ form }}
+                </div>
+
                 <input type="submit" value="Submit">
             </form>
         {% else %}

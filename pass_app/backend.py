@@ -12,6 +12,8 @@ import pandas as pd
 
 from rdkit.Chem.PandasTools import LoadSDF
 
+from email_module.utils import send_mail
+
 HOST = "192.168.0.49"
 PORT = 27017
 DB = "PASS_TEST"
@@ -31,7 +33,10 @@ def clear_collection(collection, filter={}):
 
 def parse_pass_spectra(s, ):
     split = s.split()
-    return {"Pa": split[0], "Pi": split[1], "activity" : " ".join(split[2:])}
+    pa = split[0]
+    pi = split[1]
+    activity = " ".join(split[2:])
+    return {activity: {"Pa": pa, "Pi": pi}}
 
 def write_PASS_hits_to_db(
     pass_file,
@@ -39,7 +44,7 @@ def write_PASS_hits_to_db(
     assert isinstance(pass_file, str)
     assert pass_file.endswith(".sdf")
     print ("reading PASS hits from", pass_file,
-        "and extracting activitydata")
+        "and extracting activity data")
 
     pass_activities = LoadSDF(pass_file, 
         smilesName="SMILES", molColName=None)
@@ -74,11 +79,14 @@ def write_PASS_hits_to_db(
 
     db.client.close()
 
-def handle_uploaded_file(f, 
+def pass_predict(
+    user_name,
+    user_email,
+    sdf_file, 
     output_dir=os.path.join("pass_app", "static", "pass_app",
         "files")):
 
-    filename = f.name
+    filename = sdf_file.name
     assert filename.endswith(".sdf")
     filename = os.path.splitext(filename)[0]
 
@@ -99,14 +107,21 @@ def handle_uploaded_file(f,
 
     ret = os.system(cmd)
     assert ret == 0
+    assert os.path.exists(pass_out_file)
 
     # write PASS spectra to database 
     write_PASS_hits_to_db(pass_out_file)
 
-    print ("removing", temp_file)
-    os.remove(temp_file)
+    print ("removing", input_file)
+    os.remove(input_file)
 
-    return smart_str(pass_out_file)
+    # return smart_str(pass_out_file)
+
+    # send mail containing results
+
+    send_mail(user_name, user_email, pass_out_file)
+
+    return 0
 
 
 

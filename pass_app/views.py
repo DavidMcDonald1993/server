@@ -11,7 +11,9 @@ from django.views.static import serve
 
 from .models import Compound
 from .forms import UploadFileForm
-from .backend import handle_uploaded_file
+from .backend import pass_predict
+
+import multiprocessing as mp
 
 def index(request):
     # latest_compound_list = Compound.objects\
@@ -36,12 +38,25 @@ def upload_file(request):
     if request.method == 'POST':
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
+            user_name = request.POST["user_name"]
+            user_email = request.POST["user_email"]
             uploaded_file = request.FILES['file_field'] # name of attribute
             if uploaded_file.name.endswith(".sdf"):
-                filepath = handle_uploaded_file(uploaded_file)
-                return serve(request, 
-                    os.path.basename(filepath), 
-                    os.path.dirname(filepath))
+                # filepath = handle_uploaded_file(uploaded_file)
+                # return serve(request, 
+                #     os.path.basename(filepath), 
+                #     os.path.dirname(filepath))
+
+                # handle with multi processing 
+
+                p = mp.Process(target=pass_predict,
+                    args=(user_name, user_email, upload_file))
+                p.start()
+
+                print ("process spawned")
+
+                return HttpResponseRedirect("/pass_app/success")
+                
             else:
                 form = UploadFileForm() # invalid sdf file
     else:
@@ -51,7 +66,12 @@ def upload_file(request):
         {'form': form})
 
 def success(request):
-    return HttpResponse("Success!")
+
+    context = {}
+
+    return render(request, 
+        "pass_app/success.html",
+        context)
 
 def favicon(request):
     return HttpResponse("favicon")

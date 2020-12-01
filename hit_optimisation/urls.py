@@ -7,4 +7,6 @@ urlpatterns = [
         name='index'),
     path("upload/", views.upload, 
         name='upload'),
+    path("success/", views.success, 
+        name="success")
 ]

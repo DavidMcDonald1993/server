@@ -29,6 +29,19 @@
         <h1>Hit Optimisation</h1>
             <form enctype="multipart/form-data" action="/hit_optimisation/upload/" method="post">
               {% csrf_token %}
+
+              <div>
+                <h2>User Details</h2>
+                  <label for="user_name">User name:</label>
+                  <input type="text" id="user_name" 
+                    name="user_name"> 
+                  <br>
+                  <label for="user_email">Desired email address:</label>
+                  <input type="text" id="user_email" 
+                    name="user_email"> 
+                  <br>
+              </div>
+
               <div>
                 <h2>Target Selection</h2>
                 <label for="target">Select target (PDB ID):</label>

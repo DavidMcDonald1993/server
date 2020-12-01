@@ -4,6 +4,7 @@ from django.shortcuts import render
 
 from django.views.static import serve
 
+import multiprocessing as mp
 
 from .forms import UploadFileForm
 from .backend import hit_optimisation
@@ -24,6 +25,7 @@ from .backend import hit_optimisation
 #     for human_target in human_targets}
 
 # Create your views here.
+from django.http import HttpResponse, HttpResponseRedirect
 
 def index(request):
     context = {}
@@ -48,6 +50,8 @@ def upload(request):
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
 
+            user_name = request.POST["user_name"]
+            user_email = request.POST["user_email"]
             target = request.POST["target"]
             uploaded_file = request.FILES['file_field'] # name of attribute
             chain = request.POST["chain"]
@@ -57,11 +61,15 @@ def upload(request):
            
             if uploaded_file.name.endswith(".smi"):
                 # do optimisation
-                archive_filename = hit_optimisation(target, uploaded_file, chain, user_settings)
-
-                return serve(request, 
-                    os.path.basename(archive_filename), 
-                    os.path.dirname(archive_filename))
+                # archive_filename = hit_optimisation(user_name, target, uploaded_file, chain, user_settings)
+                # start new process that ends with sent email
+                p  = mp.Process(target=hit_optimisation, args=(user_name, user_email, target, uploaded_file, chain, user_settings))
+                p.start()
+                print ("process spawned")
+            #     return serve(request, 
+            #         os.path.basename(archive_filename), 
+            #         os.path.dirname(archive_filename))
+                return HttpResponseRedirect("/hit_optimisation/success")
             else:
                 form = UploadFileForm() # invalid sdf file
     else:
@@ -76,3 +84,11 @@ def upload(request):
     return render(request, 
         'hit_optimisation/upload.html', 
         context )
+
+def success(request):
+
+    context = {}
+
+    return render(request,
+        "hit_optimisation/success.html",
+        context)
