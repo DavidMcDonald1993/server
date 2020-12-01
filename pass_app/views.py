@@ -50,7 +50,7 @@ def upload_file(request):
                 # handle with multi processing 
 
                 p = mp.Process(target=pass_predict,
-                    args=(user_name, user_email, upload_file))
+                    args=(user_name, user_email, uploaded_file))
                 p.start()
 
                 print ("process spawned")

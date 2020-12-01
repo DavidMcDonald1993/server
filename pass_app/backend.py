@@ -31,6 +31,9 @@ def count_documents(collection, filter={}):
 def clear_collection(collection, filter={}):
     collection.remove(filter=filter)
 
+def remove_invalid_characters(s):
+    return s.replace(".", "")
+
 def parse_pass_spectra(s, ):
     split = s.split()
     pa = split[0]
@@ -67,7 +70,10 @@ def write_PASS_hits_to_db(
             if pd.isnull(row[col]):
                 continue
             if col == "PASS_ACTIVITY_SPECTRUM":
-                value = list(map(parse_pass_spectra, row[col].split("\n")))
+                value = list(
+                    map(parse_pass_spectra, 
+                        map(remove_invalid_characters,
+                            row[col].split("\n"))))
             else:
                 value = row[col]
             entry.update({col: value})
@@ -96,7 +102,7 @@ def pass_predict(
     input_file = os.path.join(output_dir,
         filename + "-in.sdf")
     with open(input_file, "wb+") as out_file:
-        for chunk in f.chunks():
+        for chunk in sdf_file.chunks():
             out_file.write(chunk)
 
     pass_out_file = os.path.join(output_dir, 
