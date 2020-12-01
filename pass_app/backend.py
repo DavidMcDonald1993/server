@@ -42,7 +42,7 @@ def write_PASS_hits_to_db(
         "and extracting activitydata")
 
     pass_activities = LoadSDF(pass_file, 
-        smilesName='SMILES', molColName=None)
+        smilesName="SMILES", molColName=None)
 
     db = connect_to_db()
 
@@ -74,20 +74,27 @@ def write_PASS_hits_to_db(
 
     db.client.close()
 
-def handle_uploaded_file(f):
+def handle_uploaded_file(f, 
+    output_dir=os.path.join("pass_app", "static", "pass_app",
+        "files")):
 
     filename = f.name
     assert filename.endswith(".sdf")
+    filename = os.path.splitext(filename)[0]
 
-    temp_file = "temp.sdf"
-    with open(temp_file, "wb+") as out_file:
+    output_dir = os.path.join(output_dir, filename)
+    os.makedirs(output_dir, exist_ok=True)
+
+    input_file = os.path.join(output_dir,
+        filename + "-in.sdf")
+    with open(input_file, "wb+") as out_file:
         for chunk in f.chunks():
             out_file.write(chunk)
 
-    pass_out_file = os.path.splitext(filename)[0] +\
-        "-PASS-out.sdf"
+    pass_out_file = os.path.join(output_dir, 
+        filename +"-PASS-out.sdf")
 
-    cmd = "PASS2019toSDF {} {}".format(temp_file, pass_out_file)
+    cmd = "PASS2019toSDF.exe {} {}".format(input_file, pass_out_file)
     print ("executing command:", cmd)
 
     ret = os.system(cmd)
