@@ -188,8 +188,6 @@ def get_all_compounds(
 
     return records
 
-
-
 def get_compound_info(
     compound_id, 
     compound_info_collection="uniqueNaturalProduct",
@@ -237,12 +235,6 @@ def get_compound_info(
 
     return compound_info, pass_activities
 
-if __name__ == "__main__":
-
-    compound_info, activities = get_compound_info("CNP0000002")
-
-    print (activities[0])
-
 def draw_molecule(smiles, 
     static_dir="natural_products/static",
     img_filename="natural_products/temp.png", 
@@ -258,3 +250,136 @@ def draw_molecule(smiles,
         return img_filename
     else:
         return None
+
+def _as_batch(cursor, batch_size=50):
+    # iterate over something (pymongo cursor, generator, ...) by batch. 
+    # Note: the last batch may contain less than batch_size elements.
+    batch = []
+    try:
+        while True:
+            for _ in range(batch_size):
+                batch.append(next(cursor))
+                if len(batch) % 1000 == 0:
+                    print ("building batch...")
+                    print ("current size:", len(batch))
+            print ("yielding batch of size", len(batch))
+            yield batch
+            batch = []
+    except StopIteration as e:
+        if len(batch):
+            yield batch
+
+def migrate_to_mysql():
+
+    db = connect_to_db()
+    collection = db[PASS_COLLECTION]
+
+    import json
+
+    import mysql.connector
+    from mysql.connector.errors import ProgrammingError, IntegrityError
+
+    mydb = mysql.connector.connect(
+        host="192.168.0.49",
+        user="david",
+        password="c423612k",
+        database="npaiengine"
+    )
+
+    mycursor = mydb.cursor()
+
+    targets = sorted({target for category in get_categories() for target in get_targets_for_category(category)})
+    target_map = {i: target for i, target in enumerate(targets)}
+    target_map_inv = {target: i for i, target in target_map.items()}
+
+    import numpy as np
+    import pandas as pd
+
+    # create tables in MYSQL
+    for category in get_categories():
+
+        print ("processing category", category)
+
+        targets = get_targets_for_category(category)
+
+        records = collection.find(
+            {},
+            projection={"_id":0, "coconut_id": 1, f"PASS_{category}" : 1})
+
+        for batch_no, batch in enumerate(_as_batch(records, batch_size=10000)):
+                
+            for i, target in enumerate(targets):
+
+                create_table = f"CREATE TABLE `{target_map_inv[target]}` (coconut_id VARCHAR(255) PRIMARY KEY, Pa SMALLINT, Pi SMALLINT )"
+                try:
+                    mycursor.execute(create_table)
+                    print ("executed command", create_table)
+
+                except ProgrammingError as e: # table already exists
+                    print ("skipping table creation for target", target)
+                    pass
+
+                # get existing records
+                mycursor.execute(f"select coconut_id from `{target_map_inv[target]}`")
+                existing_ids = mycursor.fetchall()
+                existing_ids = {record[0] for record in existing_ids}
+
+                # insert records for that target
+                print (f"inserting records for target {target}")
+                sql = f"INSERT INTO `{str(target_map_inv[target])}`" + " (coconut_id, Pa, Pi) VALUES (%s, %s, %s)"
+
+                vals = [
+                    (record["coconut_id"], 
+                        int(record[f"PASS_{category}"][target]["Pa"]), 
+                        int(record[f"PASS_{category}"][target]["Pi"]), )
+                    for record in batch
+                    if not pd.isnull(record[f"PASS_{category}"]) and record["coconut_id"] not in existing_ids
+                ]
+
+                print ("inserting", len(vals), "rows")
+
+                mycursor.executemany(sql, vals)
+
+                mydb.commit()
+
+                print ("completed target", target, i+1, "/", len(targets))
+                print ("################")
+                print ()
+
+            print ("completed batch", batch_no)
+            print ("################")
+            print ()
+
+        print ("completed category", category)
+        print ("################")
+        print ()
+
+
+
+if __name__ == "__main__":
+    
+    db = connect_to_db()
+    collection = db[PASS_COLLECTION]
+
+    migrate_to_mysql()
+
+    # category = "TOXICITY"
+
+    # targets = get_targets_for_category(category)
+
+    # print (len(targets))
+
+    # for target in targets:
+        # print (target)
+
+    # from pymongo import IndexModel, ASCENDING, DESCENDING
+
+    # # # target = "Yawning"
+    # # # target = "PASS_{}.{}".format(category, target)
+    # # # print ("processing target", target)
+    # collection.create_indexes([
+    #     IndexModel([(f"PASS_{category}.{target}.Pa", ASCENDING) for target in get_targets_for_category(category)],
+    #         name=category)
+    #         # for target in get_targets_for_category(category) #("Diarrhea", "Yawning", "Delusion")
+    #     ], 
+    # )
