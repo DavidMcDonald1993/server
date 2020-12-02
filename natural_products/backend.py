@@ -1,5 +1,6 @@
 import os
 
+import numpy as np
 import pandas as pd
 
 from datetime import datetime
@@ -302,53 +303,60 @@ def migrate_to_mysql():
 
         targets = get_targets_for_category(category)
 
-        records = collection.find(
-            {},
-            projection={"_id":0, "coconut_id": 1, f"PASS_{category}" : 1})
+        # records = collection.find(
+        #     {},
+        #     projection={"_id":0, "coconut_id": 1, f"PASS_{category}" : 1})
 
-        for batch_no, batch in enumerate(_as_batch(records, batch_size=10000)):
+        # for batch_no, batch in enumerate(_as_batch(records, batch_size=10000)):
                 
-            for i, target in enumerate(targets):
+        for i, target in enumerate(targets):
+            print ("processing target", target)
 
-                create_table = f"CREATE TABLE `{target_map_inv[target]}` (coconut_id VARCHAR(255) PRIMARY KEY, Pa SMALLINT, Pi SMALLINT )"
-                try:
-                    mycursor.execute(create_table)
-                    print ("executed command", create_table)
+            create_table = f"CREATE TABLE `{target_map_inv[target]}` (coconut_id VARCHAR(255) PRIMARY KEY, Pa SMALLINT, Pi SMALLINT )"
+            try:
+                mycursor.execute(create_table)
+                print ("executed command", create_table)
 
-                except ProgrammingError as e: # table already exists
-                    print ("skipping table creation for target", target)
-                    pass
+            except ProgrammingError as e: # table already exists
+                print ("skipping table creation for target", target)
+                pass
 
-                # get existing records
-                mycursor.execute(f"select coconut_id from `{target_map_inv[target]}`")
-                existing_ids = mycursor.fetchall()
-                existing_ids = {record[0] for record in existing_ids}
+            # get existing records
+            mycursor.execute(f"select coconut_id from `{target_map_inv[target]}`")
+            existing_ids = mycursor.fetchall()
+            existing_ids = sorted({record[0] for record in existing_ids})
 
-                # insert records for that target
-                print (f"inserting records for target {target}")
-                sql = f"INSERT INTO `{str(target_map_inv[target])}`" + " (coconut_id, Pa, Pi) VALUES (%s, %s, %s)"
+            records = collection.find(
+                {"$and": [{"coconut_id": {"$nin": existing_ids}},
+                    {f"PASS_{category}": {"$ne": np.NaN}}]},
+                projection={"_id": 0, "coconut_id": 1, f"PASS_{category}.{target}": 1})
 
-                vals = [
-                    (record["coconut_id"], 
-                        int(record[f"PASS_{category}"][target]["Pa"]), 
-                        int(record[f"PASS_{category}"][target]["Pi"]), )
-                    for record in batch
-                    if not pd.isnull(record[f"PASS_{category}"]) and record["coconut_id"] not in existing_ids
-                ]
+            # insert records for that target
+            print (f"inserting records for target {target}")
+            sql = f"INSERT INTO `{str(target_map_inv[target])}`" + " (coconut_id, Pa, Pi) VALUES (%s, %s, %s)"
+            print ("using SQL command", sql)
 
-                print ("inserting", len(vals), "rows")
+            vals = [
+                (record["coconut_id"], 
+                    int(record[f"PASS_{category}"][target]["Pa"]), 
+                    int(record[f"PASS_{category}"][target]["Pi"]), )
+                for record in records#batch
+                # if not pd.isnull(record[f"PASS_{category}"]) and record["coconut_id"] not in existing_ids
+            ]
 
-                mycursor.executemany(sql, vals)
+            print ("inserting", len(vals), "rows")
 
-                mydb.commit()
+            mycursor.executemany(sql, vals)
 
-                print ("completed target", target, i+1, "/", len(targets))
-                print ("################")
-                print ()
+            mydb.commit()
 
-            print ("completed batch", batch_no)
+            print ("completed target", target, i+1, "/", len(targets))
             print ("################")
             print ()
+
+            # print ("completed batch", batch_no)
+            # print ("################")
+            # print ()
 
         print ("completed category", category)
         print ("################")
@@ -356,10 +364,15 @@ def migrate_to_mysql():
 
 
 
+
 if __name__ == "__main__":
     
     db = connect_to_db()
     collection = db[PASS_COLLECTION]
+
+    # record = collection.find_one({})#{"PASS_EFFECTS": {"$ne": np.NaN}})
+
+    # print (record)
 
     migrate_to_mysql()
 
