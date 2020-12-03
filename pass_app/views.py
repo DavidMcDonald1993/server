@@ -23,16 +23,16 @@ def index(request):
     return render(request, 
         "pass_app/index.html", context)
 
-def compound_detail(request, compound_name):
-    try:
-        compound = Compound.objects.get(name=compound_name)
-        return HttpResponse(
-            "you are looking at details " +\
-            "for compound: " + compound_name +\
-            "<br> smiles: " + compound.canonical_smiles)
-    except ObjectDoesNotExist:
-        return HttpResponse(compound_name +\
-            " does not exist in database")
+# def compound_detail(request, compound_name):
+#     try:
+#         compound = Compound.objects.get(name=compound_name)
+#         return HttpResponse(
+#             "you are looking at details " +\
+#             "for compound: " + compound_name +\
+#             "<br> smiles: " + compound.canonical_smiles)
+#     except ObjectDoesNotExist:
+#         return HttpResponse(compound_name +\
+#             " does not exist in database")
 
 def upload_file(request):
     if request.method == 'POST':

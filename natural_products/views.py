@@ -70,7 +70,7 @@ def results(request, ):
 
 def all_compounds(request):
 
-    compounds = get_all_compounds()
+    compounds = get_multiple_compound_info()
 
     # get compounds molecular formulas from database
     context = {"compounds": compounds}

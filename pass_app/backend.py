@@ -19,17 +19,6 @@ from rdkit.Chem.PandasTools import LoadSDF
 from utils.email_utils import send_mail
 from utils.mongodb_utils import connect_to_mongodb
 
-# HOST = "192.168.0.49"
-# PORT = 27017
-# DB = "PASS_TEST"
-
-# def connect_to_mongodb()():
-    # print ("connecting to MongoDB database", 
-        # DB, "using host",
-        # HOST, "and port", PORT)
-    # client = MongoClient(HOST, PORT)
-    # return client[DB]
-
 def remove_invalid_characters(s):
     return s.replace(".", "")
 
@@ -51,10 +40,9 @@ def write_PASS_hits_to_db(
     pass_activities = LoadSDF(pass_file, 
         smilesName="SMILES", molColName=None)
 
-    db = connect_to_mongodb()()
+    db = connect_to_mongodb()
 
-    print ("writing PASS hits to MongoDB:", DB, 
-        "collection:", collection)
+    print ("writing PASS hits to collection:", collection)
 
     hit_collection = db[collection]
 

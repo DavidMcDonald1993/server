@@ -43,9 +43,9 @@ def get_targets_for_category(category,
     pass_collection = db[collection]
 
     query = {"coconut_id": "CNP0000002"}
-    show = {"_id": 0, "PASS_" + category: 1}
+    projection = {"_id": 0, "PASS_" + category: 1}
 
-    record = pass_collection.find_one(query, show)
+    record = pass_collection.find_one(query, projection)
 
     return list(record["PASS_" + category].keys())
 
@@ -86,7 +86,7 @@ def query_pass_activities(
     query = {"$and": query}
 
     print ("filtering with", query)
-    print ("showing", show)
+    print ("showing", projection)
 
     cursor = pass_collection.find(query, projection)
     
