@@ -4,7 +4,7 @@ from django.shortcuts import render
 
 from django.http import HttpResponse
 
-from .backend import query_pass_activities, get_compound_info, draw_molecule, get_all_compounds
+from .backend import query_pass_activities, get_compound_info, draw_molecule, get_multiple_compound_info
 
 import html
 import urllib.parse as urlparse

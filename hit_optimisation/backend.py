@@ -1,5 +1,10 @@
-
 import os
+
+import sys
+import os.path
+sys.path.insert(1, 
+    os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
+
 
 import numpy as np
 
@@ -12,7 +17,7 @@ import scoria
 
 import shutil
 
-from email_module.utils import send_mail
+from utils.email_utils import send_mail
 
 class ChainSelect(Select):
     
@@ -136,7 +141,8 @@ def process_smiles(smiles_file, output_dir):
                 out_file.write(chunk)
     else:
         temp_smiles_file = os.path.join(output_dir,
-            smiles_file) # no request
+            os.path.basename(smiles_file)) # no request
+        shutil.copyfile(smiles_file, temp_smiles_file)
     return temp_smiles_file
 
 def load_base_settings(
@@ -191,12 +197,12 @@ def save_settings(settings, filename):
     with open(filename, "w") as f:
         json.dump(settings, f, sort_keys=True, indent=4)
 
-def determine_identifier(pdb_id, smiles_file):
+def determine_identifier(receiver_address, pdb_id, smiles_file):
     if not isinstance(smiles_file, str):
         assert hasattr(smiles_file, "name")
         smiles_file = smiles_file.name 
     assert smiles_file.endswith(".smi")
-    return "{}-{}".format(pdb_id, 
+    return "{}-{}-{}".format(receiver_address, pdb_id, 
         os.path.splitext(os.path.basename(smiles_file))[0])
 
 def hit_optimisation(
@@ -216,7 +222,7 @@ def hit_optimisation(
 
     assert len(pdb_id) == 4 
 
-    identifier = determine_identifier(pdb_id, smiles_file)
+    identifier = determine_identifier(receiver_address, pdb_id, smiles_file)
 
     # process output directory
     output_dir = os.path.join(output_dir,
@@ -282,12 +288,17 @@ def hit_optimisation(
 
 if __name__ == "__main__":
 
+    name = "David"
+    email = "davemcdonald93@gmail.com"
     pdb_id = "4DQY"
     smiles_file = "./all_ligands.smi"
     chain = "C"
 
     hit_optimisation(
+        name,
+        email, 
         pdb_id, 
         smiles_file, 
         chain,
+        user_settings={"num_generations": 1}
     )

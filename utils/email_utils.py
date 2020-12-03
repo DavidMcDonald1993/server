@@ -1,5 +1,12 @@
 import os
 
+import sys
+import os.path
+sys.path.insert(1, 
+    os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
+
+
+
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -10,8 +17,7 @@ import json
 
 import argparse
 
-with open("email_credentials.json", "r") as f:
-    credentials = json.load(f)
+from utils.io import load_json
 
 def send_mail(
     receiver_name,
@@ -20,6 +26,8 @@ def send_mail(
     subject="NPAIEngine results",
     mail_content="Dear {},\n\nPlease find attached the results from NPAIEngine.\n\nSincerely,\nShan He"
     ):
+
+    credentials = load_json("email_credentials.json")
 
     print ("sending email to user", receiver_name, "at address", receiver_address)
     print ("sending file", attach_file_name)

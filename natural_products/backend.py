@@ -1,69 +1,34 @@
 import os
+import sys
+import os.path
+sys.path.insert(1, 
+    os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 
 import numpy as np
 import pandas as pd
 
 from datetime import datetime
 
-import pymongo
-from pymongo import MongoClient
-from pymongo.errors import ServerSelectionTimeoutError
-
 from rdkit import Chem
 from rdkit.Chem.Draw import MolToImage
 
 import urllib.parse as urlparse
 
-import json
+from utils.io import load_json
+from utils.mongodb_utils import connect_to_mongodb
+from utils.mysql_utils import mysql_query, mysql_create_table, mysql_insert_many
 
-import mysql.connector
-from mysql.connector.errors import ProgrammingError, IntegrityError
-
-
-HOST = "192.168.0.49"
-PORT = 27017
-DB = "COCONUT"
 PASS_COLLECTION = "PASS_ALL"
 
 target_categories = [
     "EFFECTS",
     "MECHANISMS",
-    'TOXICITY', 'ANTITARGETS',
-    'METABOLISM', 'GENE_EXPRESSION', 'TRANSPORTERS'
+    'TOXICITY', 
+    'ANTITARGETS',
+    'METABOLISM', 
+    'GENE_EXPRESSION', 
+    'TRANSPORTERS'
 ]
-
-def connect_to_mongodb(host=HOST, port=PORT, db=DB, timeout=5000):
-    print ("connecting to MongoDB database", 
-        db, "using host",
-        host, "and port", port)
-    client = MongoClient(host, port, serverSelectionTimeoutMS=timeout)
-    return client[db]
-
-# def query_database(collection_name, query, show, return_one):
-
-#     for host in ("localhost", HOST):
-#         try:
-#             db = connect_to_db(host=host)
-#             collection = db[collection_name]
-
-#             if return_one:
-#                 query_fun = collection.find_one
-#             else:
-#                 query_fun = collection.find 
-
-#             print ("performing query with filter:", query,
-#                 "and showing", show)
-
-#             records = query_fun(query, show)
-
-#             db.client.close()
-
-#             return records
-
-#         except ServerSelectionTimeoutError as e:
-#             pass
-
-#     raise ServerSelectionTimeoutError
 
 def get_categories():
     return target_categories
@@ -82,11 +47,7 @@ def get_targets_for_category(category,
 
     record = pass_collection.find_one(query, show)
 
-    # record = query_database(collection_name=collection,
-        # query=query, show=show, return_one=True)
-  
-    return record["PASS_" + category].keys()
-
+    return list(record["PASS_" + category].keys())
 
 def query_pass_activities(
     category,
@@ -113,7 +74,7 @@ def query_pass_activities(
             {"$expr": { "$gt": 
                 ["${}.Pa".format(category_target), "${}.Pi".format(category_target)] } } )
     
-    show = {
+    projection = {
         "_id": 0, 
         "coconut_id": 1, 
         "name": 1,
@@ -127,14 +88,8 @@ def query_pass_activities(
     print ("filtering with", query)
     print ("showing", show)
 
-    cursor = pass_collection.find(query, show)#\
-        # .sort([(target+".Pa", pymongo.DESCENDING), ]) 
-
-    # cursor = query_database(collection_name=collection,
-        # query=query, show=show, return_one=False)
+    cursor = pass_collection.find(query, projection)
     
-    cursor.batch_size(1000000)
-
     print ("iterating over records")
 
     records = [
@@ -155,7 +110,7 @@ def query_pass_activities(
     return records
 
 
-def get_all_compounds(    
+def get_multiple_compound_info(compounds=None,    
     compound_info_collection="uniqueNaturalProduct",):
 
     print ("querying COCONUT database for info",
@@ -165,8 +120,13 @@ def get_all_compounds(
 
     coconut_collection = db[compound_info_collection]
 
-    query = {}
-    show = {
+    if compounds is None: # get all
+        query = {}
+    else:
+        if not isinstance(compounds, list):
+            compounds = list(compounds)
+        query = {"coconut_id": {"$in": compounds}}
+    projection = {
         "_id": 0, 
         "coconut_id": 1, 
         "name": 1,
@@ -174,9 +134,8 @@ def get_all_compounds(
         "clean_smiles": 1
     }
 
-    cursor = coconut_collection.find(query, show)\
-        .sort([("coconut_id", pymongo.ASCENDING)])
-    cursor.batch_size(1000000)
+    cursor = coconut_collection.find(query, projection)
+    # cursor.batch_size(1000000)
 
     print ("iterating over query")
 
@@ -258,90 +217,23 @@ def draw_molecule(smiles,
     else:
         return None
 
-def _as_batch(cursor, batch_size=50):
-    # iterate over something (pymongo cursor, generator, ...) by batch. 
-    # Note: the last batch may contain less than batch_size elements.
-    batch = []
-    try:
-        while True:
-            for _ in range(batch_size):
-                batch.append(next(cursor))
-                if len(batch) % 1000 == 0:
-                    print ("building batch...")
-                    print ("current size:", len(batch))
-            print ("yielding batch of size", len(batch))
-            yield batch
-            batch = []
-    except StopIteration as e:
-        if len(batch):
-            yield batch
-
-def mysql_query(query):
-
-    mydb = mysql.connector.connect(
-        host="192.168.0.49",
-        user="david",
-        password="c423612k",
-        database="npaiengine"
-    )
-
-    mycursor = mydb.cursor()
-    mycursor.execute(query)
-
-    records = mycursor.fetchall()
-
-    mydb.close()
-
-    return records
-
-def mysql_create_table(create_table):
-    mydb = mysql.connector.connect(
-        host="192.168.0.49",
-        user="david",
-        password="c423612k",
-        database="npaiengine"
-    )
-
-    mycursor = mydb.cursor()
-    try:
-        mycursor.execute(create_table)
-        print ("executed command", create_table)
-
-    except ProgrammingError as e: # table already exists
-        print ("table already exists")
-        pass
-    return 0
-
-def mysql_insert_many(sql, rows):
-
-    print ("inserting", len(rows), "rows")
-
-    mydb = mysql.connector.connect(
-        host="192.168.0.49",
-        user="david",
-        password="c423612k",
-        database="npaiengine"
-    )
-
-    mycursor = mydb.cursor()
-    mycursor.executemany(sql, rows)
-    mydb.commit()
-
-    mydb.close()
-
-    return 0
-
 def migrate_to_mysql():
 
     db = connect_to_mongodb()
     collection = db[PASS_COLLECTION]
 
-    targets = sorted({target for category in get_categories() for target in get_targets_for_category(category)})
-    target_map = {i: target for i, target in enumerate(targets)}
-    target_map_inv = {target: i for i, target in target_map.items()}
+    target_map_inv = load_json("target_ids.json")
 
     # create tables in MYSQL
-    for category in get_categories()[::-1]:
+    for category in [
+        "EFFECTS",
+        "MECHANISMS",
+        'TOXICITY', 
+        'ANTITARGETS',
+        'METABOLISM', 
+        'GENE_EXPRESSION', 
+        'TRANSPORTERS'
+    ]:
 
         print ("processing category", category)
 
@@ -386,14 +278,43 @@ def migrate_to_mysql():
         print ()
 
 if __name__ == "__main__":
+
     migrate_to_mysql()
     
-    # threshold = 100
-
     # db = connect_to_mongodb()
     # collection = db[PASS_COLLECTION]
 
     # categories = get_categories()
+
+    # category = categories[0]
+
+    # collection.create_index([(f"PASS_{category}", 1), ])
+
+    # print ("created index")
+
+    # records = collection.find({f"PASS_{category}": {"$ne": np.NaN}}, {"_id": 0, "coconut_id": 1})
+
+    # from timeit import default_timer
+
+    # start_time = default_timer()
+
+    # list(records)
+
+    # print ("with index", default_timer() - start_time)
+
+    # category = categories[1]
+
+    # # collection.set_index([(f"PASS_{category}", 1), ])
+
+    # records = collection.find({f"PASS_{category}": {"$ne": np.NaN}}, {"_id": 0, "coconut_id": 1})
+
+    # start_time = default_timer()
+
+    # list(records)
+
+    # print ("without index", default_timer() - start_time)
+
+    # threshold = 100
 
     # category = categories[0]
 

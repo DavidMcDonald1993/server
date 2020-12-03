@@ -1,5 +1,9 @@
 
 import os
+import sys
+import os.path
+sys.path.insert(1, 
+    os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 
 from django.utils.encoding import smart_str
 
@@ -12,24 +16,19 @@ import pandas as pd
 
 from rdkit.Chem.PandasTools import LoadSDF
 
-from email_module.utils import send_mail
+from utils.email_utils import send_mail
+from utils.mongodb_utils import connect_to_mongodb
 
-HOST = "192.168.0.49"
-PORT = 27017
-DB = "PASS_TEST"
+# HOST = "192.168.0.49"
+# PORT = 27017
+# DB = "PASS_TEST"
 
-def connect_to_db():
-    print ("connecting to MongoDB database", 
-        DB, "using host",
-        HOST, "and port", PORT)
-    client = MongoClient(HOST, PORT)
-    return client[DB]
-
-def count_documents(collection, filter={}):
-    return collection.count_documents(filter=filter)
-
-def clear_collection(collection, filter={}):
-    collection.remove(filter=filter)
+# def connect_to_mongodb()():
+    # print ("connecting to MongoDB database", 
+        # DB, "using host",
+        # HOST, "and port", PORT)
+    # client = MongoClient(HOST, PORT)
+    # return client[DB]
 
 def remove_invalid_characters(s):
     return s.replace(".", "")
@@ -52,7 +51,7 @@ def write_PASS_hits_to_db(
     pass_activities = LoadSDF(pass_file, 
         smilesName="SMILES", molColName=None)
 
-    db = connect_to_db()
+    db = connect_to_mongodb()()
 
     print ("writing PASS hits to MongoDB:", DB, 
         "collection:", collection)
@@ -92,6 +91,9 @@ def pass_predict(
     output_dir=os.path.join("pass_app", "static", "pass_app",
         "files")):
 
+    output_dir = os.path.join(output_dir, user_email)
+    os.makedirs(output_dir, exist_ok=True)
+
     filename = sdf_file.name
     assert filename.endswith(".sdf")
     filename = os.path.splitext(filename)[0]
@@ -128,6 +130,11 @@ def pass_predict(
     send_mail(user_name, user_email, pass_out_file)
 
     return 0
+
+if __name__ == "__main__":
+    name = "david"
+    email = "davemcdonald93@gmail.com"
+    sdf_file = "/home/david/Desktop/test.sdf"
 
 
 
