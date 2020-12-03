@@ -14,6 +14,12 @@ from rdkit.Chem.Draw import MolToImage
 
 import urllib.parse as urlparse
 
+import json
+
+import mysql.connector
+from mysql.connector.errors import ProgrammingError, IntegrityError
+
+
 HOST = "192.168.0.49"
 PORT = 27017
 DB = "COCONUT"
@@ -26,7 +32,7 @@ target_categories = [
     'METABOLISM', 'GENE_EXPRESSION', 'TRANSPORTERS'
 ]
 
-def connect_to_db(host=HOST, port=PORT, db=DB, timeout=5000):
+def connect_to_mongodb(host=HOST, port=PORT, db=DB, timeout=5000):
     print ("connecting to MongoDB database", 
         db, "using host",
         host, "and port", port)
@@ -68,7 +74,7 @@ def get_targets_for_category(category,
 
     print ("identifying targets for category", category)
 
-    db = connect_to_db()
+    db = connect_to_mongodb()
     pass_collection = db[collection]
 
     query = {"coconut_id": "CNP0000002"}
@@ -96,7 +102,7 @@ def query_pass_activities(
          "with Pa greater than or equal to",
         "threshold", threshold)
 
-    db = connect_to_db()
+    db = connect_to_mongodb()
     pass_collection = db[collection]
 
     category_target = "{}.{}".format(category, target)
@@ -155,7 +161,7 @@ def get_all_compounds(
     print ("querying COCONUT database for info",
         "about all compounds")
 
-    db = connect_to_db()
+    db = connect_to_mongodb()
 
     coconut_collection = db[compound_info_collection]
 
@@ -197,7 +203,7 @@ def get_compound_info(
     print ("querying COCONUT database for info",
         "about compound with compound id", compound_id)
 
-    db = connect_to_db()
+    db = connect_to_mongodb()
 
     coconut_collection = db[compound_info_collection]
 
@@ -270,15 +276,7 @@ def _as_batch(cursor, batch_size=50):
         if len(batch):
             yield batch
 
-def migrate_to_mysql():
-
-    db = connect_to_db()
-    collection = db[PASS_COLLECTION]
-
-    import json
-
-    import mysql.connector
-    from mysql.connector.errors import ProgrammingError, IntegrityError
+def mysql_query(query):
 
     mydb = mysql.connector.connect(
         host="192.168.0.49",
@@ -288,42 +286,76 @@ def migrate_to_mysql():
     )
 
     mycursor = mydb.cursor()
+    mycursor.execute(query)
+
+    records = mycursor.fetchall()
+
+    mydb.close()
+
+    return records
+
+def mysql_create_table(create_table):
+    mydb = mysql.connector.connect(
+        host="192.168.0.49",
+        user="david",
+        password="c423612k",
+        database="npaiengine"
+    )
+
+    mycursor = mydb.cursor()
+    try:
+        mycursor.execute(create_table)
+        print ("executed command", create_table)
+
+    except ProgrammingError as e: # table already exists
+        print ("table already exists")
+        pass
+    return 0
+
+def mysql_insert_many(sql, rows):
+
+    print ("inserting", len(rows), "rows")
+
+    mydb = mysql.connector.connect(
+        host="192.168.0.49",
+        user="david",
+        password="c423612k",
+        database="npaiengine"
+    )
+
+    mycursor = mydb.cursor()
+    mycursor.executemany(sql, rows)
+    mydb.commit()
+
+    mydb.close()
+
+    return 0
+
+def migrate_to_mysql():
+
+    db = connect_to_mongodb()
+    collection = db[PASS_COLLECTION]
 
     targets = sorted({target for category in get_categories() for target in get_targets_for_category(category)})
     target_map = {i: target for i, target in enumerate(targets)}
     target_map_inv = {target: i for i, target in target_map.items()}
 
-    import numpy as np
-    import pandas as pd
-
     # create tables in MYSQL
-    for category in get_categories():
+    for category in get_categories()[::-1]:
 
         print ("processing category", category)
 
         targets = get_targets_for_category(category)
 
-        # records = collection.find(
-        #     {},
-        #     projection={"_id":0, "coconut_id": 1, f"PASS_{category}" : 1})
-
-        # for batch_no, batch in enumerate(_as_batch(records, batch_size=10000)):
-                
         for i, target in enumerate(targets):
             print ("processing target", target)
 
             create_table = f"CREATE TABLE `{target_map_inv[target]}` (coconut_id VARCHAR(255) PRIMARY KEY, Pa SMALLINT, Pi SMALLINT )"
-            try:
-                mycursor.execute(create_table)
-                print ("executed command", create_table)
-
-            except ProgrammingError as e: # table already exists
-                print ("skipping table creation for target", target)
-                pass
+            mysql_create_table(create_table)
 
             # get existing records
-            mycursor.execute(f"select coconut_id from `{target_map_inv[target]}`")
-            existing_ids = mycursor.fetchall()
+            existing_ids_query = f"select coconut_id from `{target_map_inv[target]}`"
+            existing_ids = mysql_query(existing_ids_query)
             existing_ids = sorted({record[0] for record in existing_ids})
 
             records = collection.find(
@@ -336,45 +368,93 @@ def migrate_to_mysql():
             sql = f"INSERT INTO `{str(target_map_inv[target])}`" + " (coconut_id, Pa, Pi) VALUES (%s, %s, %s)"
             print ("using SQL command", sql)
 
-            vals = [
+            print ("building rows to insert into SQL")
+            rows = [
                 (record["coconut_id"], 
                     int(record[f"PASS_{category}"][target]["Pa"]), 
                     int(record[f"PASS_{category}"][target]["Pi"]), )
-                for record in records#batch
-                # if not pd.isnull(record[f"PASS_{category}"]) and record["coconut_id"] not in existing_ids
+                for record in records
             ]
-
-            print ("inserting", len(vals), "rows")
-
-            mycursor.executemany(sql, vals)
-
-            mydb.commit()
+            mysql_insert_many(sql, rows)
 
             print ("completed target", target, i+1, "/", len(targets))
             print ("################")
             print ()
 
-            # print ("completed batch", batch_no)
-            # print ("################")
-            # print ()
-
         print ("completed category", category)
         print ("################")
         print ()
 
-
-
-
 if __name__ == "__main__":
-    
-    db = connect_to_db()
-    collection = db[PASS_COLLECTION]
-
-    # record = collection.find_one({})#{"PASS_EFFECTS": {"$ne": np.NaN}})
-
-    # print (record)
-
     migrate_to_mysql()
+    
+    # threshold = 100
+
+    # db = connect_to_mongodb()
+    # collection = db[PASS_COLLECTION]
+
+    # categories = get_categories()
+
+    # category = categories[0]
+
+    # print ("using category", category)
+
+    # targets = list(get_targets_for_category(category))
+
+    # with open("target_map.json", "r") as f:
+    #     target_map = json.load(f)
+
+    # target = targets[0]
+
+    # target_id = target_map[target]
+
+    # mongo_records = collection.find(
+    #     {"$and":[
+    #         {f"PASS_{category}.{target}.Pa": {"$gt": threshold}}, 
+    #         {"$expr": {"$gt":[f"$PASS_{category}.{target}.Pa", f"$PASS_{category}.{target}.Pi"]}}
+    #     ]},
+    #     projection={"_id": 0, "coconut_id": 1})
+    
+    # from timeit import default_timer
+
+    # start_time = default_timer()
+
+    # mongo_records = sorted({record["coconut_id"] for record in mongo_records})
+
+    # print ("mongodb", default_timer() - start_time)
+
+    # mydb = mysql.connector.connect(
+    #     host="192.168.0.49",
+    #     user="david",
+    #     password="c423612k",
+    #     database="npaiengine"
+    # )
+
+    # mycursor = mydb.cursor()
+
+    # mycursor.execute(f"select coconut_id from `{target_id}` where Pa>{threshold} and Pa>Pi")
+
+    # start_time = default_timer()
+
+    # sql_records = {record[0] for record in mycursor.fetchall()}
+
+    # print ("SQL", default_timer() - start_time)
+
+    # print (sorted(mongo_records)[:10])
+    # print (sorted(sql_records)[:10])
+
+    # print (len(mongo_records), len(sql_records))
+
+    # assert len(mongo_records) == len(sql_records), "length"
+    # # assert all([record in mongo_records for record in sql_records]), "sql in mongo"
+    # # assert all([record in sql_records for record in mongo_records]), "mongo in sql"
+
+    # print ("pass")
+
+    # # record = collection.find_one({})#{"PASS_EFFECTS": {"$ne": np.NaN}})
+
+    # # print (record)
+
 
     # category = "TOXICITY"
 
