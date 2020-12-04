@@ -1,15 +1,18 @@
+import os
+
 import numpy as np
 
 from django.shortcuts import render
 
 from django.http import HttpResponse
+from django.views.static import serve
 
-from .backend import query_pass_activities, get_compound_info, draw_molecule, get_multiple_compound_info
 
 import html
 import urllib.parse as urlparse
 
-from .backend import get_categories, get_targets_for_category
+from .backend import get_categories, get_targets_for_category, write_records_to_file, write_smiles_to_file
+from .backend import query_pass_activities, get_compound_info, draw_molecule, get_multiple_compound_info
 
 # Create your views here.
 
@@ -65,6 +68,8 @@ def results(request, ):
         "num_hits": len(records)
     }
 
+    request.session["records"] = records
+
     return render(request,
         "natural_products/results.html", context)
 
@@ -118,3 +123,37 @@ def compound_info(request, compound_id):
 
     return render(request,
         "natural_products/compound_info.html", context)
+
+def download(request):
+    
+    username = "david" #TODO
+    records = request.session["records"]
+
+    record_filename = write_records_to_file(username, records)
+
+    return serve(request, 
+            os.path.basename(record_filename), 
+            os.path.dirname(record_filename))
+
+    # context = {}
+    # return render(request,
+    #     "natural_products/download.html",
+    #     context)
+
+def optimise(request):
+
+    username = "david" #TODO
+    records = request.session["records"]
+
+    smiles = write_smiles_to_file(username, records)
+
+    # TODO
+
+    # return serve(request, 
+    #         os.path.basename(record_filename), 
+    #         os.path.dirname(record_filename))
+
+    context = {}
+    return render(request,
+        "natural_products/optimise.html",
+        context)

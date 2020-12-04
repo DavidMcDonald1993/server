@@ -36,27 +36,27 @@
     <br>
  
     <div class="table-responsive">
-      <table class="display table data"
+      <table id=resultsTable class="display table data"
         style="width:100%;text-align:center;display:none;">
         <thead>
         <tr>
           <th>COCONUT ID</th>
           <th>Name</th>
           <th>Molecular Formula</th>
-          <!-- <th>SMILES</th> -->
+          <th>SMILES</th>
           <th>Pa</th>
           <th>Pi</th>
           <th>Pa - Pi</th>
         </tr>
         </thead>
         <tbody>
-        {% for coconut_id, name, formula, pa, pi, diff in records %}
+        {% for coconut_id, name, formula, smiles, pa, pi, diff in records %}
           <tr>
             <td> <a href="/natural_products/compounds/{{coconut_id}}"> 
               {{ coconut_id }} </a> </td>
             <td>{{name}}</td>
             <td>{{formula}}</td> 
-            <!-- <td>{{smiles}}</td> -->
+            <td>{{smiles}}</td>
             <td>{{pa}}</td>
             <td>{{pi}}</td>
             <td>{{diff}}</td>
@@ -65,6 +65,21 @@
         </tbody>
       </table>
     </div>
+
+
+  <div>
+
+    <form action="/natural_products/download/" >
+      <input type="submit" id="downloadButton" value="Download results">
+    </form>
+
+    <br>
+
+    <form action="/natural_products/optimise/">
+      <input type="submit" value="Optimise results">
+    </form>
+
+  </div>
 
    
 

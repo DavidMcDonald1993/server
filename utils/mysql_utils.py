@@ -7,7 +7,8 @@ import mysql.connector
 from mysql.connector.errors import ProgrammingError, IntegrityError
 
 from utils.io import load_json
-from utils.mongodb_utils import connect_to_mongodb
+# from utils.mongodb_utils import connect_to_mongodb
+from utils.pass_utils import remove_invalid_characters, parse_pass_spectra
 
 def connect_to_mysqldb(host=None, user=None, password=None, database=None):
     mysql_credentials = load_json("mysql_credentials.json")
@@ -70,70 +71,95 @@ def mysql_insert_many(sql, rows):
 
     return 0
 
-# def migrate_to_mysql(PASS_COLLECTION="PASS_ALL"):
+def migrate_SDF_to_mysql(sdf_file):
+    print ("reading SDF file from", sdf_file, "and inserting into SQL database")
 
-#     db = connect_to_mongodb()
-#     collection = db[PASS_COLLECTION]
+    target_to_id = load_json("target_ids.json")
 
-#     target_map_inv = load_json("target_ids.json")
+    categories = [
+        "EFFECTS",
+        "MECHANISMS",
+        'TOXICITY', 
+        'ANTITARGETS',
+        'METABOLISM', 
+        'GENE_EXPRESSION', 
+        'TRANSPORTERS',
+    ]
 
-#     # create tables in MySQL
-#     for category in [
-#         # "EFFECTS",
-#         "MECHANISMS",
-#         'TOXICITY', 
-#         'ANTITARGETS',
-#         'METABOLISM', 
-#         'GENE_EXPRESSION', 
-#         'TRANSPORTERS'
-#     ]:
+    import pandas as pd
 
-#         print ("processing category", category)
+    # from rdkit.Chem.PandasTools import LoadSDF
 
-#         targets = get_targets_for_category(category)
+    from collections import defaultdict
 
-#         for i, target in enumerate(targets):
-#             print ("processing target", target)
+    from utils.rdkit_utils import LoadSDF
 
-#             create_table = f"CREATE TABLE `{target_map_inv[target]}` (coconut_id VARCHAR(255) PRIMARY KEY, Pa SMALLINT, Pi SMALLINT )"
-#             mysql_create_table(create_table)
+    chunks = LoadSDF(sdf_file, smilesName="SMILES", molColName=None, chunksize=5000)
 
-#             # get existing records
-#             existing_ids_query = f"select coconut_id from `{target_map_inv[target]}`"
-#             existing_ids = mysql_query(existing_ids_query)
-#             existing_ids = sorted({record[0] for record in existing_ids})
+    for chunk_no, chunk in chunks:
+       
+        chunk = chunk.set_index("coconut_id", drop=True)
+        chunk = chunk.loc[pd.isnull(chunk["PASS_ERROR"])] # find only valid compounds
+        chunk = chunk[[f"PASS_{category}" for category in categories]] # drop unnecessary columns
 
-#             records = collection.find(
-#                 {"$and": [{"coconut_id": {"$nin": existing_ids}},
-#                     {f"PASS_{category}": {"$ne": np.NaN}}]},
-#                 projection={"_id": 0, "coconut_id": 1, f"PASS_{category}.{target}": 1})
+        # create tables in MySQL
+        for category in categories:
 
-#             # insert records for that target
-#             print (f"inserting records for target {target}")
-#             sql = f"INSERT INTO `{str(target_map_inv[target])}`" + " (coconut_id, Pa, Pi) VALUES (%s, %s, %s)"
-#             print ("using SQL command", sql)
+            print ("processing category", category)
 
-#             print ("building rows to insert into SQL")
-#             rows = [
-#                 (record["coconut_id"], 
-#                     int(record[f"PASS_{category}"][target]["Pa"]), 
-#                     int(record[f"PASS_{category}"][target]["Pi"]), )
-#                 for record in records
-#             ]
-#             mysql_insert_many(sql, rows)
+            col = f"PASS_{category}"
+            assert col in chunk.columns
+            category_col = chunk[col].map(lambda s: list(map(parse_pass_spectra, 
+                            map(remove_invalid_characters, s.split("\n")))),
+                na_action="ignore")
 
-#             print ("completed target", target, i+1, "/", len(targets))
-#             print ("################")
-#             print ()
+            # targets = get_targets_for_category(category)
+            targets = defaultdict(list)
+            for compound, target_activities in category_col.items():
+                for target, activities in target_activities:
+                    targets[target].append((compound, activities["Pa"], activities["Pi"]))
 
-#         print ("completed category", category)
-#         print ("################")
-#         print ()
+            for i, target in enumerate(targets):
+                assert target in target_to_id
+                target_id = target_to_id[target]
+                print ("processing target", target)
+
+                create_table = f"CREATE TABLE `{target_id}` (coconut_id VARCHAR(255) PRIMARY KEY, Pa SMALLINT, Pi SMALLINT )"
+                mysql_create_table(create_table)
+
+                # get existing records
+                existing_ids_query = f"select coconut_id from `{target_id}`"
+                existing_ids = mysql_query(existing_ids_query)
+                existing_ids = {record[0] for record in existing_ids}
+
+                # insert records for that target
+                print (f"inserting records for target {target}")
+                sql = f"INSERT INTO `{target_id}`" + " (coconut_id, Pa, Pi) VALUES (%s, %s, %s)"
+                print ("using SQL command", sql)
+
+                print ("building rows to insert into SQL")
+                rows = [
+                    row for row in targets[target]
+                    if row[0] not in existing_ids # compound_id
+                ]
+                mysql_insert_many(sql, rows)
+
+                print ("completed target", target, i+1, "/", len(targets))
+                print ("################")
+                print ()
+
+            print ("completed category", category)
+            print ("################")
+            print ()
+       
+        print ("completed chunk number", chunk_no)
+        print ("################")
+        print ()
 
 
 if __name__ == "__main__":
-    mydb = connect_to_mysqldb()
+    # mydb = connect_to_mysqldb()
 
     # print (mydb)
 
-    # migrate_to_mysql()
+    migrate_SDF_to_mysql("/media/david/26FE51D21F197BDF/coconut/COCONUT_0 (PASS2019).SDF")

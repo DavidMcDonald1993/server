@@ -14,7 +14,7 @@ from rdkit.Chem.Draw import MolToImage
 
 import urllib.parse as urlparse
 
-from utils.io import load_json
+from utils.io import load_json, write_smiles
 from utils.mongodb_utils import connect_to_mongodb
 from utils.mysql_utils import mysql_query, mysql_create_table, mysql_insert_many
 
@@ -77,9 +77,9 @@ def query_pass_activities(
     projection = {
         "_id": 0, 
         "coconut_id": 1, 
-        "name": 1,
-        "molecular_formula": 1, 
-        # "SMILES": 1,
+        # "name": 1,
+        # "molecular_formula": 1, 
+        # "SMILES": 1, # get these from compound database
         category_target: 1
     }
 
@@ -88,15 +88,15 @@ def query_pass_activities(
     print ("filtering with", query)
     print ("showing", projection)
 
-    cursor = pass_collection.find(query, projection)
+    cursor = pass_collection.find(query, projection).sort("coconut_id", 1).limit(100)
     
     print ("iterating over records")
 
     records = [
         (record["coconut_id"], 
-            (urlparse.unquote(record["name"]).capitalize() 
-                if record["name"] is not None else "<NO NAME>"),
-            record["molecular_formula"], 
+            # (urlparse.unquote(record["name"]).capitalize() 
+                # if record["name"] is not None else "<NO NAME>"),
+            # record["molecular_formula"], 
             # record["SMILES"], 
             record[category][target]["Pa"], record[category][target]["Pi"], 
             record[category][target]["Pa"] - record[category][target]["Pi"])
@@ -105,7 +105,43 @@ def query_pass_activities(
 
     db.client.close()
 
-    print ("built records", len(records))
+    n_compounds = len(records)
+
+    print ("built records", n_compounds)
+
+    # get additional compound information from compound databaase
+
+    print ("getting info about", n_compounds, "compounds")
+    coconut_ids = [record[0] for record in records]
+    compound_info_records = get_multiple_compound_info(coconut_ids)
+    # compound_info_records = [
+    #     get_compound_info(coconut_id, 
+    #         projection={
+    #             "_id": 0, 
+    #             "coconut_id": 1, 
+    #             "name": 1,
+    #             "molecular_formula": 1, 
+    #             "clean_smiles": 1, 
+    #         },
+    #         get_activities=False)
+
+    #     for coconut_id in coconut_ids
+    # ]
+
+    assert len(compound_info_records) == n_compounds
+
+    # for record, compound_info in zip(records, compound_info_records):
+        # assert record[0] == compound_info[0]
+    records = [
+            (record[0], # coconut_id
+                compound_info[1], # name
+                compound_info[2], # molecular_formula 
+                compound_info[3], # clean_smiles
+                record[1], # Pa
+                records[2], # Pi
+                record[3]) # Pa - Pi
+        for record, compound_info in zip(records, compound_info_records)
+    ]
 
     return records
 
@@ -126,6 +162,7 @@ def get_multiple_compound_info(compounds=None,
         if not isinstance(compounds, list):
             compounds = list(compounds)
         query = {"coconut_id": {"$in": compounds}}
+
     projection = {
         "_id": 0, 
         "coconut_id": 1, 
@@ -134,7 +171,7 @@ def get_multiple_compound_info(compounds=None,
         "clean_smiles": 1
     }
 
-    cursor = coconut_collection.find(query, projection)
+    cursor = coconut_collection.find(query, projection).sort("coconut_id", 1)
     # cursor.batch_size(1000000)
 
     print ("iterating over query")
@@ -156,6 +193,8 @@ def get_multiple_compound_info(compounds=None,
 
 def get_compound_info(
     compound_id, 
+    projection=None,
+    get_activities=True,
     compound_info_collection="uniqueNaturalProduct",
     pass_collection=PASS_COLLECTION):
 
@@ -167,7 +206,11 @@ def get_compound_info(
     coconut_collection = db[compound_info_collection]
 
     compound_info = coconut_collection.find_one(
-        {"coconut_id": compound_id})
+        {"coconut_id": compound_id},
+        projection=projection)
+
+    if not get_activities:
+        return compound_info
 
     pass_collection = db[pass_collection]
 
@@ -197,8 +240,6 @@ def get_compound_info(
 
     db.client.close()
 
-    assert compound_info is not None, compound_id
-
     return compound_info, pass_activities
 
 def draw_molecule(smiles, 
@@ -216,6 +257,49 @@ def draw_molecule(smiles,
         return img_filename
     else:
         return None
+
+def write_smiles_to_file(
+    username,
+    records,
+    static_dir="natural_products/static",
+    output_dir="smiles",
+    ):  
+
+    output_dir = os.path.join(static_dir, output_dir, username)
+
+    os.makedirs(output_dir, exist_ok=True)
+    # records = pd.DataFrame.from_records(records, 
+    #     columns=["coconut_id",  "molecule_name", "molecular_formula", "smiles", "Pa", "Pi", "Pa-Pi"])
+
+    smiles_filename = os.path.join(output_dir,
+        "results.smi")
+    print ("writing smiles to", smiles_filename)
+    smiles = [(record[0], record[3]) for record in records]
+
+    write_smiles(smiles, smiles_filename)
+
+    return smiles_filename
+
+def write_records_to_file(
+    username,
+    records,
+    static_dir="natural_products/static",
+    output_dir="results",
+    ):
+
+    output_dir = os.path.join(static_dir, output_dir, username)
+
+    os.makedirs(output_dir, exist_ok=True)
+    records = pd.DataFrame.from_records(records, 
+        columns=["coconut_id",  "molecule_name", "molecular_formula", "smiles", "Pa", "Pi", "Pa-Pi"])
+
+    records_filename = os.path.join(output_dir,
+        "results.csv")
+    print ("writing records to", records_filename)
+    records.to_csv(records_filename)
+
+    return records_filename
+    
 
 def migrate_to_mysql():
 

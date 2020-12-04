@@ -18,16 +18,17 @@ from rdkit.Chem.PandasTools import LoadSDF
 
 from utils.email_utils import send_mail
 from utils.mongodb_utils import connect_to_mongodb
+from utils.pass_utils import remove_invalid_characters, parse_pass_spectra
 
-def remove_invalid_characters(s):
-    return s.replace(".", "")
+# def remove_invalid_characters(s):
+#     return s.replace(".", "")
 
-def parse_pass_spectra(s, ):
-    split = s.split()
-    pa = split[0]
-    pi = split[1]
-    activity = " ".join(split[2:])
-    return {activity: {"Pa": pa, "Pi": pi}}
+# def parse_pass_spectra(s, ):
+#     split = s.split()
+#     pa = split[0]
+#     pi = split[1]
+#     activity = " ".join(split[2:])
+#     return {activity: {"Pa": pa, "Pi": pi}}
 
 def write_PASS_hits_to_db(
     pass_file,
@@ -106,7 +107,7 @@ def pass_predict(
     assert os.path.exists(pass_out_file)
 
     # write PASS spectra to database 
-    write_PASS_hits_to_db(pass_out_file)
+    # write_PASS_hits_to_db(pass_out_file) %TODO
 
     print ("removing", input_file)
     os.remove(input_file)

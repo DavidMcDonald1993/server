@@ -11,4 +11,8 @@ urlpatterns = [
         views.all_compounds, name="all_compounds"),
     path("compounds/CNP<str:compound_id>",
         views.compound_info, name="compound_info"),
+    path('download/', 
+        views.download, name='download'),
+    path('optimise/', 
+        views.optimise, name='optimise'),
 ]
