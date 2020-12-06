@@ -1,7 +1,24 @@
 
 import pandas as pd
 
+from base64 import b64encode
+import sys
+import types
+import logging
+
+import numpy as np
 from rdkit import Chem
+from rdkit import DataStructs
+from rdkit.Chem import AllChem
+from rdkit.Chem import Draw
+from rdkit.Chem import SDWriter
+from rdkit.Chem import rdchem
+from rdkit.Chem.Scaffolds import MurckoScaffold
+from io import BytesIO
+from xml.dom import minidom
+from xml.parsers.expat import ExpatError
+
+log = logging.getLogger(__name__)
 
 def LoadSDF(filename, idName='ID', molColName='ROMol', includeFingerprints=False,
             isomericSmiles=True, smilesName=None, embedProps=False, removeHs=True,

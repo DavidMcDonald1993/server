@@ -11,8 +11,10 @@ from django.views.static import serve
 import html
 import urllib.parse as urlparse
 
-from .backend import get_categories, get_targets_for_category, write_records_to_file, write_smiles_to_file
-from .backend import query_pass_activities, get_compound_info, draw_molecule, get_multiple_compound_info
+from natural_products.backend import write_records_to_file, write_smiles_to_file
+from natural_products.backend import query_target_hits, get_compound_info, draw_molecule, get_multiple_compound_info
+
+from utils.pass_utils import get_categories, get_targets_for_category
 
 # Create your views here.
 
@@ -59,7 +61,7 @@ def results(request, ):
 
     # query database
     target = urlparse.unquote(target)
-    records = query_pass_activities(category, target, threshold, filter_pa_pi=filter_pa_pi)
+    records = query_target_hits(target, threshold, filter_pa_pi=filter_pa_pi)
 
     context = {
         "target": target,
