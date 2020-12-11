@@ -1,6 +1,6 @@
 function showDiv(button){
 
-    const categories = ["ALL", "PROPERTIES", "ANTITARGETS", "EFFECTS", 
+    const categories = ["PROPERTIES", "ANTITARGETS", "EFFECTS", 
         "GENE_EXPRESSION", "MECHANISMS", "METABOLISM", 
         "TOXICITY", "TRANSPORTERS"];
     

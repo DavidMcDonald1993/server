@@ -207,39 +207,37 @@ def get_multiple_compound_info(compounds=None,
 
 def get_all_activities_for_compound(compound_id, filter_pa_pi=True):
 
-    targets = get_all_targets()
+
+    categories = get_categories()
+    category_targets = {category: get_targets_for_category(category)
+        for category in categories}
 
     conn = connect_to_mysqldb()
 
-    activities = []
-    for target_id in range(len(targets)):
-        query = f"SELECT Pa, Pi FROM `{target_id}` WHERE coconut_id='{compound_id}'"
-        if filter_pa_pi:
-            query += " AND Pa>Pi"
-        records = mysql_query(query, existing_conn=conn)
-        assert len(records) <= 1
-        if len(records) == 1:
-            activities.append(records[0])
-        else:
-            activities.append(None)
+    category_activities = {category: 
+        mysql_query(" UNION ALL ".join(
+        (f"SELECT Pa, Pi from `{target_id}` where coconut_id='{compound_id}'" 
+            for target_id in category_targets[category].values())), existing_conn=conn)
+        for category in categories
+    }
 
     conn.close()
 
-    category_activities = [("ALL",
-        [(target, 
-            activities[target_id][0], activities[target_id][1], #Pa, Pi
-                activities[target_id][0] - activities[target_id][1]) # Pa-Pi
-        for target, target_id in targets.items()
-        if activities[target_id] is not None])]
+    # category_activities = [("ALL",
+    #     [(target, 
+    #         activities[target_id][0], activities[target_id][1], #Pa, Pi
+    #             activities[target_id][0] - activities[target_id][1]) # Pa-Pi
+    #     for target, target_id in targets.items()
+    #     if not filter_pa_pi or activities[target_id][0] > activities[target_id][1]]
+    # )]
 
-    category_activities.extend([(category,
-        [(target, 
-            activities[target_id][0], activities[target_id][1], #Pa, Pi
-                activities[target_id][0] - activities[target_id][1]) # Pa-Pi
-                for target, target_id in get_targets_for_category(category).items()
-            if activities[target_id] is not None])
-        for category in get_categories()
-    ])
+    category_activities = [(category,
+        [(target, target_activities[0], target_activities[1], #Pa, Pi
+            target_activities[0] - target_activities[1]) # Pa-Pi
+                for target, target_activities in zip(category_targets[category].keys(), category_activities_)
+                    if not filter_pa_pi or target_activities[0] > target_activities[1]])
+        for category, category_activities_ in category_activities.items()
+    ]
     
     return category_activities
     

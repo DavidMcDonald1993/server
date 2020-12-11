@@ -16,6 +16,9 @@ def get_categories():
         'TRANSPORTERS'
     }
 
+def get_all_compounds():
+    return load_json("compound_ids.json")
+
 def get_all_targets():
     return load_json("target_ids.json")
 

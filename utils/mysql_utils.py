@@ -7,7 +7,7 @@ import mysql.connector
 from mysql.connector.errors import ProgrammingError, IntegrityError
 
 from utils.io import load_json
-from utils.pass_utils import remove_invalid_characters, parse_pass_spectra, get_all_targets, get_categories, get_targets_for_category
+from utils.pass_utils import remove_invalid_characters, parse_pass_spectra, get_all_targets, get_categories, get_targets_for_category, get_all_compounds
 
 from functools import partial
 
@@ -24,13 +24,13 @@ def connect_to_mysqldb(host=None, user=None, password=None, database=None):
     print ("connecting to MySQL database", 
         database, "using host",
         host, "and user", user)
-    mydb = mysql.connector.connect(
+    db = mysql.connector.connect(
         host=host,
         user=user,
         password=password,
         database=database
     )
-    return mydb
+    return db
 
 def mysql_query(query, existing_conn=None):
 
@@ -61,7 +61,6 @@ def mysql_create_table(create_table, existing_conn=None):
         print ("executed command", create_table)
 
     except ProgrammingError as e: # table already exists
-        # print ("table already exists")
         print (e)
         pass
 
@@ -72,6 +71,7 @@ def mysql_create_table(create_table, existing_conn=None):
 
 def mysql_insert_many(sql, rows, existing_conn=None):
 
+    assert isinstance(rows, list)
     print ("inserting", len(rows), "rows")
 
     if existing_conn is None:
@@ -81,26 +81,52 @@ def mysql_insert_many(sql, rows, existing_conn=None):
 
     mycursor = db.cursor()
     mycursor.executemany(sql, rows)
-    mydb.commit()
+    db.commit()
 
     if existing_conn is None:
         db.close()
 
     return 0
 
-def create_tables(): # too many columns
+def create_tables(): 
 
+    compounds = get_all_compounds()
     targets = get_all_targets()
-    n_targets = len(targets)
+    # n_targets = len(targets)
 
-    for table in ("pa", "pi"):
+    conn = connect_to_mysqldb()
 
-        create_table = f"CREATE TABLE `{table}` (coconut_id VARCHAR(255) PRIMARY KEY"
-        for target_id in range(n_targets):
-            create_table += f", `{target_id}` SMALLINT"
-        create_table += ")"
+    # create compounds table
+    create_compounds_table = f"CREATE TABLE `compounds` (compound_id INT, coconut_id VARCHAR(255), PRIMARY KEY (compound_id))"
+    mysql_create_table(create_compounds_table, existing_conn=conn)
 
-        mysql_create_table(create_table)
+    # insert into compounds table
+    insert_compounds_sql = "INSERT INTO `compounds`" + " (compound_id, coconut_id) VALUES (%s, %s) ON DUPLICATE KEY UPDATE compound_id=compound_id"
+    rows = [(i, c) for c, i in compounds.items()]
+    mysql_insert_many(insert_compounds_sql, rows, existing_conn=conn)
+
+    # create targets table
+    create_targets_table = f"CREATE TABLE `targets` (target_id INT, target_name VARCHAR(255), PRIMARY KEY (target_id))"
+    mysql_create_table(create_targets_table, existing_conn=conn)
+
+    # insert into targets table
+    insert_targets_sql = "INSERT INTO `targets`" + " (target_id, target_name) VALUES (%s, %s) ON DUPLICATE KEY UPDATE target_id=target_id"
+    rows = [(i, t) for t, i in targets.items()]
+    mysql_insert_many(insert_targets_sql, rows, existing_conn=conn)
+
+    # create activities table
+    create_activities_table = f"CREATE TABLE `activities` (compound_id INT, target_id INT, Pa SMALLINT, Pi SMALLINT, " +\
+        "PRIMARY KEY (compound_id, target_id), FOREIGN KEY (compound_id) REFERENCES compounds(compound_id), FOREIGN KEY (target_id) REFERENCES targets(target_id))"
+    mysql_create_table(create_activities_table, existing_conn=conn)
+
+    # for table in ("pa", "pi"):
+
+    #     create_table = f"CREATE TABLE `{table}` (coconut_id VARCHAR(255) PRIMARY KEY"
+    #     for target_id in range(n_targets):
+    #         create_table += f", `{target_id}` SMALLINT"
+    #     create_table += ")"
+
+    #     mysql_create_table(create_table)
 
     return 0
 
@@ -108,7 +134,8 @@ def create_tables(): # too many columns
 def migrate_SDF_to_mysql(sdf_file):
     print ("reading SDF file from", sdf_file, "and inserting into SQL database")
 
-    target_to_id = get_all_targets
+    compound_to_id = get_all_compounds()
+    target_to_id = get_all_targets()
 
     categories = get_categories()
 
@@ -120,7 +147,10 @@ def migrate_SDF_to_mysql(sdf_file):
 
     from utils.rdkit_utils import LoadSDF
 
-    chunks = LoadSDF(sdf_file, smilesName="SMILES", molColName=None, chunksize=5000)
+    chunks = LoadSDF(sdf_file, smilesName="SMILES", molColName=None, chunksize=2000)
+
+    sql = "INSERT INTO `activtities`" + " (compound_id, target_id, Pa, Pi) VALUES (%s, %s, %s, %s) "+\
+        "ON DUPLICATE KEY UPDATE compound_id=compound_id, target_id=target_id"
 
     for chunk_no, chunk in enumerate(chunks):
        
@@ -137,8 +167,8 @@ def migrate_SDF_to_mysql(sdf_file):
             assert col in chunk.columns
             print ("parsing PASS activities")
             category_col = chunk[col].map(lambda s: 
-                list(map(partial(parse_pass_spectra, mapping=target_to_id), 
-                    map(remove_invalid_characters, s.split("\n")))),
+                map(partial(parse_pass_spectra, mapping=target_to_id), 
+                    map(remove_invalid_characters, s.split("\n"))),
                 na_action="ignore")
             del chunk[col]
 
@@ -147,41 +177,49 @@ def migrate_SDF_to_mysql(sdf_file):
             targets = defaultdict(list)
             compound_ids = []
             for compound, target_activities in category_col.items():
-                compound_ids.append(compound)
+                compound_ids.append(compound_to_id[compound])
                 for target, activities in target_activities:
                     targets[target].append((activities["Pa"], activities["Pi"]))
             del category_col
 
             conn = connect_to_mysqldb()
 
-            for i, target_id in enumerate(targets):
-                # assert target in target_to_id
-                # target_id = target_to_id[target]
-                print ("processing target_id", target_id)
+            rows = [
+                (compound, target_id, *row) 
+                for compound, row in zip(compound_ids, targets[target_id])
+                for target_id in targets
+            ]
 
-                create_table = f"CREATE TABLE `{target_id}` (coconut_id VARCHAR(255) PRIMARY KEY, Pa SMALLINT, Pi SMALLINT )"
-                mysql_create_table(create_table)
+            mysql_insert_many(sql, rows)
 
-                # get existing records
-                existing_ids_query = f"select coconut_id from `{target_id}`"
-                existing_ids = mysql_query(existing_ids_query)
-                existing_ids = {record[0] for record in existing_ids}
+            # for i, target_id in enumerate(targets):
+            #     # assert target in target_to_id
+            #     # target_id = target_to_id[target]
+            #     # print ("processing target_id", target_id)
 
-                # insert records for that target
-                print (f"inserting records for target_id {target_id}")
-                sql = f"INSERT INTO `{target_id}`" + " (coconut_id, Pa, Pi) VALUES (%s, %s, %s)"
-                print ("using SQL command", sql)
+            #     # create_table = f"CREATE TABLE `{target_id}` (coconut_id VARCHAR(255) PRIMARY KEY, Pa SMALLINT, Pi SMALLINT )"
+            #     # mysql_create_table(create_table, existing_conn=conn)
 
-                print ("building rows to insert into SQL")
-                rows = [
-                    (compound, *row) for compound, row in zip(compound, targets[target_id])
-                    if compound not in existing_ids # compound_id
-                ]
-                mysql_insert_many(sql, rows, existing_conn=conn)
+            #     # # get existing records
+            #     # existing_ids_query = f"select coconut_id from `{target_id}`"
+            #     # existing_ids = mysql_query(existing_ids_query, existing_conn=conn)
+            #     # existing_ids = {record[0] for record in existing_ids}
 
-                print ("completed target_id", target_id, i+1, "/", len(targets))
-                print ("################")
-                print ()
+            #     # insert records for that target
+            #     print (f"inserting records for target_id {target_id}")
+            #     sql = f"INSERT INTO `{target_id}`" + " (coconut_id, Pa, Pi) VALUES (%s, %s, %s) ON DUPLICATE KEY UPDATE coconut_id=coconut_id"
+            #     print ("using SQL command", sql)
+
+            #     print ("building rows to insert into SQL")
+            #     rows = [
+            #         (compound, *row) for compound, row in zip(compound_ids, targets[target_id])
+            #         # if compound not in existing_ids # compound_id
+            #     ]
+            #     mysql_insert_many(sql, rows, existing_conn=conn)
+
+            #     print ("completed target_id", target_id, i+1, "/", len(targets))
+            #     print ("################")
+            #     print ()
 
             conn.close()
 
@@ -195,15 +233,77 @@ def migrate_SDF_to_mysql(sdf_file):
 
 
 if __name__ == "__main__":
-    # mydb = connect_to_mysqldb()
-
-    # print (mydb)
-
-    # migrate_SDF_to_mysql("/media/david/26FE51D21F197BDF/coconut/COCONUT_0 (PASS2019).SDF")
 
     # create_tables()
-    for category in get_categories():
 
-        targets = get_targets_for_category(category)
+    # conn = connect_to_mysqldb(database="test")
 
-        print (category, len(targets))
+    # sql = f"INSERT INTO `users`" + " (firstname, surname) VALUES (%s, %s) ON DUPLICATE KEY UPDATE firstname = firstname"
+
+    # rows = [
+    #     ("Dora", "Emese"),
+    #     ("Jack", "Statham"),
+    #     ("Rebecca", "Bennett"),
+    # ]
+
+    # mysql_insert_many(sql, rows, existing_conn=conn)
+
+    # records = mysql_query("SELECT * from users", existing_conn=conn)
+
+    # print (records)
+
+    migrate_SDF_to_mysql("/mnt/e/coconut/out/COCONUT_0 (PASS2019).SDF")
+
+    # create_tables()
+
+    # from timeit import default_timer
+
+    # compound_id = "CNP0000002"
+
+    # for category in ["EFFECTS"]:
+
+
+    #     targets = get_targets_for_category(category)
+    #     ids = list(targets.values())
+    #     # anchor = ids[0]
+
+    #     query = " UNION ALL ".join((f"SELECT Pa, Pi from `{i}` where coconut_id='{compound_id}'" for i in ids))
+        # print (query)
+
+        # # print (category, len(targets))
+
+        # query = f"SELECT {anchor}.Pa, {anchor}.Pi"
+        # for i in ids[1:]:
+        #     query += f", {i}.Pa, {i}.Pi"
+        # query += f" FROM `{anchor}`"
+        # for i in ids[1:]:
+        #     query += f", `{i}`"
+        # query += f" WHERE `{i}`.coconut_id={compound_id} AND "
+        # query += " AND ".join((f"`{anchor}`.coconut_id=`{i}`.coconut_id" for i in ids[1:]))
+
+
+        # conn = connect_to_mysqldb()
+
+        # start = default_timer()
+
+        # records = mysql_query(query, conn)
+
+        # print (default_timer() - start)
+
+        # start = default_timer()
+
+        # validation = [mysql_query(f"select Pa, Pi from `{i}` where coconut_id='{compound_id}'", conn)[0] for i in ids]
+
+        # print (default_timer() - start)
+
+        # # print (len(targets), len(ids), len(records), sum(validation))
+        # assert len(records) == len(validation)
+
+        # for r, v in zip(records, validation):
+        #     # print (r, v)
+        #     assert r[0]==v[0]
+        #     assert r[1]==v[1]
+
+
+
+        # break

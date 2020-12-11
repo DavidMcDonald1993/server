@@ -7,7 +7,7 @@ import pymongo
 from pymongo import MongoClient
 from pymongo.errors import ServerSelectionTimeoutError
 
-from utils.io import load_json
+from utils.io import load_json, write_json
 
 def connect_to_mongodb(host=None, port=None, db=None, timeout=5000):
     mongodb_credentials = load_json("mongodb_credentials.json")
@@ -31,4 +31,11 @@ def clear_collection(collection, filter={}):
 
 if __name__ == "__main__":
     db = connect_to_mongodb()
-    print (db)
+
+    cursor = db["uniqueNaturalProduct"].find({}, {"_id": 0, "coconut_id": 1})
+    
+    unique_nps = sorted((record["coconut_id"] for record in cursor))
+
+    unique_nps = {c: i for i, c in enumerate(unique_nps)}
+
+    write_json(unique_nps, "compound_ids.json")
