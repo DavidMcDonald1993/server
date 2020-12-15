@@ -80,13 +80,13 @@ WSGI_APPLICATION = 'npaiengine.wsgi.application'
 DATABASES = {
     'default': {
         "ENGINE": "djongo",
-        "NAME": "django_db",
+        "NAME": "COCONUT",
         "CLIENT": { # only needed for djongo
             "host": "192.168.0.49",
             "port": 27017,
             "username": "david",
             "password": "c423612k&",
-            "authSource": "django_db",
+            "authSource": "COCONUT",
             "authMechanism": "SCRAM-SHA-1"
         },
     }

@@ -147,16 +147,21 @@ def migrate_SDF_to_mysql(sdf_file):
 
     from utils.rdkit_utils import LoadSDF
 
-    chunks = LoadSDF(sdf_file, smilesName="SMILES", molColName=None, chunksize=2000)
+    chunks = LoadSDF(sdf_file, smilesName="SMILES", molColName=None, chunksize=5000)
 
-    sql = "INSERT INTO `activtities`" + " (compound_id, target_id, Pa, Pi) VALUES (%s, %s, %s, %s) "+\
+    sql = "INSERT INTO `activities`" + " (compound_id, target_id, Pa, Pi) VALUES (%s, %s, %s, %s) "+\
         "ON DUPLICATE KEY UPDATE compound_id=compound_id, target_id=target_id"
 
     for chunk_no, chunk in enumerate(chunks):
        
         chunk = chunk.set_index("coconut_id", drop=True)
-        chunk = chunk.loc[pd.isnull(chunk["PASS_ERROR"])] # find only valid compounds
+        if "PASS_ERROR" in chunk.columns:
+            chunk = chunk.loc[pd.isnull(chunk["PASS_ERROR"])] # find only valid compounds
         chunk = chunk[[f"PASS_{category}" for category in categories]] # drop unnecessary columns
+        assert not any(chunk.isnull().any(axis=0))
+
+        print ("processing chunk", chunk_no)
+        print ("chunk size:", chunk.shape[0])
 
         # create tables in MySQL
         for category in categories:
@@ -186,11 +191,11 @@ def migrate_SDF_to_mysql(sdf_file):
 
             rows = [
                 (compound, target_id, *row) 
-                for compound, row in zip(compound_ids, targets[target_id])
                 for target_id in targets
+                for compound, row in zip(compound_ids, targets[target_id])
             ]
 
-            mysql_insert_many(sql, rows)
+            mysql_insert_many(sql, rows, existing_conn=conn)
 
             # for i, target_id in enumerate(targets):
             #     # assert target in target_to_id

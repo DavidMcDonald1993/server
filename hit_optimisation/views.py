@@ -80,6 +80,12 @@ def upload(request):
         "form": form,
         "settings": settings.items()
     }
+
+    if "target" in request.session:
+        context.update({"target": request.session["target"]})
+
+    if "smiles_filename" in request.session:
+        context.update({"smiles_filename": request.session["smiles_filename"]})
     
     return render(request, 
         'hit_optimisation/upload.html', 

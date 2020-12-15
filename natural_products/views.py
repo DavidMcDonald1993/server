@@ -4,7 +4,7 @@ import numpy as np
 
 from django.shortcuts import render
 
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 from django.views.static import serve
 
 
@@ -63,14 +63,15 @@ def results(request, ):
     target = urlparse.unquote(target)
     records = query_target_hits(target, threshold, filter_pa_pi=filter_pa_pi)
 
+    request.session["records"] = records
+    request.session["target"] = target # TODO convert to PDB?
+
     context = {
         "target": target,
         "threshold": threshold,
         "records": records,
         "num_hits": len(records)
     }
-
-    request.session["records"] = records
 
     return render(request,
         "natural_products/results.html", context)
@@ -147,15 +148,17 @@ def optimise(request):
     username = "david" #TODO
     records = request.session["records"]
 
-    smiles = write_smiles_to_file(username, records)
+    smiles_filename = write_smiles_to_file(username, records)
+    request.session["smiles_filename"] = smiles_filename
 
     # TODO
+    return HttpResponseRedirect("/hit_optimisation/upload")
 
     # return serve(request, 
     #         os.path.basename(record_filename), 
     #         os.path.dirname(record_filename))
 
-    context = {}
-    return render(request,
-        "natural_products/optimise.html",
-        context)
+    # context = {}
+    # return render(request,
+    #     "natural_products/optimise.html",
+    #     context)

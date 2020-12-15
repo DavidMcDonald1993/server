@@ -73,9 +73,9 @@ def query_target_hits(
     if filter_pa_pi:
         query += " AND Pa>Pi"
     
-    records = mysql_query(query)
+    print ("using query string", query)
 
-    
+    hits = mysql_query(query)
 
     # db = connect_to_mongodb()
     # pass_collection = db[collection]
@@ -119,15 +119,17 @@ def query_target_hits(
 
     # db.client.close()
 
-    n_compounds = len(records)
+    n_hits = len(hits)
 
-    print ("built records", n_compounds)
+    print ("built records, number of hits", n_hits)
 
     # get additional compound information from compound databaase
 
-    print ("getting info about", n_compounds, "compounds")
-    coconut_ids = [record[0] for record in records]
-    compound_info_records = get_multiple_compound_info(coconut_ids)
+    print ("getting info about", n_hits, "compounds")
+    coconut_ids = [hit[0] for hit in hits]
+    compound_info = get_multiple_compound_info(
+        coconut_ids)
+
     # compound_info_records = [
     #     get_compound_info(coconut_id, 
     #         projection={
@@ -142,22 +144,24 @@ def query_target_hits(
     #     for coconut_id in coconut_ids
     # ]
 
-    assert len(compound_info_records) == n_compounds
+    # assert len(compound_info_records) == n_compounds
 
     # for record, compound_info in zip(records, compound_info_records):
         # assert record[0] == compound_info[0]
+
     records = [
-            (record[0], # coconut_id
-                compound_info[1], # name
-                compound_info[2], # molecular_formula 
-                compound_info[3], # clean_smiles
-                record[1], # Pa
-                record[2], # Pi
-                record[1] - record[2]) # Pa - Pi
-        for record, compound_info in zip(records, compound_info_records)
+            (hit[0], # coconut_id
+                compound_info[hit[0]][0], # name
+                compound_info[hit[0]][1], # molecular_formula 
+                compound_info[hit[0]][2], # clean_smiles
+                hit[1], # Pa
+                hit[2], # Pi
+                hit[1] - hit[2]) # Pa - Pi
+        for hit in hits
+        if hit[0] in compound_info
     ]
 
-    return records
+    return records[:10]
 
 
 def get_multiple_compound_info(compounds=None,    
@@ -190,14 +194,14 @@ def get_multiple_compound_info(compounds=None,
 
     print ("iterating over query")
 
-    records = [
-        (record["coconut_id"], 
-            (urlparse.unquote(record["name"]).capitalize() 
+    records = {
+        record["coconut_id"]:
+            ((urlparse.unquote(record["name"]).capitalize() 
                     if "name" in record else "<NO NAME>"),
             record["molecular_formula"],
             record["clean_smiles"])
         for record in cursor
-    ]
+    }
 
     db.client.close()
 
@@ -205,14 +209,16 @@ def get_multiple_compound_info(compounds=None,
 
     return records
 
-def get_all_activities_for_compound(compound_id, filter_pa_pi=True):
-
+def get_all_activities_for_compound(compound_id, 
+    filter_pa_pi=True):
+    print ("getting all activities for compound", compound_id)
 
     categories = get_categories()
     category_targets = {category: get_targets_for_category(category)
         for category in categories}
 
     conn = connect_to_mysqldb()
+
 
     category_activities = {category: 
         mysql_query(" UNION ALL ".join(
@@ -230,6 +236,9 @@ def get_all_activities_for_compound(compound_id, filter_pa_pi=True):
     #     for target, target_id in targets.items()
     #     if not filter_pa_pi or activities[target_id][0] > activities[target_id][1]]
     # )]
+
+    print ("completed query")
+    print ("building records")
 
     category_activities = [(category,
         [(target, target_activities[0], target_activities[1], #Pa, Pi
