@@ -28,7 +28,8 @@ def connect_to_mysqldb(host=None, user=None, password=None, database=None):
         host=host,
         user=user,
         password=password,
-        database=database
+        database=database,
+        autocommit=False,
     )
     return db
 
@@ -69,10 +70,19 @@ def mysql_create_table(create_table, existing_conn=None):
 
     return 0
 
-def mysql_insert_many(sql, rows, existing_conn=None):
+def mysql_insert_many(sql, rows, existing_conn=None, chunksize=1000000):
 
-    assert isinstance(rows, list)
-    print ("inserting", len(rows), "rows")
+    def to_chunks(rows):
+        chunk = []
+
+        for row in rows:
+            chunk.append(row)
+            if len(chunk) == chunksize:
+                yield chunk
+                chunk = []
+        if len(chunk) > 0:
+            yield chunk
+
 
     if existing_conn is None:
         db = connect_to_mysqldb()
@@ -80,7 +90,16 @@ def mysql_insert_many(sql, rows, existing_conn=None):
         db = existing_conn
 
     mycursor = db.cursor()
-    mycursor.executemany(sql, rows)
+
+    if isinstance(rows, list):
+        print ("inserting", len(rows), "rows")
+        mycursor.executemany(sql, rows)
+    else:
+
+        for chunk in to_chunks(rows):
+            print ("inserting", len(chunk), "rows")
+            mycursor.executemany(sql, chunk)
+
     db.commit()
 
     if existing_conn is None:
@@ -153,6 +172,8 @@ def migrate_SDF_to_mysql(sdf_file):
         "ON DUPLICATE KEY UPDATE compound_id=compound_id, target_id=target_id"
 
     for chunk_no, chunk in enumerate(chunks):
+
+        chunk = chunk.loc[chunk["coconut_id"].isin(compound_to_id)]
        
         chunk = chunk.set_index("coconut_id", drop=True)
         if "PASS_ERROR" in chunk.columns:
@@ -189,11 +210,11 @@ def migrate_SDF_to_mysql(sdf_file):
 
             conn = connect_to_mysqldb()
 
-            rows = [
+            rows = (
                 (compound, target_id, *row) 
                 for target_id in targets
                 for compound, row in zip(compound_ids, targets[target_id])
-            ]
+            )
 
             mysql_insert_many(sql, rows, existing_conn=conn)
 
@@ -228,7 +249,7 @@ def migrate_SDF_to_mysql(sdf_file):
 
             conn.close()
 
-            print ("completed category", category)
+            print ("completed category", category, "for chunk no", chunk_no)
             print ("################")
             print ()
        

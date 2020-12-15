@@ -23,8 +23,8 @@ def connect_to_mongodb(host=None, port=None, db=None, timeout=5000):
     client = MongoClient(host, port, serverSelectionTimeoutMS=timeout)
     return client[db]
 
-def count_documents(collection, filter={}):
-    return collection.count_documents(filter=filter)
+def count_documents(collection, filter_={}):
+    return collection.count_documents(filter=filter_)
 
 def clear_collection(collection, filter={}):
     collection.remove(filter=filter)
@@ -32,9 +32,11 @@ def clear_collection(collection, filter={}):
 if __name__ == "__main__":
     db = connect_to_mongodb()
 
-    cursor = db["uniqueNaturalProduct"].find({}, {"_id": 0, "coconut_id": 1})
+    cursor = db["uniqueNaturalProduct"].find({}, 
+        {"_id": 0, "coconut_id": 1})
     
-    unique_nps = sorted((record["coconut_id"] for record in cursor))
+    unique_nps = sorted((record["coconut_id"] 
+        for record in cursor))
 
     unique_nps = {c: i for i, c in enumerate(unique_nps)}
 
