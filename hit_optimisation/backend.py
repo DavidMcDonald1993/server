@@ -5,7 +5,6 @@ import os.path
 sys.path.insert(1, 
     os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 
-
 import numpy as np
 
 import json
@@ -141,7 +140,7 @@ def process_smiles(smiles_file, output_dir):
                 out_file.write(chunk)
     else:
         temp_smiles_file = os.path.join(output_dir,
-            os.path.basename(smiles_file)) # no request
+            os.path.basename(smiles_file)) # no uploaded file
         shutil.copyfile(smiles_file, temp_smiles_file)
     return temp_smiles_file
 

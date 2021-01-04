@@ -1,0 +1,68 @@
+<!doctype html>
+
+<html lang="en">
+
+  <head>
+    {% load static %}
+
+    <title>NPAIEngine</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.12.6/css/selectize.bootstrap3.min.css" 
+      integrity="sha256-ze/OEYGcFbPRmvCnrSeKbRTtjG4vGLHXgOqsyLFTRjg=" crossorigin="anonymous" />
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.12.6/js/standalone/selectize.min.js" 
+        integrity="sha256-+C0A5Ilqmu4QcSPxrlGpaZxJ04VjsRjKu+G82kl5UJk=" crossorigin="anonymous"></script>
+       
+    <script type="text/javascript" 
+      src="{% static 'natural_products/options.js' %}"></script>
+
+  </head>
+
+  <body style="text-align: center;" onload="">
+    <div>
+    <h1>Target selection page</h1>
+    <form action="/natural_products/" >
+      <input type="submit" value="Return to natural product page">
+    </form>
+  </div>
+
+  <br>
+
+  <div>
+    <form action="/natural_products/target_hits/" method="get">
+      <div>
+
+        <label for="targets">Select targets:</label>
+
+        <select name="targets" id="targets" multiple>
+          
+          {% for category, target, target_encoded in targets %}
+            <option value="{{target_encoded}}">{{category}}: {{target}}</option>
+          {% endfor %}
+          
+        </select> 
+
+      </div>
+
+      <br>
+      <br>
+
+      <label for="threshold">Threshold (Pa):</label>
+      <input type="text" id="threshold" 
+        name="threshold" value="900"><br><br>
+
+      <label for="checkbox">Pa>Pi?</label>
+      <input id="checkbox" name="checkbox" type="checkbox" checked>
+
+      <br>
+      <br>
+
+      <input type="submit" value="Submit">
+    </form> 
+
+  </div>
+
+
+  </body>
+</html>

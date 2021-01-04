@@ -7,14 +7,14 @@ from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
 from django.views.static import serve
 
-
 import html
 import urllib.parse as urlparse
 
-from natural_products.backend import write_records_to_file, write_smiles_to_file
-from natural_products.backend import query_target_hits, get_compound_info, draw_molecule, get_multiple_compound_info
+from natural_products.backend import (write_records_to_file, write_smiles_to_file, 
+    query_target_hits, get_compound_info, draw_molecule, get_multiple_compound_info,
+    query_pathway_hits, query_reaction_hits)
 
-from utils.pass_utils import get_categories, get_targets_for_category
+from utils.mysql_utils import (get_all_targets_and_categories, get_all_pathways, get_all_reactions)
 
 # Create your views here.
 
@@ -27,17 +27,13 @@ def index(request):
     return render(request, 
         "natural_products/index.html", context)
         
-def target(request):
-    # targets = [
-    #     (target,
-    #         urlparse.quote(target))
-    #     for target in pass_targets]
+def target_select(request):
 
-    categories = get_categories()
-    targets = [(category, 
-            [(target, urlparse.quote(target))
-                for target in get_targets_for_category(category)])
-        for category in categories]
+    targets = get_all_targets_and_categories()
+    targets = (
+            (c, t, urlparse.quote(t))
+        for c, t in targets
+    )
 
     thresholds = ["{:.02f}".format(threshold)
         for threshold in np.arange(0, 1, 0.05)[::-1]]
@@ -45,42 +41,160 @@ def target(request):
         "targets": targets,
         "thresholds": thresholds}
     return render(request,
-        "natural_products/targets.html", context)
+        "natural_products/target_select.html", context)
 
-def results(request, ):
+def show_target_hits(request, ):
 
-    category = request.GET["category"]
-    target = request.GET[category] # get values of fields by id
+    targets = request.GET.getlist("targets")
     threshold = request.GET["threshold"]
-    filter_pa_pi = request.GET.get("checkbox") == "on"
+    filter_pa_pi = request.GET.get("checkbox") == "on" #TODO
+    # filter_pa_pi = False
 
     try:
-        threshold = float(threshold)
+        threshold = int(threshold)
     except ValueError:
         return HttpResponse("Invalid threshold")
 
     # query database
-    target = urlparse.unquote(target)
-    records = query_target_hits(target, threshold, filter_pa_pi=filter_pa_pi)
+    targets = [urlparse.unquote(target) 
+        for target in targets]
 
-    request.session["records"] = records
-    request.session["target"] = target # TODO convert to PDB?
+    thresholds = [threshold]
+    target_hits = query_target_hits(targets, thresholds, filter_pa_pi=filter_pa_pi)
+
+    request.session["targets"] = targets
+    request.session["thresholds"] = thresholds
+    request.session["target_hits"] = target_hits
 
     context = {
-        "target": target,
-        "threshold": threshold,
-        "records": records,
-        "num_hits": len(records)
+        "targets": targets,
+        "thresholds": thresholds,
+        "target_hits": target_hits,
+        "num_hits": len(target_hits)
     }
 
     return render(request,
-        "natural_products/results.html", context)
+        "natural_products/target_hits.html", context)
+        
+def pathway_select(request):
+
+    organism = "Homo sapiens"
+
+    pathways = get_all_pathways(organism=organism)
+    pathways = (
+            (p, urlparse.quote(p), o, urlparse.quote(o))
+        for p, o in pathways
+    )
+
+    thresholds = ["{:.02f}".format(threshold)
+        for threshold in np.arange(0, 1, 0.05)[::-1]]
+    context = {
+        "pathways": pathways,
+        "thresholds": thresholds}
+    return render(request,
+        "natural_products/pathway_select.html", context)
+
+def show_pathway_hits(request, ):
+
+    pathways = request.GET.getlist("pathways")
+    threshold = request.GET["threshold"]
+    filter_pa_pi = request.GET.get("checkbox") == "on" #TODO
+    # filter_pa_pi = False
+    organism = "Homo sapiens"
+
+    try:
+        threshold = int(threshold)
+    except ValueError:
+        return HttpResponse("Invalid threshold")
+
+    # query database
+    pathways = [urlparse.unquote(pathway) 
+        for pathway in pathways]
+
+    thresholds = [threshold]
+    pathway_hits = query_pathway_hits(pathways, 
+        threshold=threshold, filter_pa_pi=filter_pa_pi,
+        organism=organism, limit=None)
+
+    request.session["pathways"] = pathways
+    request.session["thresholds"] = thresholds
+    request.session["pathway_hits"] = pathway_hits
+
+    context = {
+        "pathways": pathways,
+        "thresholds": thresholds,
+        "pathway_hits": pathway_hits,
+        "num_hits": len(pathway_hits)
+    }
+
+    return render(request,
+        "natural_products/pathway_hits.html", context)
+
+def reaction_select(request):
+
+    organism = "Homo sapiens"
+
+    reactions = get_all_reactions(organism=organism)
+    reactions = (
+            (r, urlparse.quote(r), o, urlparse.quote(o))
+        for r, o in reactions
+    )
+
+    thresholds = ["{:.02f}".format(threshold)
+        for threshold in np.arange(0, 1, 0.05)[::-1]]
+    context = {
+        "reactions": reactions,
+        "thresholds": thresholds}
+    return render(request,
+        "natural_products/reaction_select.html", context)
+
+def show_reaction_hits(request, ):
+
+    reactions = request.GET.getlist("reactions")
+    threshold = request.GET["threshold"]
+    filter_pa_pi = request.GET.get("checkbox") == "on" #TODO
+    # filter_pa_pi = False
+    organism = "Homo sapiens"
+
+    try:
+        threshold = int(threshold)
+    except ValueError:
+        return HttpResponse("Invalid threshold")
+
+    # query database
+    reactions = [urlparse.unquote(reaction) 
+        for reaction in reactions]
+
+    thresholds = [threshold]
+    reaction_hits = query_reaction_hits(reactions, 
+        threshold=threshold, filter_pa_pi=filter_pa_pi,
+        organism=organism)
+
+    request.session["reactions"] = reactions
+    request.session["thresholds"] = thresholds
+    request.session["reaction_hits"] = reaction_hits
+
+    context = {
+        "reactions": reactions,
+        "thresholds": thresholds,
+        "reaction_hits": reaction_hits,
+        "num_hits": len(reaction_hits)
+    }
+
+    return render(request,
+        "natural_products/reaction_hits.html", context)
+
+def pathway_enrichment(request):
+
+    context = {}
+
+    return render(request,
+        "natural_products/pathway_enrichment.html", context)
 
 def all_compounds(request):
 
-    compounds = get_multiple_compound_info()
-
-    # get compounds molecular formulas from database
+    # get compound data from database
+    compounds = get_multiple_compound_info() # returns list of tuples
     context = {"compounds": compounds}
 
     return render(request, 
@@ -97,68 +211,54 @@ def compound_info(request, compound_id):
 
     assert isinstance(info, dict), type(info)
     assert "clean_smiles" in info
+    assert "name" in info 
+    compound_name = info["name"]
 
     smiles = info["clean_smiles"]
     if smiles is not None:
         img_filename = draw_molecule(smiles)
         if img_filename is not None:
-            context.update({"img_filename": img_filename})
+            context["img_filename"] = img_filename
 
     # convert to list of dicts for easy presentation
-    info = [
-        (k, v)
-            for k, v in info.items()
-    ]
-
-    # if activities is not None:
-    #     activities = [
-    #         (target, activities[target])
-    #             for target in pass_targets
-    #     ]
-    #     # sort activities by activity
-    #     activities = sorted(activities, 
-    #         key=lambda x: x[1], reverse=True)
+    info = info.items()
 
     context.update({
         "compound_id": compound_id,
+        "compound_name": compound_name,
         "info": info,
         "activities": activities})
 
     return render(request,
         "natural_products/compound_info.html", context)
 
-def download(request):
+def download_target_hits(request):
+
+    assert request.user.is_authenticated
     
-    username = "david" #TODO
+    username = request.user.username
+    targets = request.session["targets"]
+    thresholds = request.session["thresholds"]
     records = request.session["records"]
 
-    record_filename = write_records_to_file(username, records)
+    record_filename = write_records_to_file(username, targets, thresholds, records)
 
     return serve(request, 
             os.path.basename(record_filename), 
             os.path.dirname(record_filename))
 
-    # context = {}
-    # return render(request,
-    #     "natural_products/download.html",
-    #     context)
+def optimise_target_hits(request):
 
-def optimise(request):
-
-    username = "david" #TODO
+    assert request.user.is_authenticated
+    # assert request.session["category"] == "GENE_EXPRESSION"
+    username = request.user.username
     records = request.session["records"]
 
-    smiles_filename = write_smiles_to_file(username, records)
+    smiles = get_multiple_compound_info(
+        compounds=(record[0] for record in records),
+        columns=("coconut_id", "clean_smiles"))
+
+    smiles_filename = write_smiles_to_file(username, smiles)
     request.session["smiles_filename"] = smiles_filename
 
-    # TODO
     return HttpResponseRedirect("/hit_optimisation/upload")
-
-    # return serve(request, 
-    #         os.path.basename(record_filename), 
-    #         os.path.dirname(record_filename))
-
-    # context = {}
-    # return render(request,
-    #     "natural_products/optimise.html",
-    #     context)

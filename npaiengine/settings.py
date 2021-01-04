@@ -78,17 +78,25 @@ WSGI_APPLICATION = 'npaiengine.wsgi.application'
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 
 DATABASES = {
+    # 'default': {
+    #     "ENGINE": "djongo",
+    #     "NAME": "COCONUT",
+    #     "CLIENT": { # only needed for djongo
+    #         "host": "192.168.0.49",
+    #         "port": 27017,
+    #         "username": "david",
+    #         "password": "c423612k&",
+    #         "authSource": "COCONUT",
+    #         "authMechanism": "SCRAM-SHA-1"
+    #     },
+    # }
     'default': {
-        "ENGINE": "djongo",
-        "NAME": "COCONUT",
-        "CLIENT": { # only needed for djongo
-            "host": "192.168.0.49",
-            "port": 27017,
-            "username": "david",
-            "password": "c423612k&",
-            "authSource": "COCONUT",
-            "authMechanism": "SCRAM-SHA-1"
-        },
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'npaiengine',
+        'USER': 'david',
+        'PASSWORD': 'c423612k',
+        'HOST': '192.168.0.49',
+        'PORT': '3306',
     }
 }
 

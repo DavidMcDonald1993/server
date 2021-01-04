@@ -6,7 +6,7 @@ sys.path.insert(1,
 from utils.io import load_json
 
 def get_categories():
-    return {
+    return sorted({
         "EFFECTS",
         "MECHANISMS",
         'TOXICITY', 
@@ -14,7 +14,7 @@ def get_categories():
         'METABOLISM', 
         'GENE_EXPRESSION', 
         'TRANSPORTERS'
-    }
+    })
 
 def get_all_compounds():
     return load_json("compound_ids.json")

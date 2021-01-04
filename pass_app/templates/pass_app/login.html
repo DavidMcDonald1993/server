@@ -1,0 +1,28 @@
+<!doctype html>
+<html>
+  <head>
+    <title>NPAIEngine</title>
+  </head>
+  <body style="text-align: center;">
+ 
+    <h1>Welcome to NPAIEngine!</h1>
+    <br>
+    <div>   
+       <h2>Please log in:</h2>
+      <form action="/" method="post">
+        {% csrf_token %}
+        <label for=username >Username:</label>
+        <input type="text" id="username" 
+            name="username">   
+        <br >
+        <label for=password>Password:</label>
+        <input type="password" id="password" 
+            name="password"> 
+        <br>
+        <br>
+        <input type="submit" value="Login">
+      </form> 
+    </div>
+
+  </body>
+</html>

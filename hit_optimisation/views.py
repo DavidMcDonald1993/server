@@ -6,23 +6,16 @@ from django.views.static import serve
 
 import multiprocessing as mp
 
+import urllib.parse as urlparse
+
+
 from .forms import UploadFileForm
 from .backend import hit_optimisation
 
-# import pypdb
-# from pypdb.clients.search.search_client import perform_search
-# from pypdb.clients.search.search_client import SearchService, ReturnType
-# from pypdb.clients.search.operators import text_operators
+from utils.pdb_utils import get_pdb_ids_from_gene_symbol, get_human_targets
+from utils.genenames_utils import search_for_targets
 
-# search_service = SearchService.TEXT
-# search_operator = text_operators.ExactMatchOperator(value="Homo sapiens",
-#     attribute="rcsb_entity_source_organism.taxonomy_lineage.name")
-# return_type = ReturnType.POLYMER_ENTITY
-
-# human_targets = perform_search(search_service, search_operator, return_type)
-
-# human_targets = {human_target[:4] 
-#     for human_target in human_targets}
+# human_targets = get_human_targets()
 
 # Create your views here.
 from django.http import HttpResponse, HttpResponseRedirect
@@ -33,6 +26,8 @@ def index(request):
         "hit_optimisation/index.html", context)
 
 def upload(request):
+
+    assert request.user.is_authenticated
 
     settings = {
         "number_of_mutants_first_generation": 10,
@@ -48,24 +43,28 @@ def upload(request):
 
     if request.method == 'POST':
         form = UploadFileForm(request.POST, request.FILES)
-        if form.is_valid():
+        if "smiles_filename" in request.session or form.is_valid():
 
-            user_name = request.POST["user_name"]
+            user_name = request.POST["username"]
             user_email = request.POST["user_email"]
             target = request.POST["target"]
-            uploaded_file = request.FILES['file_field'] # name of attribute
+            if "smiles_filename" in request.session:
+                uploaded_file = request.session["smiles_filename"] # string location on server
+            else:
+                # smiles file from client
+                uploaded_file = request.FILES['file_field'] # name of attribute
             chain = request.POST["chain"]
-            # num_generations = request.POST["num_generations"]
-            user_settings = {key: int(request.POST[key]) 
-                for key in settings}
+            user_settings = {key: int(request.POST[key]) for key in settings}
            
-            if uploaded_file.name.endswith(".smi"):
+            if isinstance(uploaded_file, str) and uploaded_file.endswith(".smi")\
+                    or uploaded_file.name.endswith(".smi"):
                 # do optimisation
-                # archive_filename = hit_optimisation(user_name, target, uploaded_file, chain, user_settings)
                 # start new process that ends with sent email
                 p  = mp.Process(target=hit_optimisation, args=(user_name, user_email, target, uploaded_file, chain, user_settings))
                 p.start()
                 print ("process spawned")
+
+                # archive_filename = hit_optimisation(user_name, target, uploaded_file, chain, user_settings)
             #     return serve(request, 
             #         os.path.basename(archive_filename), 
             #         os.path.dirname(archive_filename))
@@ -77,16 +76,33 @@ def upload(request):
 
     context = {
         # "targets": human_targets,
+        "settings": settings.items(),
         "form": form,
-        "settings": settings.items()
+        "username": request.user.username,
+        "user_email": request.user.email,
     }
 
-    if "target" in request.session:
-        context.update({"target": request.session["target"]})
+    if "targets" in request.session:
+        targets = request.session["targets"]
+        # get first word TODO
+        targets_to_gene_symbols = search_for_targets(targets)
+
+        pdb_ids = [
+            (target, symbol, pdb_id)
+                for target in targets_to_gene_symbols
+                for symbol in targets_to_gene_symbols[target]
+                for pdb_id in get_pdb_ids_from_gene_symbol(symbol)
+        ]
+
+        # pdb_ids = {pdb_id for gene_symbol in gene_symbols
+            # for pdb_id in get_pdb_ids_from_gene_symbol(gene_symbol)}
+        if len(pdb_ids) > 0:
+            context["pdb_ids"] = pdb_ids#.intersection(human_targets)
 
     if "smiles_filename" in request.session:
-        context.update({"smiles_filename": request.session["smiles_filename"]})
-    
+        context["smiles_filename"] =\
+            os.path.basename(request.session["smiles_filename"])
+
     return render(request, 
         'hit_optimisation/upload.html', 
         context )

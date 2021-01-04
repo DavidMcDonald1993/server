@@ -1,3 +1,7 @@
+import sys
+import os.path
+sys.path.insert(1, 
+    os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 
 import pandas as pd
 
@@ -14,9 +18,15 @@ from rdkit.Chem import Draw
 from rdkit.Chem import SDWriter
 from rdkit.Chem import rdchem
 from rdkit.Chem.Scaffolds import MurckoScaffold
+from rdkit.Chem.PandasTools import WriteSDF, AddMoleculeColumnToFrame
+
 from io import BytesIO
 from xml.dom import minidom
 from xml.parsers.expat import ExpatError
+
+from utils.io import read_smiles
+
+from standardiser import standardise
 
 log = logging.getLogger(__name__)
 
@@ -78,3 +88,62 @@ def LoadSDF(filename, idName='ID', molColName='ROMol', includeFingerprints=False
     if len(records) > 0:
         assert len(records) < chunksize
         yield pd.DataFrame(records, index=indices)
+
+def standardise_smi(smi, return_smiles=False):
+    mol = Chem.MolFromSmiles(smi)
+    if mol is None:
+        if return_smiles:
+            return smi 
+        else:
+            return mol
+    try:
+        mol = standardise.run(mol)
+    except standardise.StandardiseException as e:
+        print (e)
+        pass
+    if return_smiles:
+        return Chem.MolToSmiles(mol)
+    else:
+        return mol
+
+def smiles_to_sdf(smiles_filename, sdf_filename):
+    print ("converting smiles from", smiles_filename, 
+        "to SDF file", sdf_filename)
+    smiles_df = read_smiles(smiles_filename)
+    smiles_df["Molecule"] = smiles_df["SMILES"].map(standardise_smi)
+    smiles_df["clean_SMILES"] = smiles_df["Molecule"].map(Chem.MolToSmiles)
+    # AddMoleculeColumnToFrame(smiles_df, 'SMILES', 'Molecule')
+    WriteSDF(smiles_df, sdf_filename, molColName="Molecule",
+        idName="RowID", properties=list(smiles_df.columns))
+
+if __name__ == "__main__":
+
+    mol = Chem.MolFromSmiles("Cn1cc(Cn2cnc(-c3cnn(C)c3)c2-c2ccc(C#N)cc2)cn1")
+
+    print(dict((k, mol.GetProp(k)) for k in mol.GetPropNames()))
+
+    # import glob 
+
+    # smiles_files = glob.iglob(os.path.join("..", "..",
+    #     "ppb2", "splits", "*", "test.smi"))
+
+    # sdf_dir = os.path.join("/", "home", "david",
+    #     "Desktop", "ppb2_SDF")
+    # os.makedirs(sdf_dir, exist_ok=True)
+
+    # for smiles_file in smiles_files:
+    #     split_name = smiles_file.split("/")[-2]
+    #     sdf_filename = os.path.join(sdf_dir, split_name+".sdf")
+    #     smiles_to_sdf(smiles_file, sdf_filename)
+
+        # smiles = read_smiles(smiles_file)
+
+        # smiles["mols"] = smiles["SMILES"].map(lambda smi: standardise_mol(Chem.MolFromSmiles(smi)))
+
+        # smiles["SMILES_standard"] = smiles["mols"].map(Chem.MolToSmiles)
+
+        # print (smiles["SMILES"].isnull().sum())
+        # print (smiles["SMILES_standard"].isnull().sum())
+
+        # break
+
