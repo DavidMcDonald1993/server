@@ -11,7 +11,7 @@ from django.views.static import serve
 from pass_app.forms import UploadFileForm
 from pass_app.backend import pass_predict
 
-from utils.security import get_file_from_token
+from utils.users import get_file_from_token
 
 import multiprocessing as mp
 
@@ -55,14 +55,14 @@ def upload_file(request):
     if request.method == 'POST':
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
-            username = request.POST["username"]
-            user_email = request.POST["user_email"]
+            # username = request.POST["username"]
+            # user_email = request.POST["user_email"]
             uploaded_file = request.FILES['file_field'] # name of attribute
 
             # handle with multi processing 
 
             p = mp.Process(target=pass_predict,
-                args=(username, user_email, uploaded_file))
+                args=(request.user, uploaded_file))
             p.start()
             print ("process spawned")
 

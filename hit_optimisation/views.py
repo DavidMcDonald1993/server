@@ -60,7 +60,7 @@ def upload(request):
                     or uploaded_file.name.endswith(".smi"):
                 # do optimisation
                 # start new process that ends with sent email
-                p  = mp.Process(target=hit_optimisation, args=(user_name, user_email, target, uploaded_file, chain, user_settings))
+                p  = mp.Process(target=hit_optimisation, args=(request.user, target, uploaded_file, chain, user_settings))
                 p.start()
                 print ("process spawned")
 

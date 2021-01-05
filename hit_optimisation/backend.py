@@ -18,7 +18,7 @@ import shutil
 
 from utils.io import process_input_file
 from utils.email_utils import send_mail
-from utils.security import add_file_to_database
+from utils.users import send_file_to_user
 
 class ChainSelect(Select):
     
@@ -284,17 +284,7 @@ def hit_optimisation(
         compression, output_dir)
 
     attachment_filename = f"{archive_filename}.{compression}"
-
-    if os.path.getsize(attachment_filename) / (1024*1024) < 25: # file smaller than 25MB
-        send_mail(user.name,
-            user.email,
-            attach_file_name=attachment_filename)
-    else:
-        
-        # file is too large: save on server for download later
-        token = add_file_to_database(user.id, path=attachment_filename)
-        print ("added file", attachment_filename, "to database for user", user.name)
-        print ("generated token", token)
+    send_file_to_user(user, attachment_filename)
 
     return 0
 

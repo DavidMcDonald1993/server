@@ -6,6 +6,7 @@ sys.path.insert(1,
 import secrets
 
 from utils.mysql_utils import mysql_create_table, mysql_query, mysql_insert_many
+from utils.email_utils import send_mail
 
 def get_token(token_length=128): # token is double length
     return secrets.token_hex(token_length)
@@ -60,6 +61,27 @@ def get_file_from_token(token, user_id, existing_conn=None):
         return records[0][0]
     else:
         return None
+
+def send_file_to_user(user, filename, max_MB=5):
+    if os.path.getsize(filename) / (1024*1024) < max_MB: # file smaller than max MB
+        # send as attachment
+        send_mail(user.name,
+            user.email,
+            attach_file_name=filename)
+    else:
+        
+        # file is too large: save on server for download later
+        token = add_file_to_database(user.id, path=filename)
+        print ("added file", filename, "to database for user", user.name)
+        print ("generated token", token)
+        send_mail(user.name,
+            user.email,
+            token=token)
+
+    # TODO delele file?
+    # os.remove(filename)
+
+    return 0
 
 if __name__ == "__main__":
 

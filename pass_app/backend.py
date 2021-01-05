@@ -18,7 +18,7 @@ import shutil
 
 from rdkit.Chem.PandasTools import LoadSDF
 
-from utils.email_utils import send_mail
+# from utils.email_utils import send_mail
 # from utils.mongodb_utils import connect_to_mongodb
 from utils.pass_utils import (remove_invalid_characters, parse_pass_spectra, 
     get_all_targets, determine_targets)
@@ -27,7 +27,7 @@ from utils.io import process_input_file, write_json
 from utils.genenames_utils import targets_to_uniprot_ids
 from utils.mysql_utils import get_uniprots_for_targets
 # from utils.rdkit_utils import LoadSDF
-from utils.security import add_file_to_database
+from utils.users import send_file_to_user
 
 # def write_PASS_hits_to_db(
 #     pass_file,
@@ -185,20 +185,7 @@ def pass_predict(
         compression, output_dir)
 
     attachment_filename = f"{archive_filename}.{compression}"
-
-    if os.path.getsize(attachment_filename) / (1024*1024) < 25: # file smaller than 25MB
-        send_mail(user.name,
-            user.email,
-            attach_file_name=attachment_filename)
-    else:
-        
-        # file is too large: save on server for download later
-        token = add_file_to_database(user.id, path=attachment_filename)
-        print ("added file", attachment_filename, "to database for user", user.name)
-        print ("generated token", token)
-
-        
-       
+    send_file_to_user(user,attachment_filename)
 
     return 0
 
