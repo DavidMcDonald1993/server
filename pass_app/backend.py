@@ -153,7 +153,7 @@ def pass_predict(
     os.makedirs(output_dir, exist_ok=True)
 
     archive_dir = os.path.join(static_dir, archive_dir)
-    os.makedev(archive_dir, exist_ok=True)
+    os.makedirs(archive_dir, exist_ok=True)
 
     input_file = process_input_file(input_file, 
         desired_format=".sdf", output_dir=output_dir)
