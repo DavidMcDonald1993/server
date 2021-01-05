@@ -18,6 +18,7 @@ import shutil
 
 from utils.io import process_input_file
 from utils.email_utils import send_mail
+from utils.security import add_file_to_database
 
 class ChainSelect(Select):
     
@@ -207,8 +208,8 @@ def determine_identifier(receiver_address, pdb_id, smiles_file):
         os.path.splitext(os.path.basename(smiles_file))[0])
 
 def hit_optimisation(
-    receiver_name, 
-    receiver_address,
+    # receiver_name, 
+    user,
     pdb_id, 
     input_file, 
     chain,
@@ -223,7 +224,7 @@ def hit_optimisation(
 
     assert len(pdb_id) == 4 
 
-    identifier = determine_identifier(receiver_address, pdb_id, input_file)
+    identifier = determine_identifier(user.email, pdb_id, input_file)
 
     # process output directory
     output_dir = os.path.join(output_dir,
@@ -282,11 +283,26 @@ def hit_optimisation(
     shutil.make_archive(archive_filename, 
         compression, output_dir)
 
-    send_mail(receiver_name,
-        receiver_address,
-        attach_file_name=f"{archive_filename}.{compression}")
+    attachment_filename = f"{archive_filename}.{compression}"
+
+    if os.path.getsize(attachment_filename) / (1024*1024) < 25: # file smaller than 25MB
+        send_mail(user.name,
+            user.email,
+            attach_file_name=attachment_filename)
+    else:
+        
+        # file is too large: save on server for download later
+        token = add_file_to_database(user.id, path=attachment_filename)
+        print ("added file", attachment_filename, "to database for user", user.name)
+        print ("generated token", token)
 
     return 0
+
+class User(object):
+
+    def __init__(self, name, email):
+        self.name = name 
+        self.email = email
 
 if __name__ == "__main__":
 
@@ -296,9 +312,10 @@ if __name__ == "__main__":
     smiles_file = "./all_ligands.smi"
     chain = "C"
 
+    user = User(name, email)
+
     hit_optimisation(
-        name,
-        email, 
+        user, 
         pdb_id, 
         smiles_file, 
         chain,

@@ -2,7 +2,7 @@ function showDiv(button){
 
     const categories = ["ALL", "PROPERTIES", "ANTITARGETS", "EFFECTS", 
         "GENE_EXPRESSION", "MECHANISMS", "METABOLISM", 
-        "TOXICITY", "TRANSPORTERS"];
+        "TOXICITY", "TRANSPORTERS", "PATHWAYS", "REACTIONS"];
     
     categories.forEach( category => {
 

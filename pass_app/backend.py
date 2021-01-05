@@ -27,6 +27,7 @@ from utils.io import process_input_file, write_json
 from utils.genenames_utils import targets_to_uniprot_ids
 from utils.mysql_utils import get_uniprots_for_targets
 # from utils.rdkit_utils import LoadSDF
+from utils.security import add_file_to_database
 
 # def write_PASS_hits_to_db(
 #     pass_file,
@@ -94,8 +95,7 @@ def perform_enrichment_on_PASS_file(
         for target in targets}
     
     # unique_uniprots = targets_to_uniprot_ids(unique_target_names)
-    targets_to_uniprot = get_uniprots_for_targets(unique_target_names)
-    print (targets_to_uniprot)
+    targets_to_uniprot = get_uniprots_for_targets(unique_target_names) # SQL query
     targets_to_uniprot_filename = os.path.join(output_dir, "targets_to_uniprot.csv")
     print ("writing targets to uniprot to", targets_to_uniprot_filename)
     targets_to_uniprot = pd.DataFrame(targets_to_uniprot, 
@@ -126,7 +126,6 @@ def perform_enrichment_on_PASS_file(
         not_found_filename,
         pdf_filename)
 
-
     return 0
 
 def determine_identifier(receiver_address, input_file):
@@ -134,26 +133,27 @@ def determine_identifier(receiver_address, input_file):
         assert hasattr(input_file, "name")
         input_file = input_file.name 
     # assert smiles_file.endswith(".smi")
-    return "{}-{}-{}".format(receiver_address, 
+    return "{}-{}".format(receiver_address, 
         os.path.splitext(os.path.basename(input_file))[0])
 
-
 def pass_predict(
-    username,
-    user_email,
+    user,
+    # user_email,
     input_file, 
     compression="zip",
-    static_dir="pass_app/static",
+    static_dir="pass_app/static/pass_app",
     output_dir="files",
-    archive_dir=os.path.join("hit_optimisation",
-        "static", "hit_optimisation", "archives"),
+    archive_dir="archives",
     threshold=500,
     enrichment=True):
 
-    identifier = determine_identifier(user_email, input_file)
+    identifier = determine_identifier(user.email, input_file)
 
     output_dir = os.path.join(static_dir, output_dir, identifier)
     os.makedirs(output_dir, exist_ok=True)
+
+    archive_dir = os.path.join(static_dir, archive_dir)
+    os.makedev(archive_dir, exist_ok=True)
 
     input_file = process_input_file(input_file, 
         desired_format=".sdf", output_dir=output_dir)
@@ -184,9 +184,20 @@ def pass_predict(
     shutil.make_archive(archive_filename, 
         compression, output_dir)
 
-    send_mail(username,
-        user_email,
-        attach_file_name=f"{archive_filename}.{compression}")
+    attachment_filename = f"{archive_filename}.{compression}"
+
+    if os.path.getsize(attachment_filename) / (1024*1024) < 25: # file smaller than 25MB
+        send_mail(user.name,
+            user.email,
+            attach_file_name=attachment_filename)
+    else:
+        
+        # file is too large: save on server for download later
+        token = add_file_to_database(user.id, path=attachment_filename)
+        print ("added file", attachment_filename, "to database for user", user.name)
+        print ("generated token", token)
+
+        
        
 
     return 0

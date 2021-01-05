@@ -504,6 +504,7 @@ def get_uniprots_for_compound(
 
     return [record[0] for record in records]
 
+
 def add_pathways_and_reactions():
     import pandas as pd
 
@@ -664,6 +665,73 @@ def get_all_pathways(
         query += f"AND organism=\"{organism}\""
     return mysql_query(query, existing_conn=existing_conn)
 
+def get_all_pathways_for_compounds(
+    coconut_ids,
+    organism=None,
+    filter_pa_pi=True,
+    threshold=0,
+    existing_conn=None,
+    limit=None,
+    ):
+    if isinstance(coconut_ids, list):
+        coconut_ids = tuple(coconut_ids)
+    else:
+        assert isinstance(coconut_ids, str)
+    query = f'''
+        SELECT DISTINCT t.target_name, a.Pa, a.Pi, a.Pa-a.Pi, 
+            u.acc, tu.score, p.pathway_name, p.organism, up.evidence, p.pathway_url
+        FROM compounds AS c, activities AS a, 
+            targets AS t, uniprot AS u,
+            targets_to_uniprot AS tu, uniprot_to_pathway AS up,
+            pathway AS p
+        WHERE c.compound_id=a.compound_id
+        AND a.target_id=t.target_id
+        AND a.target_id=tu.target_id
+        AND tu.uniprot_id=u.uniprot_id
+        AND tu.uniprot_id=up.uniprot_id
+        AND up.pathway_id=p.pathway_id
+        {f"AND c.coconut_id IN {coconut_ids}" if isinstance(coconut_ids, tuple)
+            else f'AND c.coconut_id="{coconut_ids}"'}
+        {"AND a.Pa>a.Pi" if filter_pa_pi else ""}
+        {f"AND a.Pa>{threshold}" if threshold>0 else ""}
+        {f"LIMIT {limit}" if limit is not None else ""}
+    '''
+    return mysql_query(query, existing_conn=existing_conn)
+
+def get_all_reactions_for_compounds(
+    coconut_ids,
+    organism=None,
+    filter_pa_pi=True,
+    threshold=0,
+    existing_conn=None,
+    limit=None,
+    ):
+    if isinstance(coconut_ids, list):
+        coconut_ids = tuple(coconut_ids)
+    else:
+        assert isinstance(coconut_ids, str)
+    query = f'''
+        SELECT DISTINCT t.target_name, a.Pa, a.Pi, a.Pa-a.Pi, 
+            u.acc, tu.score, r.reaction_name, r.organism, ur.evidence, r.reaction_url
+        FROM compounds AS c, activities AS a, 
+            targets AS t, uniprot AS u,
+            targets_to_uniprot AS tu, uniprot_to_reaction AS ur,
+            reaction AS r
+        WHERE c.compound_id=a.compound_id
+        AND a.target_id=t.target_id
+        AND a.target_id=tu.target_id
+        AND tu.uniprot_id=u.uniprot_id
+        AND tu.uniprot_id=ur.uniprot_id
+        AND ur.reaction_id=r.reaction_id
+        {f"AND c.coconut_id IN {coconut_ids}" if isinstance(coconut_ids, tuple)
+            else f'AND c.coconut_id="{coconut_ids}"'}
+        {"AND a.Pa>a.Pi" if filter_pa_pi else ""}
+        {f"AND a.Pa>{threshold}" if threshold>0 else ""}
+        {f"LIMIT {limit}" if limit is not None else ""}
+    '''
+    return mysql_query(query, existing_conn=existing_conn)
+
+
 def get_all_reactions(
     actives=True,
     organism=None, 
@@ -681,8 +749,13 @@ def get_all_reactions(
 
 if __name__ == "__main__":
     # create_tables()
-    add_target_to_uniprot()
+    # add_target_to_uniprot()
     # pass
+
+    records = get_all_reactions_for_compounds(coconut_ids="CNP0000002", organism="Homo sapiens", threshold=950)
+
+    for record in records:
+        print (record)
 
     # pathway_name = "Urea cycle"
     # reaction_name = "Expression of ABCA1"

@@ -14,7 +14,8 @@ from natural_products.backend import (write_records_to_file, write_smiles_to_fil
     query_target_hits, get_compound_info, draw_molecule, get_multiple_compound_info,
     query_pathway_hits, query_reaction_hits)
 
-from utils.mysql_utils import (get_all_targets_and_categories, get_all_pathways, get_all_reactions)
+from utils.mysql_utils import (get_all_targets_and_categories, 
+    get_all_pathways, get_all_reactions, get_all_pathways_for_compounds, get_all_reactions_for_compounds)
 
 # Create your views here.
 
@@ -223,6 +224,9 @@ def compound_info(request, compound_id):
         if img_filename is not None:
             context["img_filename"] = img_filename
 
+    pathways = get_all_pathways_for_compounds(compound_id)
+    reactions = get_all_reactions_for_compounds(compound_id)
+
     # convert to list of dicts for easy presentation
     info = info.items()
 
@@ -230,7 +234,10 @@ def compound_info(request, compound_id):
         "compound_id": compound_id,
         "compound_name": compound_name,
         "info": info,
-        "activities": activities})
+        "activities": activities,
+        "pathways": pathways,
+        "reactions": reactions,
+        })
 
     return render(request,
         "natural_products/compound_info.html", context)

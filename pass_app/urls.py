@@ -17,4 +17,7 @@ urlpatterns = [
         name="upload"),
     path("pass_app/success/", views.success, 
         name="success",),
+        
+    path("download/<str:token>", views.download, 
+        name="download",),
 ]

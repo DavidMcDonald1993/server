@@ -62,6 +62,21 @@
             {% endfor %}
         {% endif %}
 
+        &nbsp;
+        &nbsp;
+        &nbsp;
+        &nbsp;
+        <!-- pathways -->
+        <input type="button" onclick="showDiv(this)" value="PATHWAYS">
+
+        &nbsp;
+        &nbsp;
+        &nbsp;
+        &nbsp;
+        <!-- reactions -->
+        <input type="button" onclick="showDiv(this)" value="REACTIONS">
+        
+
       </div>
 
     <div class="tab-content" id="nav-tabContent">
@@ -128,6 +143,102 @@
           </div>
         {% endfor %}
       {% endif %}
+
+      <!-- pathways -->
+
+      <div class="tab-pane active" id="nav-PATHWAYS" 
+      role="tabpanel" aria-labelledby="nav-PATHWAYS-tab"
+      style="display: none;">
+      
+        <h2>PATHWAYS</h2>
+        <div class="table-responsive">
+          <table id="PATHWAYSTable" class="display table data"
+            style="width:100%;text-align:center;display:none;">
+           
+            <thead>
+            <tr>
+              <th>Target</th>
+              <th>Pa</th>
+              <th>Pi</th>
+              <th>Pa - Pi</th>
+              <!-- u.acc, tu.score, p.pathway_name, p.organism, up.evidence, p.pathway_url -->
+              <th>Uniprot ACC</th>
+              <th>Association Score</th>
+              <th>Pathway Name</th>
+              <th>Pathway Organism</th>
+              <th>Evidence</th>
+              <th>Pathway URL</th>
+            </tr>
+            </thead>
+           
+            <tbody>
+            {% for target, pa, pi, diff, acc, score, pathway_name, organism, evidence, url in pathways %}
+            <tr>
+              <td>{{target}}</td>
+              <td>{{pa}}</td>
+              <td>{{pi}}</td>
+              <td>{{diff}}</td>
+              <td>{{acc}}</td>
+              <td>{{score}}</td>
+              <td>{{pathway_name}}</td>
+              <td>{{organism}}</td>
+              <td>{{evidence}}</td>
+              <td><a href={{url}}>{{url}}</a></td>
+            </tr>
+          {% endfor %}
+          </tbody>
+          </table>
+        </div>
+    </div>
+
+
+        <!-- reactions -->
+
+      <div class="tab-pane active" id="nav-REACTIONS" 
+      role="tabpanel" aria-labelledby="nav-REACTIONS-tab"
+      style="display: none;">
+      
+        <h2>REACTIONS</h2>
+        <div class="table-responsive">
+          <table id="REACTIONSTable" class="display table data"
+            style="width:100%;text-align:center;display:none;">
+           
+            <thead>
+            <tr>
+              <th>Target</th>
+              <th>Pa</th>
+              <th>Pi</th>
+              <th>Pa - Pi</th>
+              <th>Uniprot ACC</th>
+              <th>Association Score</th>
+              <th>Reaction Name</th>
+              <th>Reaction Organism</th>
+              <th>Evidence</th>
+              <th>Reaction URL</th>
+            </tr>
+            </thead>
+           
+            <tbody>
+            {% for target, pa, pi, diff, acc, score, reaction_name, organism, evidence, url in reactions %}
+            <tr>
+              <td>{{target}}</td>
+              <td>{{pa}}</td>
+              <td>{{pi}}</td>
+              <td>{{diff}}</td>
+              <td>{{acc}}</td>
+              <td>{{score}}</td>
+              <td>{{reaction_name}}</td>
+              <td>{{organism}}</td>
+              <td>{{evidence}}</td>
+              <td><a href={{url}}>{{url}}</a></td>
+            </tr>
+          {% endfor %}
+          </tbody>
+          </table>
+        </div>
+
+    </div>
+
     </div>
 
   </body>

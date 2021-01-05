@@ -61,9 +61,6 @@ def standardise_smi(smi, return_smiles=False):
     else:
         return mol
 
-
-
-
 def smiles_to_sdf(
     smiles_filename, 
     sdf_filename):
@@ -82,10 +79,12 @@ def process_input_file(
     desired_format,
     output_dir, 
     valid_input_file_types=(".smi", ".sdf")):
-    '''process input file from client'''
+    '''
+    process input file from client
+    '''
     assert desired_format in valid_input_file_types 
     if not isinstance(input_file, str):
-        assert hasattr(input, "name")
+        assert hasattr(input_file, "name")
         print ("input file has been recieved from client -- downloading")
         input_file_type = os.path.splitext(input_file.name)[1]
         assert input_file_type in valid_input_file_types

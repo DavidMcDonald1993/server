@@ -5,11 +5,13 @@ from django.shortcuts import render
 from django.core.exceptions import ObjectDoesNotExist
 
 # Create your views here.
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect, FileResponse
 from django.views.static import serve
 
 from pass_app.forms import UploadFileForm
 from pass_app.backend import pass_predict
+
+from utils.security import get_file_from_token
 
 import multiprocessing as mp
 
@@ -70,7 +72,6 @@ def upload_file(request):
         form = UploadFileForm()
 
     context = {"form": form}
-
     context["username"] = request.user.username
     context["user_email"] = request.user.email
     
@@ -85,6 +86,13 @@ def success(request):
     return render(request, 
         "pass_app/success.html",
         context)
+
+def download(request, token):
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect("/")
+    filename = get_file_from_token(token, request.user.id)
+    response = FileResponse(open(filename, 'rb'))
+    return response
 
 def favicon(request):
     return HttpResponse("/favicon")
