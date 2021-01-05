@@ -59,8 +59,8 @@
                 <!-- <input type="text" id="target" 
                   name="target" value={{target}}>  -->
                 <select name=target id=target>
-                    {% for target, symbol, pdb_id in pdb_ids %}
-                      <option value={{pdb_id}}>{{target}}: {{symbol}}: {{pdb_id}}</option>
+                    {% for target, symbol, score, pdb_id in pdb_ids %}
+                      <option value={{pdb_id}}>{{target}}: {{symbol}}: {{score}}: {{pdb_id}}</option>
                     {% endfor %}
                   </select> 
                 {% else %}

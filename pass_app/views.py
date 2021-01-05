@@ -53,12 +53,8 @@ def upload_file(request):
     if request.method == 'POST':
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
-            user_name = request.POST["user_name"]
+            username = request.POST["username"]
             user_email = request.POST["user_email"]
-            if "user_name" not in request.session:
-                request.session["user_name"] = user_name
-            if "user_email" not in request.session:
-                request.session["user_email"] = user_email
             uploaded_file = request.FILES['file_field'] # name of attribute
             if uploaded_file.name.endswith(".sdf"):
                 # filepath = handle_uploaded_file(uploaded_file)
@@ -69,7 +65,7 @@ def upload_file(request):
                 # handle with multi processing 
 
                 p = mp.Process(target=pass_predict,
-                    args=(user_name, user_email, uploaded_file))
+                    args=(username, user_email, uploaded_file))
                 p.start()
                 print ("process spawned")
 

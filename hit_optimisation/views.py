@@ -85,12 +85,12 @@ def upload(request):
     if "targets" in request.session:
         targets = request.session["targets"]
         # get first word TODO
-        targets_to_gene_symbols = search_for_targets(targets)
+        targets_to_gene_symbols = search_for_targets(targets, only_best_scoring=False)
 
         pdb_ids = [
-            (target, symbol, pdb_id)
+            (target, symbol, score, pdb_id)
                 for target in targets_to_gene_symbols
-                for symbol in targets_to_gene_symbols[target]
+                for symbol, score in targets_to_gene_symbols[target]
                 for pdb_id in get_pdb_ids_from_gene_symbol(symbol)
         ]
 

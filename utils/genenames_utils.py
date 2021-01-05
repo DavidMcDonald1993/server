@@ -66,7 +66,7 @@ def search_for_hgnc_id(hgnc_id, key="symbol"):
         print( 'Error detected: ' + response['status'])
         return None
 
-def search_for_targets(search_terms, key="symbol", max_hits=100):
+def search_for_targets(search_terms, key="symbol", max_hits=100, only_best_scoring=True):
     '''
     Use GeneNames REST service 
     returns name, symbol, uniprot
@@ -110,8 +110,9 @@ def search_for_targets(search_terms, key="symbol", max_hits=100):
             data = json.loads(content)
             max_score = data["response"]["maxScore"]
             results = data['response']['docs']
-            results = list( filter(
-                lambda r: r["score"]==max_score, results))
+            if only_best_scoring:
+                results = list( filter(
+                    lambda r: r["score"]==max_score, results))
             num_hits = len(results)
             if num_hits > max_hits:
                 print ("Too many hits for target", search_term)
