@@ -111,18 +111,20 @@ def show_pathway_hits(request, ):
     pathways = [urlparse.unquote(pathway) 
         for pathway in pathways]
 
-    thresholds = [threshold]
+    # thresholds = [threshold]
     pathway_hits = query_pathway_hits(pathways, 
         threshold=threshold, filter_pa_pi=filter_pa_pi,
-        organism=organism, limit=None)
+        organism=organism, 
+        limit=100,
+        )
 
     request.session["pathways"] = pathways
-    request.session["thresholds"] = thresholds
+    request.session["threshold"] = threshold
     request.session["pathway_hits"] = pathway_hits
 
     context = {
         "pathways": pathways,
-        "thresholds": thresholds,
+        "threshold": threshold,
         "pathway_hits": pathway_hits,
         "num_hits": len(pathway_hits)
     }
@@ -165,18 +167,19 @@ def show_reaction_hits(request, ):
     reactions = [urlparse.unquote(reaction) 
         for reaction in reactions]
 
-    thresholds = [threshold]
+    # thresholds = [threshold]
     reaction_hits = query_reaction_hits(reactions, 
         threshold=threshold, filter_pa_pi=filter_pa_pi,
-        organism=organism)
+        organism=organism,
+        limit=100)
 
     request.session["reactions"] = reactions
-    request.session["thresholds"] = thresholds
+    request.session["threshold"] = threshold
     request.session["reaction_hits"] = reaction_hits
 
     context = {
         "reactions": reactions,
-        "thresholds": thresholds,
+        "threshold": threshold,
         "reaction_hits": reaction_hits,
         "num_hits": len(reaction_hits)
     }
@@ -184,12 +187,12 @@ def show_reaction_hits(request, ):
     return render(request,
         "natural_products/reaction_hits.html", context)
 
-def pathway_enrichment(request):
+# def pathway_enrichment(request):
 
-    context = {}
+#     context = {}
 
-    return render(request,
-        "natural_products/pathway_enrichment.html", context)
+#     return render(request,
+#         "natural_products/pathway_enrichment.html", context)
 
 def all_compounds(request):
 

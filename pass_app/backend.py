@@ -14,90 +14,154 @@ from pymongo import MongoClient
 import numpy as np
 import pandas as pd
 
+import shutil
+
 from rdkit.Chem.PandasTools import LoadSDF
 
 from utils.email_utils import send_mail
-from utils.mongodb_utils import connect_to_mongodb
-from utils.pass_utils import remove_invalid_characters, parse_pass_spectra
+# from utils.mongodb_utils import connect_to_mongodb
+from utils.pass_utils import (remove_invalid_characters, parse_pass_spectra, 
+    get_all_targets, determine_targets)
+from utils.enrichment_utils import perform_enrichment_analysis
+from utils.io import process_input_file, write_json
+from utils.genenames_utils import targets_to_uniprot_ids
+from utils.mysql_utils import get_uniprots_for_targets
+# from utils.rdkit_utils import LoadSDF
 
-# def remove_invalid_characters(s):
-#     return s.replace(".", "")
+# def write_PASS_hits_to_db(
+#     pass_file,
+#     collection="PASS_hits"):
+#     assert isinstance(pass_file, str)
+#     assert pass_file.endswith(".sdf")
+#     print ("reading PASS hits from", pass_file,
+#         "and extracting activity data")
 
-# def parse_pass_spectra(s, ):
-#     split = s.split()
-#     pa = split[0]
-#     pi = split[1]
-#     activity = " ".join(split[2:])
-#     return {activity: {"Pa": pa, "Pi": pi}}
+#     pass_activities = LoadSDF(pass_file, 
+#         smilesName="SMILES", molColName=None)
 
-def write_PASS_hits_to_db(
-    pass_file,
-    collection="PASS_hits"):
-    assert isinstance(pass_file, str)
-    assert pass_file.endswith(".sdf")
-    print ("reading PASS hits from", pass_file,
-        "and extracting activity data")
+#     db = connect_to_mongodb()
 
-    pass_activities = LoadSDF(pass_file, 
-        smilesName="SMILES", molColName=None)
+#     print ("writing PASS hits to collection:", collection)
 
-    db = connect_to_mongodb()
+#     hit_collection = db[collection]
 
-    print ("writing PASS hits to collection:", collection)
+#     records = []
 
-    hit_collection = db[collection]
+#     print ("determining hits")
 
-    records = []
-
-    print ("determining hits")
-
-    for _, row in pass_activities.iterrows():
+#     for _, row in pass_activities.iterrows():
         
-        entry = {}
-        for col in row.index:
-            if pd.isnull(row[col]):
-                continue
-            if col == "PASS_ACTIVITY_SPECTRUM":
-                value = list(
-                    map(parse_pass_spectra, 
-                        map(remove_invalid_characters,
-                            row[col].split("\n"))))
-            else:
-                value = row[col]
-            entry.update({col: value})
-        entry.update({"time": str(datetime.now())})
-        records.append(entry)
+#         entry = {}
+#         for col in row.index:
+#             if pd.isnull(row[col]):
+#                 continue
+#             if col == "PASS_ACTIVITY_SPECTRUM":
+#                 value = list(
+#                     map(parse_pass_spectra, 
+#                         map(remove_invalid_characters,
+#                             row[col].split("\n"))))
+#             else:
+#                 value = row[col]
+#             entry.update({col: value})
+#         entry.update({"time": str(datetime.now())})
+#         records.append(entry)
 
-    print ("inserting", len(records), "records")
-    hit_collection.insert_many(records)
+#     print ("inserting", len(records), "records")
+#     hit_collection.insert_many(records)
 
-    db.client.close()
+#     db.client.close()
+
+def perform_enrichment_on_PASS_file(
+    pass_out_file, 
+    output_dir,
+    threshold=500,
+    ):
+
+    output_dir = os.path.join(output_dir, "enrichment")
+    os.makedirs(output_dir, exist_ok=True)
+
+    print ("perfoming enrichment analysis on predicted PASS file",
+        "to directory", output_dir)
+
+    # determine active targets from PASS-predicted SDF file
+    active_targets = determine_targets(pass_out_file, threshold=threshold)
+    active_targets_filename = os.path.join(output_dir,
+        f"active_targets_threshold={threshold}.json")
+    write_json(active_targets, active_targets_filename)
+
+    unique_target_names = {target 
+        for compound, targets in active_targets.items()
+        for target in targets}
+    
+    # unique_uniprots = targets_to_uniprot_ids(unique_target_names)
+    targets_to_uniprot = get_uniprots_for_targets(unique_target_names)
+    print (targets_to_uniprot)
+    targets_to_uniprot_filename = os.path.join(output_dir, "targets_to_uniprot.csv")
+    print ("writing targets to uniprot to", targets_to_uniprot_filename)
+    targets_to_uniprot = pd.DataFrame(targets_to_uniprot, 
+        columns=["target", "uniprot_ACC", "association_score"])
+    targets_to_uniprot.to_csv(targets_to_uniprot_filename)
+
+    unique_uniprots = set(targets_to_uniprot["uniprot_ACC"])
+    unique_uniprots_filename = os.path.join(output_dir, 
+        "unique_uniprot_ACCs.txt")
+    print ("writing unique uniprots to", unique_uniprots_filename)
+    with open(unique_uniprots_filename, "w") as f:
+        f.write("\n".join(unique_uniprots))
+
+    # declare filenames to output enrichment
+    output_csv_filename = os.path.join(output_dir, 
+        "enrichment.csv")
+    found_filename = os.path.join(output_dir,
+        "found.txt")
+    not_found_filename = os.path.join(output_dir,
+        "not_found.txt")
+    pdf_filename = os.path.join(output_dir,
+        "enrichment_summary.pdf")
+
+    perform_enrichment_analysis(
+        unique_uniprots_filename,
+        output_csv_filename,
+        found_filename,
+        not_found_filename,
+        pdf_filename)
+
+
+    return 0
+
+def determine_identifier(receiver_address, input_file):
+    if not isinstance(input_file, str):
+        assert hasattr(input_file, "name")
+        input_file = input_file.name 
+    # assert smiles_file.endswith(".smi")
+    return "{}-{}-{}".format(receiver_address, 
+        os.path.splitext(os.path.basename(input_file))[0])
+
 
 def pass_predict(
-    user_name,
+    username,
     user_email,
-    sdf_file, 
-    output_dir=os.path.join("pass_app", "static", "pass_app",
-        "files")):
+    input_file, 
+    compression="zip",
+    static_dir="pass_app/static",
+    output_dir="files",
+    archive_dir=os.path.join("hit_optimisation",
+        "static", "hit_optimisation", "archives"),
+    threshold=500,
+    enrichment=True):
 
-    output_dir = os.path.join(output_dir, user_email)
+    identifier = determine_identifier(user_email, input_file)
+
+    output_dir = os.path.join(static_dir, output_dir, identifier)
     os.makedirs(output_dir, exist_ok=True)
 
-    filename = sdf_file.name
-    assert filename.endswith(".sdf")
-    filename = os.path.splitext(filename)[0]
+    input_file = process_input_file(input_file, 
+        desired_format=".sdf", output_dir=output_dir)
 
-    output_dir = os.path.join(output_dir, filename)
-    os.makedirs(output_dir, exist_ok=True)
+    base_name, extension = os.path.splitext(input_file)
+    assert extension == ".sdf"
 
-    input_file = os.path.join(output_dir,
-        filename + "-in.sdf")
-    with open(input_file, "wb+") as out_file:
-        for chunk in sdf_file.chunks():
-            out_file.write(chunk)
-
-    pass_out_file = os.path.join(output_dir, 
-        filename +"-PASS-out.sdf")
+    pass_out_file = base_name +"-PASS-out.sdf"
 
     cmd = "PASS2019toSDF.exe {} {}".format(input_file, pass_out_file)
     print ("executing command:", cmd)
@@ -106,24 +170,34 @@ def pass_predict(
     assert ret == 0
     assert os.path.exists(pass_out_file)
 
-    # write PASS spectra to database 
-    # write_PASS_hits_to_db(pass_out_file) %TODO
+    # add enrichment to output directory
+    if enrichment:
+        ret = perform_enrichment_on_PASS_file(pass_out_file,
+            output_dir=output_dir, threshold=threshold)
 
-    print ("removing", input_file)
-    os.remove(input_file)
+    # build zip file containing all targets / run settings / run output
+    archive_filename = os.path.join(archive_dir,
+        identifier)
+    print ("writing archive to", 
+        archive_filename + "." + compression)
 
-    # return smart_str(pass_out_file)
+    shutil.make_archive(archive_filename, 
+        compression, output_dir)
 
-    # send mail containing results
-
-    send_mail(user_name, user_email, pass_out_file)
+    send_mail(username,
+        user_email,
+        attach_file_name=f"{archive_filename}.{compression}")
+       
 
     return 0
 
 if __name__ == "__main__":
     name = "david"
     email = "davemcdonald93@gmail.com"
-    sdf_file = "/home/david/Desktop/test.sdf"
+    input_file = "/home/david/Desktop/test-PASS-out.sdf"
+
+    # determine_targets(input_file)
+    perform_enrichment_on_PASS_file(input_file, output_dir="/home/david/Desktop", threshold=0)
 
 
 

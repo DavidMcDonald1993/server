@@ -18,6 +18,7 @@ from utils.io import load_json, write_json, write_smiles
 from utils.mongodb_utils import connect_to_mongodb
 from utils.mysql_utils import mysql_query, mysql_create_table, mysql_insert_many, connect_to_mysqldb
 from utils.pass_utils import get_categories, get_all_targets, get_targets_for_category, get_all_compounds
+from utils.enrichment_utils import perform_enrichment_analysis
 
 def query_target_hits(
     targets, 
@@ -84,8 +85,15 @@ def query_pathway_hits(pathway_names,
         assert isinstance(pathway_names, str)
         pathway_names = [pathway_names]
 
+    if not isinstance(thresholds, list):
+        assert isinstance(thresholds, int)
+        thresholds = [thresholds]
+    # if len(thresholds) == 1:
+    #     thresholds = thresholds * len(pathway_names)
+
      # initial query
     pathway_name = pathway_names[0] 
+    # threshold = thresholds[0]
 
     # query = f'''
     #     SELECT DISTINCT c.compound_id, c.coconut_id, c.name, c.formula,
@@ -170,10 +178,13 @@ def query_pathway_hits(pathway_names,
             {f"LIMIT {limit}" if limit is not None else ""}
         '''
 
-    hits = mysql_query(query, existing_conn=existing_conn)
-    hits = [hit[0] for hit in hits]
+    compound_hits = mysql_query(query, existing_conn=existing_conn)
+    compound_hits = [hit[0] for hit in compound_hits]
+    num_compound_hits = len(compound_hits)
 
-    print ("number of unique compounds that hit all pathways:", len(hits))
+    print ("number of unique compounds that hit all pathways:",  num_compound_hits)
+    if num_compound_hits == 0:
+        return []
 
     # records = []
     # for pathway_name in pathway_names:
@@ -182,7 +193,7 @@ def query_pathway_hits(pathway_names,
         SELECT DISTINCT c.coconut_id, c.name, c.formula,
             {f"t.target_name, u.acc, a.Pa, a.Pi,"
             if include_targets else ""}
-            p.pathway_name, p.organism
+            up.evidence, p.pathway_name, p.organism, p.pathway_url
         FROM compounds AS c, activities AS a,
             targets_to_uniprot AS tu,
             {"targets AS t, uniprot AS u," 
@@ -195,11 +206,12 @@ def query_pathway_hits(pathway_names,
             if include_targets else ""}
         AND tu.uniprot_id=up.uniprot_id
         AND up.pathway_id=p.pathway_id
-        AND p.pathway_name in {tuple(pathway_names)}
+        {f"AND p.pathway_name in {tuple(pathway_names)}" if len(pathway_names)>1
+            else f'AND p.pathway_name="{pathway_names[0]}"'}
         {f'AND p.organism="{organism}"' if organism is not None else ""}
         {f"AND a.Pa>{threshold}" if threshold>0 else ""}
         {"AND a.Pa>a.Pi" if filter_pa_pi else ""}
-        AND c.compound_id IN {tuple(hits)}
+        AND c.compound_id IN {tuple(compound_hits)}
     ''' 
 
         # records.append((pathway_name, mysql_query(query, existing_conn=existing_conn)))
@@ -274,23 +286,26 @@ def query_reaction_hits(reaction_names,
             AND a.target_id=tu.target_id
             AND tu.uniprot_id=ur.uniprot_id
             AND ur.reaction_id=r.reaction_id
-            AND r.reaction_name="{reation_name}"
+            AND r.reaction_name="{reaction_name}"
             {f'AND r.organism="{organism}"' if organism is not None else ""}
             {f"AND a.Pa>{threshold}" if threshold>0 else ""}
             {"AND a.Pa>a.Pi" if filter_pa_pi else ""}
             {f"LIMIT {limit}" if limit is not None else ""}
         '''
 
-    hits = mysql_query(query, existing_conn=existing_conn)
-    hits = [hit[0] for hit in hits]
+    compound_hits = mysql_query(query, existing_conn=existing_conn)
+    compound_hits = [hit[0] for hit in compound_hits]
+    num_compound_hits = len(compound_hits)
 
-    print ("number of unique compounds that hit all reactions:", len(hits))
+    print ("number of unique compounds that hit all reactions:",  num_compound_hits)
+    if num_compound_hits == 0:
+        return []
 
     query = f'''
         SELECT DISTINCT c.coconut_id, c.name, c.formula,
             {f"t.target_name, u.acc, a.Pa, a.Pi,"
             if include_targets else ""}
-            r.reaction_name, r.organism
+            ur.evidence, r.reaction_name, r.organism, r.reaction_url
         FROM compounds AS c, activities AS a,
             targets_to_uniprot AS tu,
             {"targets AS t, uniprot AS u," 
@@ -303,11 +318,12 @@ def query_reaction_hits(reaction_names,
             if include_targets else ""}
         AND tu.uniprot_id=ur.uniprot_id
         AND ur.reaction_id=r.reaction_id
-        AND r.reaction_name in {tuple(reaction_names)}
+        {f"AND r.reaction_name in {tuple(reaction_names)}" if len(reaction_names)>1
+            else f'AND r.reaction_name="{reaction_names[0]}"'}
         {f'AND r.organism="{organism}"' if organism is not None else ""}
         {f"AND a.Pa>{threshold}" if threshold>0 else ""}
         {"AND a.Pa>a.Pi" if filter_pa_pi else ""}
-        AND c.compound_id IN {tuple(hits)}
+        AND c.compound_id IN {tuple(compound_hits)}
     ''' 
 
     records = mysql_query(query, existing_conn=existing_conn)
@@ -448,7 +464,6 @@ def write_records_to_file(
     ):
 
     output_dir = os.path.join(static_dir, output_dir, username)
-
     os.makedirs(output_dir, exist_ok=True)
 
     columns = ["coconut_id",  "molecule_name", "molecular_formula", ] #"smiles", ]

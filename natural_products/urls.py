@@ -29,9 +29,7 @@ urlpatterns = [
     path("compounds/CNP<str:compound_id>",
         views.compound_info, name="compound_info"),
 
-
-    path("pathway_enrichment", 
-        views.pathway_enrichment, name="enrichment")
-
+    # path("pathway_enrichment", 
+    #     views.pathway_enrichment, name="enrichment")
 
 ]

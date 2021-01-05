@@ -1,8 +1,22 @@
+import sys
+import os.path
+sys.path.insert(1, 
+    os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
+
 import os
 
 import json 
 
 import pandas as pd
+
+import shutil
+
+from standardiser import standardise
+
+from rdkit.Chem.PandasTools import LoadSDF
+from rdkit import Chem
+from rdkit.Chem.PandasTools import WriteSDF, AddMoleculeColumnToFrame
+
 
 def load_json(json_filename):
     print ("loading json from", json_filename)
@@ -28,3 +42,105 @@ def read_smiles(smiles_filename):
         names=["SMILES", "compound"],
         sep="\t", header=None)
     return smiles_df.set_index("compound", drop=True)
+
+
+def standardise_smi(smi, return_smiles=False):
+    mol = Chem.MolFromSmiles(smi)
+    if mol is None:
+        if return_smiles:
+            return smi 
+        else:
+            return mol
+    try:
+        mol = standardise.run(mol)
+    except standardise.StandardiseException as e:
+        print (e)
+        pass
+    if return_smiles:
+        return Chem.MolToSmiles(mol)
+    else:
+        return mol
+
+
+
+
+def smiles_to_sdf(
+    smiles_filename, 
+    sdf_filename):
+    print ("converting smiles from", smiles_filename, 
+        "to SDF file", sdf_filename)
+    smiles_df = read_smiles(smiles_filename)
+    smiles_df["Molecule"] = smiles_df["SMILES"].map(standardise_smi)
+    smiles_df["clean_SMILES"] = smiles_df["Molecule"].map(Chem.MolToSmiles, na_action="ignore")
+    smiles_df = smiles_df.loc[~pd.isnull(smiles_df["Molecule"])] # drop missing values
+    # AddMoleculeColumnToFrame(smiles_df, 'SMILES', 'Molecule')
+    WriteSDF(smiles_df, sdf_filename, molColName="Molecule",
+        idName="RowID", properties=list(smiles_df.columns))
+
+def process_input_file(
+    input_file, 
+    desired_format,
+    output_dir, 
+    valid_input_file_types=(".smi", ".sdf")):
+    '''process input file from client'''
+    assert desired_format in valid_input_file_types 
+    if not isinstance(input_file, str):
+        assert hasattr(input, "name")
+        print ("input file has been recieved from client -- downloading")
+        input_file_type = os.path.splitext(input_file.name)[1]
+        assert input_file_type in valid_input_file_types
+        # write compounds to server local directory
+        temp_file = os.path.join(output_dir,
+            input_file.name)
+        with open(temp_file, "wb+") as out_file:
+            for chunk in input_file.chunks():
+                out_file.write(chunk)
+    else:
+        print ("input file is a local file")
+        input_file_type = os.path.splitext(input_file)[1]
+        assert input_file_type in valid_input_file_types
+        temp_file = os.path.join(output_dir,
+            os.path.basename(input_file)) # no uploaded file
+        shutil.copyfile(input_file, temp_file)
+    
+    temp_file_name, _ = os.path.splitext(temp_file)
+
+    # convert if necessary
+    if input_file_type != desired_format:
+        if input_file_type == ".sdf" and desired_format == ".smi":
+            # convert SDF to smiles
+            print ("converting SDF to SMILES")
+            print ("SDF filename:", temp_file)
+            sdf_df = LoadSDF(temp_file, smilesName="SMILES")
+            # write smiles
+            smiles = [(row["ID"], row["SMILES"])
+                for _, row in sdf_df.iterrows()]
+            # write smiles to temp_file
+            temp_file = temp_file_name + desired_format
+            write_smiles(smiles, temp_file)
+        elif input_file_type == ".smi" and desired_format == ".sdf":
+            # convert from SMILES to SDF
+            print ("converting SMILES to SDF")
+            smiles_filename = temp_file
+            print ("SMILES filename:", smiles_filename)
+            temp_file = temp_file_name + desired_format
+            smiles_to_sdf(smiles_filename, temp_file)
+        else:
+            raise NotImplementedError #conversion not yet implemented
+    else:
+        print ("no conversion necesary")
+
+    
+    assert temp_file.endswith(desired_format)
+    
+    return temp_file
+
+if __name__ == "__main__":
+    
+    input_file = "temp.smi"
+    desired_format = ".sdf"
+    output_dir = "/home/david/Desktop"
+    
+    processed_file = process_input_file(input_file, desired_format, output_dir)
+
+    print (processed_file)

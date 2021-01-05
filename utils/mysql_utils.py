@@ -184,69 +184,70 @@ def create_tables():
 
     # mysql_create_table(create_uniprot_table)
 
-    # create_target_uniprot_link_table = '''
-    # CREATE TABLE targets_to_uniprot(
-    #     target_id SMALLINT, 
-    #     uniprot_id MEDIUMINT,
-    #     PRIMARY KEY(target_id, id),
-    #     FOREIGN KEY(target_id) REFERENCES targets(target_id),
-    #     FOREIGN KEY(uniprot_id) REFERENCES uniprot(uniprot_id)
-    # )
+    create_target_uniprot_link_table = '''
+    CREATE TABLE targets_to_uniprot(
+        target_id SMALLINT, 
+        uniprot_id MEDIUMINT,
+        score FLOAT,
+        PRIMARY KEY(target_id, uniprot_id),
+        FOREIGN KEY(target_id) REFERENCES targets(target_id),
+        FOREIGN KEY(uniprot_id) REFERENCES uniprot(uniprot_id)
+    )
+    '''
+
+    mysql_create_table(create_target_uniprot_link_table)
+
+    # create_pathway_table = '''
+    #     CREATE TABLE pathway (
+    #         pathway_id SMALLINT NOT NULL AUTO_INCREMENT,
+    #         reactome_identifier VARCHAR(255) NOT NULL UNIQUE,
+    #         pathway_name VARCHAR(255) NOT NULL,
+    #         organism VARCHAR(255) NOT NULL,
+    #         pathway_url VARCHAR(255),
+    #         PRIMARY KEY(pathway_id)
+    #     )
     # '''
 
-    # mysql_create_table(create_target_uniprot_link_table)
+    # mysql_create_table(create_pathway_table)
 
-    create_pathway_table = '''
-        CREATE TABLE pathway (
-            pathway_id SMALLINT NOT NULL AUTO_INCREMENT,
-            reactome_identifier VARCHAR(255) NOT NULL UNIQUE,
-            pathway_name VARCHAR(255) NOT NULL,
-            organism VARCHAR(255) NOT NULL,
-            pathway_url VARCHAR(255),
-            PRIMARY KEY(pathway_id)
-        )
-    '''
+    # create_uniprot_to_pathway_table = '''
+    #     CREATE TABLE uniprot_to_pathway (
+    #         uniprot_id MEDIUMINT NOT NULL,
+    #         pathway_id SMALLINT NOT NULL,
+    #         evidence VARCHAR(25),
+    #         PRIMARY KEY(uniprot_id, pathway_id),
+    #         FOREIGN KEY(uniprot_id) REFERENCES uniprot(uniprot_id),
+    #         FOREIGN KEY(pathway_id) REFERENCES pathway(pathway_id)
+    #     )
+    # '''
 
-    mysql_create_table(create_pathway_table)
+    # mysql_create_table(create_uniprot_to_pathway_table)
 
-    create_uniprot_to_pathway_table = '''
-        CREATE TABLE uniprot_to_pathway (
-            uniprot_id MEDIUMINT NOT NULL,
-            pathway_id SMALLINT NOT NULL,
-            evidence VARCHAR(25),
-            PRIMARY KEY(uniprot_id, pathway_id),
-            FOREIGN KEY(uniprot_id) REFERENCES uniprot(uniprot_id),
-            FOREIGN KEY(pathway_id) REFERENCES pathway(pathway_id)
-        )
-    '''
+    # create_reaction_table = '''
+    #     CREATE TABLE reaction (
+    #         reaction_id MEDIUMINT NOT NULL AUTO_INCREMENT,
+    #         reactome_identifier VARCHAR(255) NOT NULL UNIQUE,
+    #         reaction_name VARCHAR(255) NOT NULL,
+    #         organism VARCHAR(255) NOT NULL,
+    #         reaction_url VARCHAR(255),
+    #         PRIMARY KEY(reaction_id)
+    #     )
+    # '''
 
-    mysql_create_table(create_uniprot_to_pathway_table)
+    # mysql_create_table(create_reaction_table)
 
-    create_reaction_table = '''
-        CREATE TABLE reaction (
-            reaction_id MEDIUMINT NOT NULL AUTO_INCREMENT,
-            reactome_identifier VARCHAR(255) NOT NULL UNIQUE,
-            reaction_name VARCHAR(255) NOT NULL,
-            organism VARCHAR(255) NOT NULL,
-            reaction_url VARCHAR(255),
-            PRIMARY KEY(reaction_id)
-        )
-    '''
+    # create_uniprot_to_reaction_table = '''
+    #     CREATE TABLE uniprot_to_reaction (
+    #         uniprot_id MEDIUMINT NOT NULL,
+    #         reaction_id MEDIUMINT NOT NULL,
+    #         evidence VARCHAR(25),
+    #         PRIMARY KEY(uniprot_id, reaction_id),
+    #         FOREIGN KEY(uniprot_id) REFERENCES uniprot(uniprot_id),
+    #         FOREIGN KEY(reaction_id) REFERENCES reaction(reaction_id)
+    #     )
+    # '''
 
-    mysql_create_table(create_reaction_table)
-
-    create_uniprot_to_reaction_table = '''
-        CREATE TABLE uniprot_to_reaction (
-            uniprot_id MEDIUMINT NOT NULL,
-            reaction_id MEDIUMINT NOT NULL,
-            evidence VARCHAR(25),
-            PRIMARY KEY(uniprot_id, reaction_id),
-            FOREIGN KEY(uniprot_id) REFERENCES uniprot(uniprot_id),
-            FOREIGN KEY(reaction_id) REFERENCES reaction(reaction_id)
-        )
-    '''
-
-    mysql_create_table(create_uniprot_to_reaction_table)
+    # mysql_create_table(create_uniprot_to_reaction_table)
 
     return 0
 
@@ -263,6 +264,10 @@ def get_all_targets_and_categories():
 
 
 def migrate_SDF_to_mysql(sdf_file):
+    '''
+        read in PASS predictions from SDF file and add to SQL database
+        only valid for GUI PASS version
+    '''
     print ("reading SDF file from", sdf_file, "and inserting into SQL database")
 
     compound_to_id = get_all_compounds()
@@ -369,6 +374,7 @@ def add_clean_smiles():
     mysql_insert_many(insert_standard_smiles_sql, rows)
 
 def add_uniprot_accs(uniprot_accs, existing_conn=None):
+    print ("inserting", len(uniprot_accs), "UNIPROT ACCs")
     insert_uniprots_sql = '''
         INSERT INTO uniprot (acc) VALUES (%s)
             ON DUPLICATE KEY UPDATE acc=acc
@@ -379,84 +385,98 @@ def add_uniprot_accs(uniprot_accs, existing_conn=None):
 
     return 0
 
-def add_target_to_uniprot():
+def add_target_to_uniprot(chunksize=50):
     from utils.genenames_utils import search_for_targets
 
     '''
         MECHANISMS is (too?) general
-
+        
         COMPLETED
-        GENE EXPRESSION
-        ANTITARGETS
         EFFECTS
+        ANTITARGETS
+        GENE EXPRESSIONS
+        TRANSPORTERS
+        TOXICITY
+        METABOLISM
     '''
 
-    get_target_names_sql = '''
-        SELECT t.target_name
-        FROM targets AS t
-        WHERE t.target_id NOT IN (SELECT target_id FROM targets_to_uniprot)
+    # get valid targets
+    get_target_names_sql = f'''
+        SELECT t.target_id, t.target_name
+        FROM targets AS t, category_members as cm,
+        categories as c
+        WHERE t.target_id NOT IN (
+            SELECT DISTINCT target_id FROM targets_to_uniprot)
+        AND t.target_id=cm.target_id 
+        AND cm.category_id=c.category_id
+        AND c.category_name="METABOLISM"
     '''
     targets = mysql_query(get_target_names_sql)
+    target_map = {t:i for i, t in targets}
 
-    targets_to_uniprots = search_for_targets(
-        [target[0] for target in targets],
-        key="uniprot_ids")
+    n_targets = len(targets)
+    n_chunks = n_targets // chunksize + 1
+    assert n_chunks * chunksize >= n_targets
 
-    n_targets = len(targets_to_uniprots)
+    for chunk_no in range(n_chunks):
 
-    unique_uniprots = {uniprot 
-        for target in targets_to_uniprots
-        for uniprot in targets_to_uniprots[target]}
-    
-    # insert_uniprots_sql = '''
-    #     INSERT INTO uniprot (acc) VALUES (%s)
-    #         ON DUPLICATE KEY UPDATE acc=acc
-    # '''
+        targets_to_uniprots = search_for_targets(
+            [target_name for target_id, target_name in targets[chunk_no*chunksize:(chunk_no+1)*chunksize]],
+            key="uniprot_ids")
 
-    # mysql_insert_many(insert_uniprots_sql, 
-    #     ((unique_uniprot,) for unique_uniprot in unique_uniprots))
+        unique_uniprots = {uniprot
+            for target in targets_to_uniprots
+            for uniprot, score in targets_to_uniprots[target]}
 
-    add_uniprot_accs(unique_uniprots)
+        add_uniprot_accs(unique_uniprots)
 
-    insert_targets_to_uniprot_sql = '''
-        INSERT INTO targets_to_uniprot (target_id, id)
-            VALUES (%s, %s) ON DUPLICATE KEY UPDATE
-            target_id=target_id, id=id
+        # get all uniprots for mapping (reduce queries)
+        get_all_uniprots_sql = '''
+            SELECT uniprot_id, acc
+            from uniprot
+        '''
+        uniprot_map = mysql_query(get_all_uniprots_sql)
+        uniprot_map = {u: i for i, u in uniprot_map}
+
+        insert_targets_to_uniprot_sql = '''
+            INSERT INTO targets_to_uniprot (target_id, uniprot_id, score)
+                VALUES (%s, %s, %s) ON DUPLICATE KEY UPDATE
+                target_id=target_id, uniprot_id=uniprot_id, score=score
+        '''
+
+        rows = []
+
+        for i, (target_name, uniprots) in \
+            enumerate(targets_to_uniprots.items()):
+
+            target_rows = [
+                (target_map[target_name], uniprot_map[uniprot], score) # target and uniprot must be in database
+                    for uniprot, score in uniprots
+            ]
+            assert len(target_rows) == len(uniprots)
+            rows.extend(target_rows)
+
+            print ("completed target", i+1, "/", len(targets_to_uniprots))
+
+        mysql_insert_many(insert_targets_to_uniprot_sql, rows)
+        print ("completed chunk no", chunk_no+1, "/", n_chunks)
+
+def get_uniprots_for_targets(targets, existing_conn=None):
+    if not isinstance(targets, tuple):
+        assert isinstance(targets, list) or isinstance(targets, set)
+        targets = tuple(targets)
+    print ("querying mySQL database for UNIPROTS associated with",
+        len(targets), "targets")
+    query = f'''
+        SELECT DISTINCT t.target_name, u.acc, tu.score
+        FROM targets as t, targets_to_uniprot as tu, uniprot as u
+        WHERE t.target_name IN {targets}
+        AND t.target_id=tu.target_id
+        AND tu.uniprot_id=u.uniprot_id
     '''
+    return mysql_query(query, existing_conn=existing_conn)
 
-
-    rows = []
-
-    for i, (target_name, uniprots) in \
-        enumerate(targets_to_uniprots.items()):
-
-        uniprots = tuple(uniprots)
-
-        if len(uniprots) > 1:
-            
-            query = f'''
-                SELECT t.target_id, u.id
-                FROM targets as t, uniprot as u
-                WHERE t.target_name="{target_name}"
-                AND u.acc IN {uniprots}
-            '''
-        else:
-             query = f'''
-                SELECT t.target_id, u.id
-                FROM targets as t, uniprot as u
-                WHERE t.target_name="{target_name}"
-                AND u.acc="{uniprots[0]}"
-            '''
-
-        target_rows = mysql_query(query)
-        assert len(target_rows) == len(uniprots)
-        rows.extend(target_rows)
-
-        print ("completed target", i+1, "/", n_targets)
-
-    mysql_insert_many(insert_targets_to_uniprot_sql, rows)
-
-def get_uniprots_for_compounds(
+def get_uniprots_for_compound(
     coconut_id, 
     threshold=0,
     filter_pa_pi=True):
@@ -537,7 +557,7 @@ def add_uniprot_to_pathways():
 
     conn = connect_to_mysqldb()
 
-    unique_uniprots = set(uniprot_to_pathways["acc"])
+    unique_uniprots = set(uniprot_to_pathways["acc"]) # add all associated uniprots to database
     add_uniprot_accs(unique_uniprots, existing_conn=conn)
 
     uniprot_query = '''
@@ -585,8 +605,6 @@ def add_uniprot_to_reactions():
     uniprot_to_reaction = pd.read_csv(
         "/home/david/Desktop/uniprot_to_reaction.csv", 
         index_col=0)
-
-
 
     conn = connect_to_mysqldb()
 
@@ -662,7 +680,9 @@ def get_all_reactions(
 
 
 if __name__ == "__main__":
-    pass
+    # create_tables()
+    add_target_to_uniprot()
+    # pass
 
     # pathway_name = "Urea cycle"
     # reaction_name = "Expression of ABCA1"

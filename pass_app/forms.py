@@ -1,5 +1,6 @@
 from django import forms 
 
 class UploadFileForm(forms.Form):
-    file_field = forms.FileField(label="SDF_file:",
+    file_field = forms.FileField(
+        label="Compounds (SDF or SMILES format):",
         max_length=100)

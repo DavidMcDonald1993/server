@@ -16,6 +16,7 @@ import scoria
 
 import shutil
 
+from utils.io import process_input_file
 from utils.email_utils import send_mail
 
 class ChainSelect(Select):
@@ -128,21 +129,22 @@ def get_bounding_box_size(mol, allowance=2.):
     bounding_box = mol.get_bounding_box()
     return np.ceil(np.abs(bounding_box[0] - bounding_box[1])) + allowance 
 
-def process_smiles(smiles_file, output_dir):
-    '''process smiles file from client'''
-    if not isinstance(smiles_file, str):
-        assert smiles_file.name.endswith(".smi")
-        # write compounds to server local directory
-        temp_smiles_file = os.path.join(output_dir,
-            smiles_file.name)
-        with open(temp_smiles_file, "wb+") as out_file:
-            for chunk in smiles_file.chunks():
-                out_file.write(chunk)
-    else:
-        temp_smiles_file = os.path.join(output_dir,
-            os.path.basename(smiles_file)) # no uploaded file
-        shutil.copyfile(smiles_file, temp_smiles_file)
-    return temp_smiles_file
+# def process_smiles(smiles_file, output_dir):
+#     '''process smiles file from client'''
+#     if not isinstance(smiles_file, str):
+#         assert hasattr(smiles_file, "name")
+#         assert smiles_file.name.endswith(".smi")
+#         # write compounds to server local directory
+#         temp_smiles_file = os.path.join(output_dir,
+#             smiles_file.name)
+#         with open(temp_smiles_file, "wb+") as out_file:
+#             for chunk in smiles_file.chunks():
+#                 out_file.write(chunk)
+#     else:
+#         temp_smiles_file = os.path.join(output_dir,
+#             os.path.basename(smiles_file)) # no uploaded file
+#         shutil.copyfile(smiles_file, temp_smiles_file)
+#     return temp_smiles_file
 
 def load_base_settings(
     settings_file=os.path.join("hit_optimisation", "static",
@@ -208,7 +210,7 @@ def hit_optimisation(
     receiver_name, 
     receiver_address,
     pdb_id, 
-    smiles_file, 
+    input_file, 
     chain,
     user_settings={},
     compression="zip",
@@ -221,7 +223,7 @@ def hit_optimisation(
 
     assert len(pdb_id) == 4 
 
-    identifier = determine_identifier(receiver_address, pdb_id, smiles_file)
+    identifier = determine_identifier(receiver_address, pdb_id, input_file)
 
     # process output directory
     output_dir = os.path.join(output_dir,
@@ -230,7 +232,8 @@ def hit_optimisation(
     print ("outputting to directory", output_dir)
 
     # download file if file is a GET request
-    input_smiles_file = process_smiles(smiles_file, output_dir)
+    input_smiles_file = process_input_file(input_file, 
+        desired_format=".smi", output_dir=output_dir)
 
     print ("performing hit optimisation for target", pdb_id,
         "with smiles file", input_smiles_file, )
@@ -281,7 +284,7 @@ def hit_optimisation(
 
     send_mail(receiver_name,
         receiver_address,
-        attach_file_name=archive_filename + ".zip")
+        attach_file_name=f"{archive_filename}.{compression}")
 
     return 0
 

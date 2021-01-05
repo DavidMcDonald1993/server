@@ -13,7 +13,7 @@ from pass_app.backend import pass_predict
 
 import multiprocessing as mp
 
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, logout
 
 def index(request):
     context = {}
@@ -36,6 +36,10 @@ def login_page(request):
         context = {}
         return render(request, "pass_app/login.html", context)
 
+def logout_page(request):
+    logout(request)
+    return HttpResponseRedirect("/")
+
 def login_unsuccessful(request):
     context = {}
     return render(request, 
@@ -43,7 +47,9 @@ def login_unsuccessful(request):
         context)
 
 def upload_file(request):
-    assert request.user.is_authenticated
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect("login_unsucessful")
+
     if request.method == 'POST':
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
@@ -92,4 +98,4 @@ def success(request):
         context)
 
 def favicon(request):
-    return HttpResponse("favicon")
+    return HttpResponse("/favicon")

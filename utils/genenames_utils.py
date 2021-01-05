@@ -17,11 +17,11 @@ except ImportError:
 
 
 def prepare_search_terms(search_terms, 
-    remove=set(["agonist", "inhibitor", "antibiotic", "inducer",
-        "antagonist", "expression", "enhancer", "treatment" ])):
+    remove=set(["protein", "agonist", "inhibitor", "antibiotic", "inducer",
+        "antagonist", "expression", "enhancer", "treatment", "substrate" ])):
     print ("removing terms", remove, "from search terms")
-    # search_terms = map(lambda s: 
-    #     re.sub(r"[^a-zA-Z0-9 ]+", "", s), search_terms) # remove non alpha-numeric characters
+    search_terms = map(lambda s: 
+        re.sub(r"[^a-zA-Z0-9 ]+", " ", s), search_terms) # remove non alpha-numeric characters
     pattern = "({}) *".format("|".join(remove))
     return map(lambda s: re.sub(r"{}".format(pattern), "", s),
         search_terms) # remove words in list
@@ -60,12 +60,13 @@ def search_for_hgnc_id(hgnc_id, key="symbol"):
         if key in result:
             return result[key]
         else:
+            print ("Key:", key, "not in result")
             return None
     else:
         print( 'Error detected: ' + response['status'])
         return None
 
-def search_for_targets(search_terms, key="symbol", max_hits=25):
+def search_for_targets(search_terms, key="symbol", max_hits=100):
     '''
     Use GeneNames REST service 
     returns name, symbol, uniprot
@@ -111,11 +112,13 @@ def search_for_targets(search_terms, key="symbol", max_hits=25):
             results = data['response']['docs']
             results = list( filter(
                 lambda r: r["score"]==max_score, results))
-            if len(results) > max_hits:
-                print ("Too many hits for target", target)
+            num_hits = len(results)
+            if num_hits > max_hits:
+                print ("Too many hits for target", search_term)
                 continue # too general
-            for result in results:
+            for i, result in enumerate(results):
                 hgnc_id = result["hgnc_id"]
+                score = result["score"]
 
                 # fetch info for hgnc id
                 data = search_for_hgnc_id(hgnc_id, key=key) # much more data is available
@@ -123,7 +126,10 @@ def search_for_targets(search_terms, key="symbol", max_hits=25):
                     if not isinstance(data, list):
                         data = [data]
                     for d in data:
-                        targets[search_term].add(d)
+                        targets[search_term].add((d, score))
+                print ("completed result", i+1, "/",
+                    num_hits, "for term no", term_no+1,
+                    "/", n_search_terms)
         else:
             print( 'Error detected: ' + response['status'])
         print ("completed term no", term_no+1, 
@@ -138,7 +144,7 @@ def targets_to_gene_name(targets, ):
     assert isinstance(targets, dict)
     return {name
         for target in targets
-        for name in targets[target]
+        for name, score in targets[target]
     }
 
 def targets_to_gene_symbol(targets, ):
@@ -147,24 +153,27 @@ def targets_to_gene_symbol(targets, ):
     assert isinstance(targets, dict)
     return {symbol
         for target in targets
-        for symbol in targets[target]
+        for symbol, score in targets[target]
     }
 
-def targets_to_uniprot_ids(targets, ):
-    if isinstance(targets, list):
+def targets_to_uniprot_ids(targets, ): # loses target->uniprot mapping
+    if isinstance(targets, list) or isinstance(targets, set):
         targets = search_for_targets(targets, key="uniprot_ids")
     assert isinstance(targets, dict)
     return {uniprot_id
         for target in targets
-        for uniprot_ids in targets[target]
-        for uniprot_id in uniprot_ids
+        for uniprot_id, score in targets[target]
     }
 
 if __name__ == "__main__":
 
-    # print (targets_to_gene_symbol(["Alpha 1a adrenoreceptor antagonist"], prepare=True ))
+    # print (targets_to_gene_symbol(
+    # ["Alpha 1a adrenoreceptor antagonist"], prepare=True ))
     # print (search_for_hgnc_id("HGNC:3018"))
 
-    search_terms = prepare_search_terms(["Erbb11 treatment receptor"])
+    targets = ["1,2-alpha-L-fucosidase inhibitor"]
 
+    search_terms = prepare_search_terms(targets)
     print (list(search_terms))
+
+    print (targets_to_gene_name(targets))

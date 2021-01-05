@@ -5,9 +5,11 @@ from . import views
 urlpatterns = [
     path('', views.login_page, 
         name='login_page'),
+    path("logout", views.logout_page,
+        name="logout"),
     path('login_unsuccessful', views.login_unsuccessful, 
         name='login_unsuccessful'),
-    path("favicon.ico", views.favicon, 
+    path("favicon", views.favicon, 
         name="favicon"),
     path('pass_app', views.index, 
         name='index'),

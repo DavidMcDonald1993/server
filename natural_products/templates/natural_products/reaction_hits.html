@@ -55,8 +55,10 @@
             <th>Target Uniprot ACC</th>
             <th>Pa</th>
             <th>Pi</th>
+            <th>Evidence</th>
             <th>Reaction Name</th>
             <th>Organism</th>
+            <th>Reaction URL</th>
             {% endfor %}
           </tr>
         </thead>
@@ -67,6 +69,9 @@
             {% if forloop.first %}
               <td> <a href="/natural_products/compounds/{{element}}"> 
                 {{ element }} </a> </td>
+            {% elif forloop.last %}
+              <td> <a href={{element}}> 
+                  {{ element }} </a> </td>
             {% else %}
               <td>{{ element }}</td>
             {% endif %}
