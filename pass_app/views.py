@@ -56,23 +56,16 @@ def upload_file(request):
             username = request.POST["username"]
             user_email = request.POST["user_email"]
             uploaded_file = request.FILES['file_field'] # name of attribute
-            if uploaded_file.name.endswith(".sdf"):
-                # filepath = handle_uploaded_file(uploaded_file)
-                # return serve(request, 
-                #     os.path.basename(filepath), 
-                #     os.path.dirname(filepath))
 
-                # handle with multi processing 
+            # handle with multi processing 
 
-                p = mp.Process(target=pass_predict,
-                    args=(username, user_email, uploaded_file))
-                p.start()
-                print ("process spawned")
+            p = mp.Process(target=pass_predict,
+                args=(username, user_email, uploaded_file))
+            p.start()
+            print ("process spawned")
 
-                return HttpResponseRedirect("/pass_app/success")
+            return HttpResponseRedirect("/pass_app/success")
                 
-            else:
-                form = UploadFileForm() # invalid sdf file
     else:
         form = UploadFileForm()
 
