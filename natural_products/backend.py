@@ -41,7 +41,8 @@ def query_target_hits(
          "with Pa greater than or equal to",
         "thresholds", thresholds)
 
-    target_names = [target.replace(" ", "_") for target in targets]
+    target_names = [target.replace(" ", "_").replace("-", "_")
+        for target in targets]
     columns = ", ".join((f"{target}_activity.Pa AS '{target}-Pa', {target}_activity.Pi AS '{target}-Pi', {target}_activity.Pa-{target}_activity.Pi AS '{target}-Pa-Pi'"
             for target in target_names))
     tables = "\n".join((
