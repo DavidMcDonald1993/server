@@ -128,12 +128,12 @@ def perform_enrichment_on_PASS_file(
 
     return 0
 
-def determine_identifier(receiver_address, input_file):
+def determine_identifier(user_id, input_file):
     if not isinstance(input_file, str):
         assert hasattr(input_file, "name")
         input_file = input_file.name 
     # assert smiles_file.endswith(".smi")
-    return "{}-{}".format(receiver_address, 
+    return "{}-{}".format(user_id, 
         os.path.splitext(os.path.basename(input_file))[0])
 
 def pass_predict(
@@ -147,7 +147,7 @@ def pass_predict(
     threshold=500,
     enrichment=True):
 
-    identifier = determine_identifier(user.email, input_file)
+    identifier = determine_identifier(user.id, input_file)
 
     output_dir = os.path.join(static_dir, output_dir, identifier)
     os.makedirs(output_dir, exist_ok=True)
