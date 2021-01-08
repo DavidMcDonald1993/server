@@ -35,7 +35,8 @@ def index(request):
         
 def target_select(request):
 
-    targets = get_all_targets_and_categories()
+    targets = get_all_targets_and_categories(
+        categories={"MECHANISMS", "GENE_EXPRESSION"})
     targets = (
             (c, t, urlparse.quote(t))
         for c, t in targets

@@ -4,6 +4,8 @@ import os.path
 sys.path.insert(1, 
     os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 
+import re
+
 import numpy as np
 import pandas as pd
 
@@ -41,7 +43,7 @@ def query_target_hits(
          "with Pa greater than or equal to",
         "thresholds", thresholds)
 
-    target_names = [target.replace(" ", "_").replace("-", "_")
+    target_names = [re.sub(r"( |-|\(|\))", "_", target)
         for target in targets]
     columns = ", ".join((f"{target}_activity.Pa AS '{target}-Pa', {target}_activity.Pi AS '{target}-Pi', {target}_activity.Pa-{target}_activity.Pi AS '{target}-Pa-Pi'"
             for target in target_names))
@@ -54,7 +56,8 @@ def query_target_hits(
             for target_name, target, threshold in zip(target_names[1:], targets[1:], thresholds[1:])
         ))
     query = f'''
-        SELECT c.compound_id, c.coconut_id AS 'ID', c.name AS 'Molecule Name', c.formula AS 'Molecular Formula',
+        SELECT c.compound_id, c.coconut_id AS 'ID', c.name AS 'Molecule Name', 
+            c.formula AS 'Molecular Formula', c.clean_smiles AS 'SMILES',
         {columns}
         FROM compounds AS c
         {tables}

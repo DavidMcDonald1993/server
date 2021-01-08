@@ -161,7 +161,7 @@ def pass_predict(
     base_name, extension = os.path.splitext(input_file)
     assert extension == ".sdf"
 
-    pass_out_file = base_name +"-PASS-out.sdf"
+    pass_out_file = base_name + "-PASS-out.sdf"
 
     cmd = "PASS2019toSDF.exe {} {}".format(input_file, pass_out_file)
     print ("executing command:", cmd)
@@ -174,6 +174,8 @@ def pass_predict(
     if enrichment:
         ret = perform_enrichment_on_PASS_file(pass_out_file,
             output_dir=output_dir, threshold=threshold)
+        # delete pass out file
+        os.remove(pass_out_file)
 
     # build zip file containing all targets / run settings / run output
     archive_filename = os.path.join(archive_dir,

@@ -255,13 +255,18 @@ def create_tables():
     return 0
 
 
-def get_all_targets_and_categories():
+def get_all_targets_and_categories(categories=None):
 
-    query = '''
+    if categories is not None:
+        if isinstance(categories, list) or isinstance(categories, set):
+            categories = tuple(categories)
+
+    query = f'''
        SELECT c.category_name, t.target_name
        FROM categories AS c
        INNER JOIN category_members AS m ON (c.category_id=m.category_id) 
        INNER JOIN targets AS t ON (m.target_id=t.target_id)
+       {f"WHERE c.category_name IN {categories}" if categories is not None else ""}
     '''
 
     return mysql_query(query)
