@@ -36,7 +36,7 @@ def connect_to_mysqldb(host=None, user=None, password=None, database=None):
     )
     return db
 
-def mysql_query(query, existing_conn=None):
+def mysql_query(query, return_cols=False, existing_conn=None):
 
     if existing_conn is None:
         db = connect_to_mysqldb()
@@ -45,10 +45,13 @@ def mysql_query(query, existing_conn=None):
 
     print ("executing MySQL query:", query)
 
-    mycursor = db.cursor()
-    mycursor.execute(query)
+    cursor = db.cursor()
+    cursor.execute(query)
 
-    records = mycursor.fetchall()
+    records = cursor.fetchall()
+
+    if return_cols:
+        records = records, cursor.column_names
 
     if existing_conn is None:
         db.close()
@@ -61,9 +64,9 @@ def mysql_create_table(create_table, existing_conn=None):
     else:
         db = existing_conn
 
-    mycursor = db.cursor()
+    cursor = db.cursor()
     try:
-        mycursor.execute(create_table)
+        cursor.execute(create_table)
         print ("executed command", create_table)
 
     except ProgrammingError as e: # table already exists
@@ -93,16 +96,16 @@ def mysql_insert_many(sql, rows, existing_conn=None, chunksize=1000000):
     else:
         db = existing_conn
 
-    mycursor = db.cursor()
+    cursor = db.cursor()
 
     if isinstance(rows, list):
         print ("inserting", len(rows), "rows")
-        mycursor.executemany(sql, rows)
+        cursor.executemany(sql, rows)
     else:
 
         for chunk in to_chunks(rows):
             print ("inserting", len(chunk), "rows")
-            mycursor.executemany(sql, chunk)
+            cursor.executemany(sql, chunk)
 
     db.commit()
 
@@ -256,8 +259,9 @@ def get_all_targets_and_categories():
 
     query = '''
        SELECT c.category_name, t.target_name
-       FROM categories as c, category_members as m, targets as t
-       where c.category_id=m.category_id AND m.target_id=t.target_id
+       FROM categories AS c
+       INNER JOIN category_members AS m ON (c.category_id=m.category_id) 
+       INNER JOIN targets AS t ON (m.target_id=t.target_id)
     '''
 
     return mysql_query(query)
@@ -403,12 +407,11 @@ def add_target_to_uniprot(chunksize=50):
     # get valid targets
     get_target_names_sql = f'''
         SELECT t.target_id, t.target_name
-        FROM targets AS t, category_members as cm,
-        categories as c
+        FROM targets AS t
+        INNER JOIN category_members AS cm ON (t.target_id=cm.target_id)
+        INNER JOIN categories AS c ON (cm.category_id=c.category_id)
         WHERE t.target_id NOT IN (
             SELECT DISTINCT target_id FROM targets_to_uniprot)
-        AND t.target_id=cm.target_id 
-        AND cm.category_id=c.category_id
         AND c.category_name="METABOLISM"
     '''
     targets = mysql_query(get_target_names_sql)
@@ -469,10 +472,10 @@ def get_uniprots_for_targets(targets, existing_conn=None):
         len(targets), "targets")
     query = f'''
         SELECT DISTINCT t.target_name, u.acc, tu.score
-        FROM targets as t, targets_to_uniprot as tu, uniprot as u
+        FROM targets AS t
+        INNER JOIN targets_to_uniprot AS tu ON (t.target_id=tu.target_id)
+        INNER JOIN uniprot AS u ON (tu.uniprot_id=u.uniprot_id)
         WHERE t.target_name IN {targets}
-        AND t.target_id=tu.target_id
-        AND tu.uniprot_id=u.uniprot_id
     '''
     return mysql_query(query, existing_conn=existing_conn)
 
@@ -481,29 +484,23 @@ def get_uniprots_for_compound(
     threshold=0,
     filter_pa_pi=True):
 
+    if isinstance(coconut_id, list) or isinstance(coconut_id, set):
+        coconut_id = tuple(coconut_id)
+
     get_uniprots_sql = f'''
-        SELECT u.acc
-        FROM compounds AS c, activities AS a,
-            targets_to_uniprot AS tu, uniprot AS u
-        WHERE c.compound_id=a.compound_id
-        AND a.target_id=tu.target_id
-        AND tu.id=u.id
-        AND a.Pa>{threshold}
+        SELECT c.coconut_id, t.target_name, u.acc
+        FROM compounds AS c
+        INNER JOIN activities AS a ON (c.compound_id=a.compound_id)
+        INNER JOIN targets AS t ON (a.target_id=t.target_id)
+        INNER JOIN targets_to_uniprot AS tu ON (a.target_id=tu.target_id)
+        INNER JOIN uniprot AS u ON (tu.uniprot_id=u.uniprot_id)
+        WHERE {f"c.coconut_id='{coconut_id}'" if isinstance(coconut_id, str)
+            else f"c.coconut_id IN {coconut_id}"}
+        {f"AND a.Pa>{threshold}" if threshold>0 else ""}
+        {f"AND a.Pa>a.Pi" if filter_pa_pi else ""}
     '''
-    if filter_pa_pi:
-        get_uniprots_sql += " AND a.Pa>a.Pi"
-    if isinstance(coconut_id, str):
-        get_uniprots_sql += f" AND c.coconut_id='{coconut_id}'"
-    else:
-        if isinstance(coconut_id, list):
-            coconut_id = tuple(coconut_id)
-        assert isinstance(coconut_id, tuple)
-        get_uniprots_sql += f" AND c.coconut_id IN {coconut_id}"
 
-    records = mysql_query(get_uniprots_sql)
-
-    return [record[0] for record in records]
-
+    return mysql_query(get_uniprots_sql)
 
 def add_pathways_and_reactions():
     import pandas as pd
@@ -554,7 +551,6 @@ def add_uniprot_to_pathways():
     uniprot_to_pathways = pd.read_csv(
         "/home/david/Desktop/uniprot_to_pathway.csv", 
         index_col=0)
-
 
     conn = connect_to_mysqldb()
 
@@ -673,25 +669,23 @@ def get_all_pathways_for_compounds(
     existing_conn=None,
     limit=None,
     ):
-    if isinstance(coconut_ids, list):
+    if isinstance(coconut_ids, list) or isinstance(coconut_ids, set):
         coconut_ids = tuple(coconut_ids)
     else:
         assert isinstance(coconut_ids, str)
+    filter_pa_pi = False
     query = f'''
         SELECT DISTINCT t.target_name, a.Pa, a.Pi, a.Pa-a.Pi, 
             u.acc, tu.score, p.pathway_name, p.organism, up.evidence, p.pathway_url
-        FROM compounds AS c, activities AS a, 
-            targets AS t, uniprot AS u,
-            targets_to_uniprot AS tu, uniprot_to_pathway AS up,
-            pathway AS p
-        WHERE c.compound_id=a.compound_id
-        AND a.target_id=t.target_id
-        AND a.target_id=tu.target_id
-        AND tu.uniprot_id=u.uniprot_id
-        AND tu.uniprot_id=up.uniprot_id
-        AND up.pathway_id=p.pathway_id
-        {f"AND c.coconut_id IN {coconut_ids}" if isinstance(coconut_ids, tuple)
-            else f'AND c.coconut_id="{coconut_ids}"'}
+        FROM compounds AS c
+        INNER JOIN activities AS a ON (c.compound_id=a.compound_id) 
+        INNER JOIN targets AS t ON (a.target_id=t.target_id)
+        INNER JOIN targets_to_uniprot AS tu ON (a.target_id=tu.target_id)
+        INNER JOIN uniprot AS u ON (tu.uniprot_id=u.uniprot_id)
+        INNER JOIN uniprot_to_pathway AS up ON (tu.uniprot_id=up.uniprot_id)
+        INNER JOIN pathway AS p ON (up.pathway_id=p.pathway_id)
+        WHERE {f"c.coconut_id IN {coconut_ids}" if isinstance(coconut_ids, tuple)
+            else f'c.coconut_id="{coconut_ids}"'}
         {"AND a.Pa>a.Pi" if filter_pa_pi else ""}
         {f"AND a.Pa>{threshold}" if threshold>0 else ""}
         {f"LIMIT {limit}" if limit is not None else ""}
@@ -710,21 +704,19 @@ def get_all_reactions_for_compounds(
         coconut_ids = tuple(coconut_ids)
     else:
         assert isinstance(coconut_ids, str)
+    filter_pa_pi = False
     query = f'''
         SELECT DISTINCT t.target_name, a.Pa, a.Pi, a.Pa-a.Pi, 
             u.acc, tu.score, r.reaction_name, r.organism, ur.evidence, r.reaction_url
-        FROM compounds AS c, activities AS a, 
-            targets AS t, uniprot AS u,
-            targets_to_uniprot AS tu, uniprot_to_reaction AS ur,
-            reaction AS r
-        WHERE c.compound_id=a.compound_id
-        AND a.target_id=t.target_id
-        AND a.target_id=tu.target_id
-        AND tu.uniprot_id=u.uniprot_id
-        AND tu.uniprot_id=ur.uniprot_id
-        AND ur.reaction_id=r.reaction_id
-        {f"AND c.coconut_id IN {coconut_ids}" if isinstance(coconut_ids, tuple)
-            else f'AND c.coconut_id="{coconut_ids}"'}
+        FROM compounds AS c
+        INNER JOIN activities AS a ON (c.compound_id=a.compound_id) 
+        INNER JOIN targets AS t ON (a.target_id=t.target_id) 
+        INNER JOIN targets_to_uniprot AS tu ON (a.target_id=tu.target_id)
+        INNER JOIN uniprot AS u ON (tu.uniprot_id=u.uniprot_id)
+        INNER JOIN uniprot_to_reaction AS ur ON (tu.uniprot_id=ur.uniprot_id)
+        INNER JOIN reaction AS r ON (ur.reaction_id=r.reaction_id)
+        WHERE {f"c.coconut_id IN {coconut_ids}" if isinstance(coconut_ids, tuple)
+            else f'c.coconut_id="{coconut_ids}"'}
         {"AND a.Pa>a.Pi" if filter_pa_pi else ""}
         {f"AND a.Pa>{threshold}" if threshold>0 else ""}
         {f"LIMIT {limit}" if limit is not None else ""}
@@ -752,9 +744,14 @@ if __name__ == "__main__":
     # add_target_to_uniprot()
     # pass
 
-    records = get_all_reactions_for_compounds(coconut_ids="CNP0000002", organism="Homo sapiens", threshold=950)
+    # records = get_all_reactions_for_compounds(coconut_ids="CNP0000002", organism="Homo sapiens", threshold=950)
 
-    for record in records:
+    # for record in records:
+    #     print (record)
+
+    # records = get_uniprots_for_targets(targets=("Diarrhea", "Yawning"))
+    records = get_all_reactions_for_compounds("CNP0000002", threshold=900)
+    for record in records[:10]:
         print (record)
 
     # pathway_name = "Urea cycle"

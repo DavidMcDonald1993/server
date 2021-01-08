@@ -23,7 +23,7 @@
       <h1>Results</h1>
 
       <form action="/natural_products/reaction_selection/">
-        <input type="submit" value="Return to reaction search">
+        <input type="submit" value="Back to reaction selection">
       </form>
  
     </div>
@@ -39,18 +39,17 @@
       <table id=resultsTable class="display table data"
         style="width:100%;text-align:center;display:none;">
         <thead>
-          <tr>
-            <th colspan="3">Molecule</th>
-            {% for reaction in reactions %}
-            <th colspan="6">{{reaction}}</th>
-            {% endfor %}
-          </tr>
+          <!-- <tr> -->
+            <!-- <th colspan="3">Molecule</th> -->
+            <!-- {% for reaction in reactions %} -->
+            <!-- <th colspan="8">{{reaction}}</th> -->
+            <!-- {% endfor %} -->
+          <!-- </tr> -->
           <tr>
             <th>COCONUT ID</th>
             <th>Compound Name</th>
             <th>Molecular Formula</th>
             <!-- <th>SMILES</th> -->
-            {% for reaction in reactions %}
             <th>Target Name</th>
             <th>Target Uniprot ACC</th>
             <th>Pa</th>
@@ -59,22 +58,21 @@
             <th>Reaction Name</th>
             <th>Organism</th>
             <th>Reaction URL</th>
-            {% endfor %}
           </tr>
         </thead>
         <tbody>
         {% for hit in reaction_hits %}
           <tr>
             {% for element in hit %}
-            {% if forloop.first %}
-              <td> <a href="/natural_products/compounds/{{element}}"> 
-                {{ element }} </a> </td>
-            {% elif forloop.last %}
-              <td> <a href={{element}}> 
+              {% if forloop.first %}
+                <td> <a href="/natural_products/compounds/{{element}}"> 
                   {{ element }} </a> </td>
-            {% else %}
-              <td>{{ element }}</td>
-            {% endif %}
+              {% elif forloop.last %}
+                <td> <a href={{element}}> 
+                    {{ element }} </a> </td>
+              {% else %}
+                <td>{{ element }}</td>
+              {% endif %}
             {% endfor %}
           </tr>
         {% endfor %}
@@ -83,11 +81,11 @@
     </div>
 
 
-  <!-- <div> -->
+  <div>
 
-    <!-- <form action="/natural_products/download/" > -->
-      <!-- <input type="submit" id="downloadButton" value="Download results"> -->
-    <!-- </form> -->
+    <form action="/natural_products/download/" >
+      <input type="submit" id="downloadButton" value="Download results">
+    </form>
 
     <!-- <br> -->
 <!--  -->
@@ -95,7 +93,7 @@
       <!-- <input type="submit" value="Optimise results"> -->
     <!-- </form> -->
 
-  <!-- </div> -->
+  </div>
 
   </body>
 </html>

@@ -1,6 +1,7 @@
 import os
 
 import numpy as np
+import pandas as pd
 
 from django.shortcuts import render
 
@@ -23,6 +24,10 @@ from utils.mysql_utils import (get_all_targets_and_categories,
 #     pass_targets = [line.rstrip()
 #         for line in f.readlines()]
 
+MAX_VAL = 950
+MIN_VAL = 450
+STEP = -50
+
 def index(request):
     context = {}
     return render(request, 
@@ -36,8 +41,8 @@ def target_select(request):
         for c, t in targets
     )
 
-    thresholds = ["{:.02f}".format(threshold)
-        for threshold in np.arange(0, 1, 0.05)[::-1]]
+    thresholds = range(MAX_VAL, MIN_VAL, STEP)
+
     context = {
         "targets": targets,
         "thresholds": thresholds}
@@ -61,11 +66,12 @@ def show_target_hits(request, ):
         for target in targets]
 
     thresholds = [threshold]
-    target_hits = query_target_hits(targets, thresholds, filter_pa_pi=filter_pa_pi)
+    target_hits, columns = query_target_hits(targets, thresholds, filter_pa_pi=filter_pa_pi)
 
     request.session["targets"] = targets
     request.session["thresholds"] = thresholds
-    request.session["target_hits"] = target_hits
+    request.session["hits"] = target_hits
+    request.session["columns"] = columns
 
     context = {
         "targets": targets,
@@ -87,8 +93,7 @@ def pathway_select(request):
         for p, o in pathways
     )
 
-    thresholds = ["{:.02f}".format(threshold)
-        for threshold in np.arange(0, 1, 0.05)[::-1]]
+    thresholds = range(MAX_VAL, MIN_VAL, STEP)
     context = {
         "pathways": pathways,
         "thresholds": thresholds}
@@ -112,22 +117,22 @@ def show_pathway_hits(request, ):
     pathways = [urlparse.unquote(pathway) 
         for pathway in pathways]
 
-    # thresholds = [threshold]
-    pathway_hits = query_pathway_hits(pathways, 
+    pathway_hits, columns = query_pathway_hits(pathways, 
         threshold=threshold, filter_pa_pi=filter_pa_pi,
         organism=organism, 
-        limit=100,
+        # limit=100,
         )
 
-    request.session["pathways"] = pathways
-    request.session["threshold"] = threshold
-    request.session["pathway_hits"] = pathway_hits
+    request.session["targets"] = pathways # for downloading
+    request.session["thresholds"] = [threshold]
+    request.session["hits"] = pathway_hits
+    request.session["columns"] = columns
 
     context = {
         "pathways": pathways,
         "threshold": threshold,
         "pathway_hits": pathway_hits,
-        "num_hits": len(pathway_hits)
+        "num_hits": len(pathway_hits),
     }
 
     return render(request,
@@ -143,11 +148,11 @@ def reaction_select(request):
         for r, o in reactions
     )
 
-    thresholds = ["{:.02f}".format(threshold)
-        for threshold in np.arange(0, 1, 0.05)[::-1]]
+    thresholds = range(MAX_VAL, MIN_VAL, STEP)
     context = {
         "reactions": reactions,
-        "thresholds": thresholds}
+        "thresholds": thresholds,
+    }
     return render(request,
         "natural_products/reaction_select.html", context)
 
@@ -169,37 +174,35 @@ def show_reaction_hits(request, ):
         for reaction in reactions]
 
     # thresholds = [threshold]
-    reaction_hits = query_reaction_hits(reactions, 
+    reaction_hits, columns = query_reaction_hits(reactions, 
         threshold=threshold, filter_pa_pi=filter_pa_pi,
         organism=organism,
-        limit=100)
+        # limit=100
+        )
 
-    request.session["reactions"] = reactions
-    request.session["threshold"] = threshold
-    request.session["reaction_hits"] = reaction_hits
+    request.session["targets"] = reactions # for downloading
+    request.session["thresholds"] = [threshold]
+    request.session["hits"] = reaction_hits
+    request.session["columns"] = columns
 
     context = {
         "reactions": reactions,
         "threshold": threshold,
         "reaction_hits": reaction_hits,
-        "num_hits": len(reaction_hits)
+        "num_hits": len(reaction_hits),
     }
 
     return render(request,
         "natural_products/reaction_hits.html", context)
 
-# def pathway_enrichment(request):
-
-#     context = {}
-
-#     return render(request,
-#         "natural_products/pathway_enrichment.html", context)
 
 def all_compounds(request):
 
     # get compound data from database
     compounds = get_multiple_compound_info() # returns list of tuples
-    context = {"compounds": compounds}
+    context = {
+        "compounds": compounds
+    }
 
     return render(request, 
         "natural_products/all_compounds.html", context)
@@ -237,21 +240,24 @@ def compound_info(request, compound_id):
         "activities": activities,
         "pathways": pathways,
         "reactions": reactions,
-        })
+    })
 
     return render(request,
         "natural_products/compound_info.html", context)
 
-def download_target_hits(request):
+def download_hits(request):
 
     assert request.user.is_authenticated
     
-    username = request.user.username
+    user_id = request.user.id
     targets = request.session["targets"]
     thresholds = request.session["thresholds"]
-    records = request.session["records"]
+    hits = request.session["hits"]
+    columns = request.session["columns"]
 
-    record_filename = write_records_to_file(username, targets, thresholds, records)
+    hits = pd.DataFrame(hits, columns=columns)
+
+    record_filename = write_records_to_file(user_id, targets, thresholds, hits)
 
     return serve(request, 
             os.path.basename(record_filename), 
@@ -260,15 +266,16 @@ def download_target_hits(request):
 def optimise_target_hits(request):
 
     assert request.user.is_authenticated
-    # assert request.session["category"] == "GENE_EXPRESSION"
-    username = request.user.username
-    records = request.session["records"]
+    user_id = request.user.id
+    targets = request.session["targets"]
+    thresholds = request.session["thresholds"]
+    hits = request.session["hits"]
 
     smiles = get_multiple_compound_info(
-        compounds=(record[0] for record in records),
+        compounds=(hit[0] for hit in hits),
         columns=("coconut_id", "clean_smiles"))
 
-    smiles_filename = write_smiles_to_file(username, smiles)
+    smiles_filename = write_smiles_to_file(user_id, targets, thresholds, smiles)
     request.session["smiles_filename"] = smiles_filename
 
     return HttpResponseRedirect("/hit_optimisation/upload")

@@ -49,8 +49,16 @@
       <br>
 
       <label for="threshold">Threshold (Pa):</label>
-      <input type="text" id="threshold" 
-        name="threshold" value="900"><br><br>
+      <!-- <input type="text" id="threshold"  -->
+        <!-- name="threshold" value="900"> -->
+      <select name="threshold" id="threshold">
+        {% for threshold in thresholds %}
+          <option value={{threshold}}>{{threshold}}</option>
+        {% endfor %}
+      </select>
+      
+      <br>
+       <br>
 
       <label for="checkbox">Pa>Pi?</label>
       <input id="checkbox" name="checkbox" type="checkbox" checked>

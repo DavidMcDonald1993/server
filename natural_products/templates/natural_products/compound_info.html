@@ -167,7 +167,6 @@
               <th>Pathway Name</th>
               <th>Pathway Organism</th>
               <th>Evidence</th>
-              <th>Pathway URL</th>
             </tr>
             </thead>
            
@@ -180,10 +179,9 @@
               <td>{{diff}}</td>
               <td>{{acc}}</td>
               <td>{{score}}</td>
-              <td>{{pathway_name}}</td>
+              <td><a href={{url}}>{{pathway_name}}</a></td>
               <td>{{organism}}</td>
               <td>{{evidence}}</td>
-              <td><a href={{url}}>{{url}}</a></td>
             </tr>
           {% endfor %}
           </tbody>
@@ -214,7 +212,6 @@
               <th>Reaction Name</th>
               <th>Reaction Organism</th>
               <th>Evidence</th>
-              <th>Reaction URL</th>
             </tr>
             </thead>
            
@@ -227,10 +224,9 @@
               <td>{{diff}}</td>
               <td>{{acc}}</td>
               <td>{{score}}</td>
-              <td>{{reaction_name}}</td>
+              <td><a href={{url}}>{{reaction_name}}</a></td>
               <td>{{organism}}</td>
               <td>{{evidence}}</td>
-              <td><a href={{url}}>{{url}}</a></td>
             </tr>
           {% endfor %}
           </tbody>

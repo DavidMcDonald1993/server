@@ -24,11 +24,13 @@ def query_target_hits(
     targets, 
     thresholds,
     filter_pa_pi=True,
+    limit=None
     ):
-
+    assert filter_pa_pi
     assert isinstance(targets, list)
     if not isinstance(thresholds, list):
         assert isinstance(thresholds, int), thresholds
+        # assert thresholds in (900, )
         thresholds = [thresholds]
     num_targets = len(targets)
     if len(thresholds) < num_targets:
@@ -39,44 +41,67 @@ def query_target_hits(
          "with Pa greater than or equal to",
         "thresholds", thresholds)
 
-    # initial query
-    target = targets[0] 
-    threshold = thresholds[0]
-    query = f'''SELECT c.compound_id, c.coconut_id, c.name, c.formula,
-        a.Pa AS '{target}-Pa', a.Pi AS '{target}-Pi', a.Pa-a.Pi AS '{target}-Pa-Pi'
-        FROM compounds AS c, activities AS a, targets AS t
-        WHERE t.target_name='{target}' AND t.target_id=a.target_id
-        AND a.compound_id=c.compound_id
-        AND a.Pa>{threshold}
-        {"AND a.Pa>a.Pi" if filter_pa_pi else ""}
+    target_names = [target.replace(" ", "_") for target in targets]
+    columns = ", ".join((f"{target}_activity.Pa AS '{target}-Pa', {target}_activity.Pi AS '{target}-Pi', {target}_activity.Pa-{target}_activity.Pi AS '{target}-Pa-Pi'"
+            for target in target_names))
+    tables = "\n".join((
+            f"INNER JOIN activities AS {target}_activity ON (c.compound_id={target}_activity.compound_id)\n"+\
+            f"INNER JOIN targets AS {target}_target ON ({target}_activity.target_id={target}_target.target_id)"
+            for target in target_names))
+    conditions = "\n".join((
+            f"AND {target_name}_activity.above_{threshold}=(1) AND {target_name}_target.target_name='{target}'"
+            for target_name, target, threshold in zip(target_names[1:], targets[1:], thresholds[1:])
+        ))
+    query = f'''
+        SELECT c.compound_id, c.coconut_id AS 'ID', c.name AS 'Molecule Name', c.formula AS 'Molecular Formula',
+        {columns}
+        FROM compounds AS c
+        {tables}
+        WHERE {target_names[0]}_activity.above_{thresholds[0]}=(1)
+        AND {target_names[0]}_target.target_name='{targets[0]}'
+        {conditions}
+        {f"LIMIT {limit}" if limit is not None else ""}
     '''
 
-    for target, threshold in zip(targets[1:], thresholds[1:]):
-        query = f'''
-        SELECT q.*, a.Pa AS '{target}-Pa', a.Pi AS '{target}-Pi', a.Pa-a.Pi AS '{target}-Pa-Pi'
-        FROM ({query}) AS q, activities AS a, targets AS t
-        WHERE t.target_name='{target}' AND t.target_id=a.target_id
-        AND a.compound_id=q.compound_id
-        AND a.Pa>{threshold}
-        {"AND a.Pa>a.Pi" if filter_pa_pi else ""}
-        '''
+    # # initial query
+    # target = targets[0] 
+    # threshold = thresholds[0]
+    # query = f'''SELECT c.compound_id, c.coconut_id AS 'ID', c.name AS 'Molecule Name', c.formula AS 'Molecular Formula',
+    #     a.Pa AS '{target}-Pa', a.Pi AS '{target}-Pi', a.Pa-a.Pi AS '{target}-Pa-Pi'
+    #     FROM compounds AS c
+    #     INNER JOIN activities AS a ON (c.compound_id=a.compound_id)
+    #     INNER JOIN targets AS t ON (a.target_id=t.target_id)
+    #     WHERE t.target_name='{target}'
+    #     {f"AND a.Pa>{threshold}" if threshold>0 else ""}
+    #     {"AND a.Pa>a.Pi" if filter_pa_pi else ""}
+    # '''
 
-    hits =  mysql_query(query)
+    # for target, threshold in zip(targets[1:], thresholds[1:]):
+    #     query = f'''
+    #     SELECT q.*, a.Pa AS '{target}-Pa', a.Pi AS '{target}-Pi', a.Pa-a.Pi AS '{target}-Pa-Pi'
+    #     FROM ({query}) AS q
+    #     INNER JOIN activities AS a ON (q.compound_id=a.compound_id)
+    #     INNER JOIN targets AS t ON (a.target_id=t.target_id)
+    #     WHERE t.target_name='{target}'
+    #     {f"AND a.Pa>{threshold}" if threshold>0 else ""}
+    #     {"AND a.Pa>a.Pi" if filter_pa_pi else ""}
+    #     '''
 
-    # n_hits = len(hits)
-    # print ("built records, number of hits", n_hits)
+    hits, cols = mysql_query(query, return_cols=True)
 
     records = [
         record[1:] for record in hits
     ]
 
-    return records
+    return records, cols[1:]
 
 def query_pathway_hits(pathway_names,
     organism=None, threshold=0, filter_pa_pi=True, 
     include_targets=True,
     limit=None,
     existing_conn=None):
+    assert filter_pa_pi
+    # assert threshold in (900, )
 
     if existing_conn is None:
         existing_conn = connect_to_mysqldb()
@@ -85,96 +110,37 @@ def query_pathway_hits(pathway_names,
         assert isinstance(pathway_names, str)
         pathway_names = [pathway_names]
 
-    if not isinstance(thresholds, list):
-        assert isinstance(thresholds, int)
-        thresholds = [thresholds]
-    # if len(thresholds) == 1:
-    #     thresholds = thresholds * len(pathway_names)
+    # get unique compounds that hit all pathways
 
      # initial query
     pathway_name = pathway_names[0] 
-    # threshold = thresholds[0]
-
-    # query = f'''
-    #     SELECT DISTINCT c.compound_id, c.coconut_id, c.name, c.formula,
-    #         {f"t.target_name AS '{pathway_name}-target_name', u.acc AS '{pathway_name}-acc', a.Pa AS '{pathway_name}-Pa', a.Pi AS '{pathway_name}-Pi',"
-    #         if include_targets else ""}
-    #         p.pathway_name AS '{pathway_name}-pathway_name', p.organism AS '{pathway_name}-organism'
-    #     FROM compounds AS c, activities AS a,
-    #         targets_to_uniprot AS tu,
-    #         {"targets AS t, uniprot AS u," 
-    #             if include_targets else ""}
-    #         uniprot_to_pathway AS up,
-    #         pathway AS p
-    #     WHERE c.compound_id=a.compound_id
-    #     AND a.target_id=tu.target_id
-    #     {"AND a.target_id=t.target_id AND tu.uniprot_id=u.uniprot_id" 
-    #         if include_targets else ""}
-    #     AND tu.uniprot_id=up.uniprot_id
-    #     AND up.pathway_id=p.pathway_id
-    #     AND p.pathway_name="{pathway_name}"
-    #     {f"AND a.Pa>{threshold}" if threshold>0 else ""}
-    #     {"AND a.Pa>a.Pi" if filter_pa_pi else ""}
-    #     {f'AND p.organism="{organism}"' if organism is not None else ""}
-    #     {f"LIMIT {limit}" if limit is not None else ""}
-    # '''
-
-    # get unique compounds that hit all pathways
     query = f'''
         SELECT DISTINCT a.compound_id
-        FROM activities AS a,
-            targets_to_uniprot AS tu,
-            uniprot_to_pathway AS up,
-            pathway AS p
-        WHERE a.target_id=tu.target_id
-        AND tu.uniprot_id=up.uniprot_id
-        AND up.pathway_id=p.pathway_id
-        AND p.pathway_name="{pathway_name}"
+        FROM activities AS a
+        INNER JOIN targets_to_uniprot AS tu ON (a.target_id=tu.target_id)
+        INNER JOIN uniprot_to_pathway AS up ON (tu.uniprot_id=up.uniprot_id)
+        INNER JOIN pathway AS p ON (up.pathway_id=p.pathway_id)
+        WHERE p.pathway_name="{pathway_name}"
         {f'AND p.organism="{organism}"' if organism is not None else ""}
-        {f"AND a.Pa>{threshold}" if threshold>0 else ""}
-        {"AND a.Pa>a.Pi" if filter_pa_pi else ""}
+        AND a.above_{threshold}=(1)
         {f"LIMIT {limit}" if limit is not None else ""}
     '''
+    # save in case of need
+    # {f"AND a.Pa>{threshold}" if threshold>0 else ""}
+    # {"AND a.Pa>a.Pi" if filter_pa_pi else ""}
 
     for pathway_name in pathway_names[1:]:
-        # query = f'''
-        #     SELECT DISTINCT q.*,
-        #         {f"t.target_name AS '{pathway_name}-target_name',  u.acc AS '{pathway_name}-acc', a.Pa AS '{pathway_name}-Pa', a.Pi AS '{pathway_name}-Pi',"
-        #         if include_targets else ""}
-        #         p.pathway_name AS '{pathway_name}-pathway_name', p.organism AS '{pathway_name}-organism'
-        #     FROM ({query}) AS q, activities AS a,
-        #         targets_to_uniprot AS tu,
-        #         {"targets AS t, uniprot AS u," 
-        #             if include_targets else ""}
-        #         uniprot_to_pathway AS up,
-        #         pathway AS p
-        #     WHERE q.compound_id=a.compound_id
-        #     AND a.target_id=tu.target_id
-        #     {"AND a.target_id=t.target_id AND tu.uniprot_id=u.uniprot_id" 
-        #         if include_targets else ""}
-        #     AND tu.uniprot_id=up.uniprot_id
-        #     AND up.pathway_id=p.pathway_id
-        #     AND p.pathway_name="{pathway_name}"
-        #     {f"AND a.Pa>{threshold}" if threshold>0 else ""}
-        #     {"AND a.Pa>a.Pi" if filter_pa_pi else ""}
-        #     {f'AND p.organism="{organism}"' if organism is not None else ""}
-        #     {f"LIMIT {limit}" if limit is not None else ""}
-        # '''
 
         query = f'''
-            SELECT DISTINCT a.compound_id
-            FROM ({query}) as q, activities AS a,
-                targets_to_uniprot AS tu,
-                uniprot_to_pathway AS up,
-                pathway AS p
-            WHERE q.compound_id=a.compound_id
-            AND a.target_id=tu.target_id
-            AND tu.uniprot_id=up.uniprot_id
-            AND up.pathway_id=p.pathway_id
-            AND p.pathway_name="{pathway_name}"
+            SELECT DISTINCT q.compound_id
+            FROM ({query}) as q
+            INNER JOIN activities AS a ON (q.compound_id=a.compound_id)
+            INNER JOIN targets_to_uniprot AS tu ON (a.target_id=tu.target_id)
+            INNER JOIN uniprot_to_pathway AS up ON (tu.uniprot_id=up.uniprot_id)
+            INNER JOIN pathway AS p ON up.pathway_id=p.pathway_id
+            WHERE p.pathway_name="{pathway_name}"
             {f'AND p.organism="{organism}"' if organism is not None else ""}
-            {f"AND a.Pa>{threshold}" if threshold>0 else ""}
-            {"AND a.Pa>a.Pi" if filter_pa_pi else ""}
+            AND a.above_{threshold}=(1)
             {f"LIMIT {limit}" if limit is not None else ""}
         '''
 
@@ -184,112 +150,73 @@ def query_pathway_hits(pathway_names,
 
     print ("number of unique compounds that hit all pathways:",  num_compound_hits)
     if num_compound_hits == 0:
-        return []
-
-    # records = []
-    # for pathway_name in pathway_names:
+        return [], None
 
     query = f'''
-        SELECT DISTINCT c.coconut_id, c.name, c.formula,
-            {f"t.target_name, u.acc, a.Pa, a.Pi,"
+        SELECT DISTINCT c.coconut_id AS 'ID', c.name AS 'Molecule Name', c.formula AS 'Molecular Formula',
+            {f"t.target_name AS 'Target Name', u.acc AS 'Target UNIPROT ACC', a.Pa AS 'Pa', a.Pi AS 'Pi',"
             if include_targets else ""}
-            up.evidence, p.pathway_name, p.organism, p.pathway_url
-        FROM compounds AS c, activities AS a,
-            targets_to_uniprot AS tu,
-            {"targets AS t, uniprot AS u," 
-                if include_targets else ""}
-            uniprot_to_pathway AS up,
-            pathway AS p
-        WHERE c.compound_id=a.compound_id
-        AND a.target_id=tu.target_id
-        {"AND a.target_id=t.target_id AND tu.uniprot_id=u.uniprot_id" 
+            up.evidence AS 'Evidence', p.pathway_name as 'Pathway Name', p.organism AS 'Organism', p.pathway_url AS 'Pathway URL'
+        FROM compounds AS c
+        INNER JOIN activities AS a ON (c.compound_id=a.compound_id)
+        INNER JOIN targets_to_uniprot AS tu ON (a.target_id=tu.target_id)
+        {"INNER JOIN targets AS t ON (a.target_id=t.target_id)" 
             if include_targets else ""}
-        AND tu.uniprot_id=up.uniprot_id
-        AND up.pathway_id=p.pathway_id
-        {f"AND p.pathway_name in {tuple(pathway_names)}" if len(pathway_names)>1
-            else f'AND p.pathway_name="{pathway_names[0]}"'}
+        {"INNER JOIN uniprot AS u ON (tu.uniprot_id=u.uniprot_id)"
+            if include_targets else ""}
+        INNER JOIN uniprot_to_pathway AS up ON (tu.uniprot_id=up.uniprot_id)
+        INNER JOIN pathway AS p ON (up.pathway_id=p.pathway_id)
+        WHERE {f"p.pathway_name IN {tuple(pathway_names)}" if len(pathway_names)>1
+            else f'p.pathway_name="{pathway_names[0]}"'}
         {f'AND p.organism="{organism}"' if organism is not None else ""}
-        {f"AND a.Pa>{threshold}" if threshold>0 else ""}
-        {"AND a.Pa>a.Pi" if filter_pa_pi else ""}
+        AND a.above_{threshold}=(1)
         AND c.compound_id IN {tuple(compound_hits)}
     ''' 
 
-        # records.append((pathway_name, mysql_query(query, existing_conn=existing_conn)))
+    records, cols = mysql_query(query, return_cols=True, existing_conn=existing_conn)
 
-    records = mysql_query(query, existing_conn=existing_conn)
-
-    # return [hit[1:] for hit in hits]
-    return records
+    return records, cols
 
 def query_reaction_hits(reaction_names,
     organism=None, threshold=0, filter_pa_pi=True, 
     include_targets=True,
     limit=None,
     existing_conn=None):
+    assert filter_pa_pi
+    # assert threshold in (900, )
 
     if not isinstance(reaction_names, list):
         assert isinstance(reaction_names, str)
         reaction_names = [reaction_names]
 
+    # get unique compounds that hit all reactions
+
      # initial query
     reaction_name = reaction_names[0] 
-
-    # query = f'''
-    #     SELECT DISTINCT c.coconut_id, c.name, c.formula
-    #         {", t.target_name AS {reaction_name}-target_name, u.acc" if include_targets else ""}
-    #     FROM compounds AS c, activities AS a,
-    #         targets_to_uniprot as tu,
-    #         {"targets as t, uniprot AS u," 
-    #             if include_targets else ""}
-    #         uniprot_to_reaction AS ur,
-    #         reaction AS r
-    #     WHERE c.compound_id=a.compound_id
-    #     AND a.target_id=tu.target_id
-    #     {"AND a.target_id=t.target_id AND tu.uniprot_id=u.uniprot_id" 
-    #         if include_targets else ""}
-    #     AND tu.uniprot_id=ur.uniprot_id
-    #     AND ur.reaction_id=r.reaction_id
-    #     AND r.reaction_name="{reaction_name}"
-    # '''
-    # if threshold>0:
-    #     query += f" AND a.Pa>{threshold}"
-    # if filter_pa_pi:
-    #     query += " AND a.Pa>a.Pi"
-    # if organism is not None:
-    #     query += f" AND r.organism=\"{organism}\""
    
-    # get unique compounds that hit all reactions
     query = f'''
         SELECT DISTINCT a.compound_id
-        FROM activities AS a,
-            targets_to_uniprot AS tu,
-            uniprot_to_reaction AS ur,
-            reaction AS r
-        WHERE a.target_id=tu.target_id
-        AND tu.uniprot_id=ur.uniprot_id
-        AND ur.reaction_id=r.reaction_id
-        AND r.reaction_name="{reaction_name}"
+        FROM activities AS a
+        INNER JOIN targets_to_uniprot AS tu ON (a.target_id=tu.target_id)
+        INNER JOIN uniprot_to_reaction AS ur ON (tu.uniprot_id=ur.uniprot_id)
+        INNER JOIN reaction AS r ON (ur.reaction_id=r.reaction_id)
+        WHERE r.reaction_name="{reaction_name}"
         {f'AND r.organism="{organism}"' if organism is not None else ""}
-        {f"AND a.Pa>{threshold}" if threshold>0 else ""}
-        {"AND a.Pa>a.Pi" if filter_pa_pi else ""}
+        AND a.above_{threshold}=(1)
         {f"LIMIT {limit}" if limit is not None else ""}
     '''
 
     for reaction_name in reaction_names[1:]:
         query = f'''
             SELECT DISTINCT a.compound_id
-            FROM ({query}) as q, activities AS a,
-                targets_to_uniprot AS tu,
-                uniprot_to_reaction AS ur,
-                reaction AS r
-            WHERE q.compound_id=a.compound_id
-            AND a.target_id=tu.target_id
-            AND tu.uniprot_id=ur.uniprot_id
-            AND ur.reaction_id=r.reaction_id
-            AND r.reaction_name="{reaction_name}"
+            FROM ({query}) as q
+            INNER JOIN activities AS a ON (q.compound_id=a.compound_id)
+            INNER JOIN targets_to_uniprot AS tu ON (a.target_id=tu.target_id)
+            INNER JOIN uniprot_to_reaction AS ur ON (tu.uniprot_id=ur.uniprot_id)
+            INNER JOIN reaction AS r ON ( ur.reaction_id=r.reaction_id)
+            WHERE r.reaction_name="{reaction_name}"
             {f'AND r.organism="{organism}"' if organism is not None else ""}
-            {f"AND a.Pa>{threshold}" if threshold>0 else ""}
-            {"AND a.Pa>a.Pi" if filter_pa_pi else ""}
+            AND a.above_{threshold}=(1)
             {f"LIMIT {limit}" if limit is not None else ""}
         '''
 
@@ -299,36 +226,32 @@ def query_reaction_hits(reaction_names,
 
     print ("number of unique compounds that hit all reactions:",  num_compound_hits)
     if num_compound_hits == 0:
-        return []
+        return [], None
 
     query = f'''
-        SELECT DISTINCT c.coconut_id, c.name, c.formula,
-            {f"t.target_name, u.acc, a.Pa, a.Pi,"
+        SELECT DISTINCT c.coconut_id AS 'ID', c.name AS 'Molecule Name', c.formula AS 'Molecular Formula',
+            {f"t.target_name AS 'Target Name', u.acc AS 'Target UNIPROT ACC', a.Pa AS 'Pa', a.Pi AS 'Pi',"
             if include_targets else ""}
-            ur.evidence, r.reaction_name, r.organism, r.reaction_url
-        FROM compounds AS c, activities AS a,
-            targets_to_uniprot AS tu,
-            {"targets AS t, uniprot AS u," 
-                if include_targets else ""}
-            uniprot_to_reaction AS ur,
-            reaction AS r
-        WHERE c.compound_id=a.compound_id
-        AND a.target_id=tu.target_id
-        {"AND a.target_id=t.target_id AND tu.uniprot_id=u.uniprot_id" 
+            ur.evidence AS 'Evidence', r.reaction_name AS 'Reaction Name', r.organism AS 'Organism', r.reaction_url AS 'Reaction URL'
+        FROM compounds AS c
+        INNER JOIN activities AS a ON (c.compound_id=a.compound_id)
+        INNER JOIN targets_to_uniprot AS tu ON (a.target_id=tu.target_id)
+        {"INNER JOIN targets AS t ON (a.target_id=t.target_id)" 
             if include_targets else ""}
-        AND tu.uniprot_id=ur.uniprot_id
-        AND ur.reaction_id=r.reaction_id
-        {f"AND r.reaction_name in {tuple(reaction_names)}" if len(reaction_names)>1
-            else f'AND r.reaction_name="{reaction_names[0]}"'}
+        {"INNER JOIN uniprot AS u ON (tu.uniprot_id=u.uniprot_id)"
+            if include_targets else ""}
+        INNER JOIN uniprot_to_reaction AS ur ON (tu.uniprot_id=ur.uniprot_id)
+        INNER JOIN reaction AS r ON (ur.reaction_id=r.reaction_id)
+        WHERE {f"r.reaction_name in {tuple(reaction_names)}" if len(reaction_names)>1
+            else f'r.reaction_name="{reaction_names[0]}"'}
         {f'AND r.organism="{organism}"' if organism is not None else ""}
-        {f"AND a.Pa>{threshold}" if threshold>0 else ""}
-        {"AND a.Pa>a.Pi" if filter_pa_pi else ""}
+        AND a.above_{threshold}=(1)
         AND c.compound_id IN {tuple(compound_hits)}
     ''' 
 
-    records = mysql_query(query, existing_conn=existing_conn)
+    records, cols = mysql_query(query, return_cols=True, existing_conn=existing_conn)
 
-    return records
+    return records, cols
 
 
 def get_multiple_compound_info(
@@ -342,8 +265,8 @@ def get_multiple_compound_info(
     compound_query = f'''
         SELECT {(", ".join(columns))}
         FROM compounds
-        {"WHERE coconut_id IN {compounds}" if compounds is not None else ""}
-        '''
+        {f"WHERE coconut_id IN {compounds}" if compounds is not None else ""}
+    '''
 
     records = mysql_query(compound_query)
 
@@ -389,9 +312,10 @@ def get_all_activities_for_compound(
 
     all_targets_query = f'''
         SELECT t.target_id, t.target_name, a.Pa, a.Pi, a.Pa-a.Pi
-        FROM targets AS t, activities AS a, compounds AS c
+        FROM targets AS t
+        INNER JOIN activities AS a ON (a.target_id=t.target_id)
+        INNER JOIN compounds AS c ON (a.compound_id=c.compound_id)
         WHERE c.coconut_id='{coconut_id}'
-        AND a.compound_id=c.compound_id AND a.target_id=t.target_id
         {"AND a.Pa>a.Pi" if filter_pa_pi else ""}
         '''
 
@@ -432,58 +356,77 @@ def draw_molecule(smiles,
     else:
         return None
 
+
+
+def write_records_to_file(
+    user_id,
+    targets, 
+    thresholds,
+    records,
+    static_dir="natural_products/static/natural_products",
+    output_dir="results",
+    ):
+    assert isinstance(records, pd.DataFrame)
+
+    output_dir = os.path.join(static_dir, output_dir, f"user={user_id}")
+    os.makedirs(output_dir, exist_ok=True)
+
+    targets = ",".join(map(lambda s: s.replace(" ", "_"), targets))
+    thresholds= ",".join(map(str, thresholds))
+
+    records_filename = os.path.join(output_dir,
+        f'''targets={targets}-thresholds={thresholds}-results.csv''')
+    print ("writing records to", records_filename)
+    records.to_csv(records_filename)
+
+    return records_filename
+
 def write_smiles_to_file(
-    username,
+    user_id,
+    targets,
+    thresholds,
     smiles,
     static_dir="natural_products/static",
     output_dir="smiles",
     ):  
 
-    output_dir = os.path.join(static_dir, output_dir, username)
-
+    output_dir = os.path.join(static_dir, output_dir, f"user_id={user_id}")
     os.makedirs(output_dir, exist_ok=True)
 
-    smiles_filename = os.path.join(output_dir,
-        "results.smi")
-    print ("writing smiles to", smiles_filename)
+    targets = ",".join(map(lambda s: s.replace(" ", "_"), targets))
+    thresholds= ",".join(map(str, thresholds))
 
-    # columns are ["coconut_id",  "molecule_name", "molecular_formula", "smiles", "Pa", "Pi", "Pa-Pi", ...]
-    # smiles = [(record[0], record[3]) for record in records]
+    smiles_filename = os.path.join(output_dir,
+        f'''targets={targets}-thresholds={thresholds}-hits.smi''')
+    print ("writing smiles to", smiles_filename)
 
     write_smiles(smiles, smiles_filename)
 
     return smiles_filename
-
-def write_records_to_file(
-    username,
-    targets, 
-    thresholds,
-    records,
-    static_dir="natural_products/static",
-    output_dir="results",
-    ):
-
-    output_dir = os.path.join(static_dir, output_dir, username)
-    os.makedirs(output_dir, exist_ok=True)
-
-    columns = ["coconut_id",  "molecule_name", "molecular_formula", ] #"smiles", ]
-    for target in targets:
-        columns += [f"{target}-Pa", f"{target}-Pi", f"{target}-Pa-Pi" ]
-
-    records = pd.DataFrame.from_records(records, 
-        columns=columns)
-
-    records_filename = os.path.join(output_dir,
-        f"{targets}-{thresholds}-results.csv")
-    print ("writing records to", records_filename)
-    records.to_csv(records_filename)
-
-    return records_filename
     
 if __name__ == "__main__":
 
-    # hits = query_target_hits(["Diarrhea", "Yawning", "Nausea"], 500, filter_pa_pi=False)
-    # print (hits)
+    from timeit import default_timer
+
+    # "Stridor": 6773,
+    # "Keratitis": 4205,
+    # "Acidosis": 504,
+
+    start_time = default_timer()
+    hits, cols = query_target_hits([
+        "Diarrhea", 
+        "Yawning", 
+        "Nausea",
+        "Paralysis"
+    ], 550, 
+    filter_pa_pi=True,
+    # limit=100
+    )
+    print (len (hits))
+    print (default_timer() - start_time)
+    print (cols)
+    # for hit in hits[:10]:
+        # print (hit)
 
     # compound_info, activities = get_compound_info("CNP0000002", filter_pa_pi=True)
     # all_activities = {c: a for c, a in get_all_activities_for_compound("CNP0000002")}
@@ -495,18 +438,15 @@ if __name__ == "__main__":
     # for record in records[:5]:
     #     print (record)
 
-    pathway_hits = query_pathway_hits(pathway_names=[
-        "Zinc transporters", 
-        "Xenobiotics",
-        "Disease",
-        ],
-        organism="Homo sapiens", filter_pa_pi=True, threshold=950, limit=10000)
+    # pathway_hits, cols = query_reaction_hits([
+    #     # "Zinc transporters", 
+    #     # "Xenobiotics",
+    #     # "Disease",
+    #     "PI3K phosphorylates PIP2 to PIP3", # reaction
+    #     "Recruitment of PLCgamma to membrane"
+    #     ],
+    #     organism="Homo sapiens", filter_pa_pi=True, threshold=900,)
 
-    print (len(pathway_hits))
+    # print (len(pathway_hits))
     # for hit in pathway_hits[:10]:
-        # print (hit)
-    # for pathway, hits in pathway_hits:
-        # print (pathway)
-        # for record in hits[:10]:
-            # print (record)
-        # print ()
+    #     print (hit)

@@ -6,6 +6,8 @@ hit_optimisation/autogrow4
 hit_optimisation/static/hit_optimisation/output
 hit_optimisation/static/hit_optimisation/archives
 
+natural_products/static/natural_products/results
+
 *_credentials.json
 
 *.smi

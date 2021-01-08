@@ -199,12 +199,12 @@ def save_settings(settings, filename):
     with open(filename, "w") as f:
         json.dump(settings, f, sort_keys=True, indent=4)
 
-def determine_identifier(receiver_address, pdb_id, smiles_file):
+def determine_identifier(user_id, pdb_id, smiles_file):
     if not isinstance(smiles_file, str):
         assert hasattr(smiles_file, "name")
         smiles_file = smiles_file.name 
     assert smiles_file.endswith(".smi")
-    return "{}-{}-{}".format(receiver_address, pdb_id, 
+    return "{}-{}-{}".format(user_id, pdb_id, 
         os.path.splitext(os.path.basename(smiles_file))[0])
 
 def hit_optimisation(
@@ -224,7 +224,7 @@ def hit_optimisation(
 
     assert len(pdb_id) == 4 
 
-    identifier = determine_identifier(user.email, pdb_id, input_file)
+    identifier = determine_identifier(user.id, pdb_id, input_file)
 
     # process output directory
     output_dir = os.path.join(output_dir,
@@ -266,8 +266,10 @@ def hit_optimisation(
         user_settings, 
         output_dir)
 
-    cmd = "python hit_optimisation/autogrow4/RunAutogrow.py " +\
-        "--json {}".format(settings_filename)
+    cmd = f'''
+    python hit_optimisation/autogrow4/RunAutogrow.py\
+        --json "{settings_filename}"
+    '''
     
     ret = os.system(cmd)
     # assert ret == 0

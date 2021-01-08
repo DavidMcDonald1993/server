@@ -15,6 +15,9 @@ from .backend import hit_optimisation
 from utils.pdb_utils import get_pdb_ids_from_gene_symbol, get_human_targets
 from utils.genenames_utils import search_for_targets
 
+import urllib.parse as urlparse
+
+
 # human_targets = get_human_targets()
 
 # Create your views here.
@@ -45,29 +48,26 @@ def upload(request):
         form = UploadFileForm(request.POST, request.FILES)
         if "smiles_filename" in request.session or form.is_valid():
 
-            user_name = request.POST["username"]
-            user_email = request.POST["user_email"]
             target = request.POST["target"]
             if "smiles_filename" in request.session:
-                uploaded_file = request.session["smiles_filename"] # string location on server
+                uploaded_file = request.session["smiles_filename"] # string full location on server
+                del request.session["smiles_filename"]
             else:
                 # smiles file from client
-                uploaded_file = request.FILES['file_field'] # name of attribute
+                uploaded_file = request.FILES["file_field"] # name of attribute
+           
             chain = request.POST["chain"]
+           
             user_settings = {key: int(request.POST[key]) for key in settings}
            
             if isinstance(uploaded_file, str) and uploaded_file.endswith(".smi")\
                     or uploaded_file.name.endswith(".smi"):
                 # do optimisation
                 # start new process that ends with sent email
-                p  = mp.Process(target=hit_optimisation, args=(request.user, target, uploaded_file, chain, user_settings))
+                p  = mp.Process(target=hit_optimisation, 
+                    args=(request.user, target, uploaded_file, chain, user_settings))
                 p.start()
                 print ("process spawned")
-
-                # archive_filename = hit_optimisation(user_name, target, uploaded_file, chain, user_settings)
-            #     return serve(request, 
-            #         os.path.basename(archive_filename), 
-            #         os.path.dirname(archive_filename))
                 return HttpResponseRedirect("/hit_optimisation/success")
             else:
                 form = UploadFileForm() # invalid sdf file
@@ -84,15 +84,14 @@ def upload(request):
 
     if "targets" in request.session:
         targets = request.session["targets"]
-        # get first word TODO
         targets_to_gene_symbols = search_for_targets(targets, only_best_scoring=False)
 
-        pdb_ids = [
-            (target, symbol, score, pdb_id)
+        pdb_ids = sorted(
+            ((target, symbol, score, pdb_id)
                 for target in targets_to_gene_symbols
                 for symbol, score in targets_to_gene_symbols[target]
-                for pdb_id in get_pdb_ids_from_gene_symbol(symbol)
-        ]
+                for pdb_id in get_pdb_ids_from_gene_symbol(symbol)),
+        key=lambda t: t[3]) # sort by pdb_ID
 
         # pdb_ids = {pdb_id for gene_symbol in gene_symbols
             # for pdb_id in get_pdb_ids_from_gene_symbol(gene_symbol)}
@@ -100,7 +99,7 @@ def upload(request):
             context["pdb_ids"] = pdb_ids#.intersection(human_targets)
 
     if "smiles_filename" in request.session:
-        context["smiles_filename"] =\
+        context["smiles_filename"] = \
             os.path.basename(request.session["smiles_filename"])
 
     return render(request, 

@@ -17,9 +17,6 @@ import argparse
 
 from utils.io import load_json
 
-HOST = "82.40.62.253"
-PORT = "8080"
-
 def send_mail(
     receiver_name,
     receiver_address,
@@ -29,6 +26,7 @@ def send_mail(
     # mail_content="Dear {},\n\nPlease find attached the results from NPAIEngine.\n\nSincerely,\nShan He"
     ):
 
+    host_information = load_json("host_credentials.json")
     credentials = load_json("email_credentials.json")
 
     print ("sending email to user", receiver_name, "at address", receiver_address)
@@ -43,7 +41,7 @@ def send_mail(
     #The body and the attachments for the mail
     if attach_file_name is not None:
         mail_content=f'''
-        Dear {receiver_name},
+        Dear {receiver_name.capitalize()},
         
         Please find attached the results from NPAIEngine.
         
@@ -64,7 +62,7 @@ def send_mail(
         mail_content=f'''
         Dear {receiver_name},
         
-        Please find your files at http://{HOST}:{PORT}/download/{token}
+        Please find your files at http://{host_information["host"]}:{host_information["port"]}/download/{token}
         
         Sincerely,
         Shan He

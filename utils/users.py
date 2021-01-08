@@ -65,16 +65,16 @@ def get_file_from_token(token, user_id, existing_conn=None):
 def send_file_to_user(user, filename, max_MB=5):
     if os.path.getsize(filename) / (1024*1024) < max_MB: # file smaller than max MB
         # send as attachment
-        send_mail(user.name,
+        send_mail(user.username,
             user.email,
             attach_file_name=filename)
     else:
         
         # file is too large: save on server for download later
         token = add_file_to_database(user.id, path=filename)
-        print ("added file", filename, "to database for user", user.name)
+        print ("added file", filename, "to database for user", user.username)
         print ("generated token", token)
-        send_mail(user.name,
+        send_mail(user.username,
             user.email,
             token=token)
 

@@ -10,7 +10,7 @@ urlpatterns = [
     path('target_hits/', 
         views.show_target_hits, name='target_hits'),
     path('download/', 
-        views.download_target_hits, name='download_target_hits'),
+        views.download_hits, name='download_hits'),
     path('optimise/', 
         views.optimise_target_hits, name='optimise_target_hits'),
  

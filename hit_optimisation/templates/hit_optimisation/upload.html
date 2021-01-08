@@ -60,7 +60,7 @@
                   name="target" value={{target}}>  -->
                 <select name=target id=target>
                     {% for target, symbol, score, pdb_id in pdb_ids %}
-                      <option value={{pdb_id}}>{{target}}: {{symbol}}: {{score}}: {{pdb_id}}</option>
+                      <option value={{pdb_id}}>{{target}}--{{symbol}}({{score}})--{{pdb_id}}</option>
                     {% endfor %}
                   </select> 
                 {% else %}
@@ -86,7 +86,7 @@
               {% if smiles_filename %}
                 <label for="input_smiles">Smiles file:</label>
                 <input type="text" id="input_smiles" 
-                  name="input_smiles" value={{smiles_filename}} readonly> 
+                  name="input_smiles" value="{{smiles_filename}}" readonly> 
               {% else %}
               {{form}}
               {% endif %}
@@ -110,7 +110,7 @@
       <br>
 
       <div>
-        <form action="/pass_app/">
+        <form action="/pass_app">
           <input id="backButton" type="submit" value="Return to home">
         </form>
 
