@@ -10,8 +10,8 @@
     <link rel="stylesheet" href="http://cdn.datatables.net/1.10.2/css/jquery.dataTables.min.css">
 
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
-    <script type="text/javascript"  src="http://cdn.datatables.net/1.10.2/js/jquery.dataTables.min.js"></script>
-    <script type="text/javascript"  src="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="http://cdn.datatables.net/1.10.2/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" src="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
 
     <script type="text/javascript" 
       src="{% static 'natural_products/tables.js' %}"></script>
@@ -19,7 +19,13 @@
 
   <body style="text-align: center;" onload="setDataTablesVisible();">
 
+    <div>
     <h1>All natural products</h1>
+    <form action="/natural_products/" >
+      <input type="submit" value="Return to natural product page">
+    </form>
+    </div>
+        
     <div class="table-responsive" >
     <table class="display table data"
       style="width:100%;text-align:center;display:none">
