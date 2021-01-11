@@ -7,6 +7,19 @@
  
     <h1>Download page</h1>
     <br>
+    {% if filename %}
+
+    <div>
+        <form method="get" action={{filename}}>
+            <button type="submit">Download</button>
+         </form>
+
+        <form action="/pass_app">
+            <input type="submit" value="Go to NPAIEngine home">
+        </form> 
+    </div>
+
+    {% else %}
     <div>   
        <h2>Please log in to download file:</h2>
        {% if login_error %}
@@ -26,6 +39,6 @@
         <input type="submit" value="Login">
       </form> 
     </div>
-
+    {% endif %}
   </body>
 </html>

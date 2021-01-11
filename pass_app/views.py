@@ -105,8 +105,9 @@ def download(request, token):
             if filename is None:
                 return HttpResponseRedirect("/download_error")
             # if filename is not None:
-            response = FileResponse(open(filename, 'rb'))
-            return response
+            # response = FileResponse(open(filename, 'rb'))
+            # return response
+            context["filename"] = filename
         else:
             context["login_error"] = True
 
