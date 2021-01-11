@@ -101,13 +101,19 @@ def download(request, token):
 
         if user is not None:
             # return HttpResponseRedirect("/")
-            filename = get_file_from_token(token, user.id)
-            if filename is None:
-                return HttpResponseRedirect("/download_error")
-            # if filename is not None:
-            # response = FileResponse(open(filename, 'rb'))
-            # return response
-            context["filename"] = filename
+            if "authenticated" in request.session and request.session["authenticated"]:
+                del request.session["authenticated"]
+                filename = get_file_from_token(token, user.id)
+                if filename is None:
+                    return HttpResponseRedirect("/download_error")
+                response = FileResponse(open(filename, 'rb'))
+                return response
+
+            context["authenticated"] = True
+            request.session["authenticated"] = True
+
+            
+            # context["filename"] = filename
         else:
             context["login_error"] = True
 

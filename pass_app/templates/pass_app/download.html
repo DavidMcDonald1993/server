@@ -2,20 +2,30 @@
 <html>
   <head>
     <title>NPAIEngine</title>
+    <script>
+        $(function() {
+            $('a[data-auto-download]').each(function(){
+                var $this = $(this);
+                setTimeout(function() {
+                    window.location = $this.attr('href');
+                 }, 1000);
+            });
+            });
+    </script>
   </head>
   <body style="text-align: center;">
  
     <h1>Download page</h1>
     <br>
-    {% if filename %}
+    {% if authenticated %}
 
     <div>
-        <h2>Download should start automatically</h2>>
         <!-- <form method="get" action={{filename}}> -->
             <!-- <button type="submit">Download</button> -->
          <!-- </form> -->
-         <a href={{filename}}>Start automatic download!</a>
-
+         <p>The download should begin shortly. If it doesn't, click
+            <a data-auto-download href=".">here</a>.</p>
+       
          <br>
          <br>
 
