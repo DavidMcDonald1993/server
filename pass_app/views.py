@@ -90,13 +90,26 @@ def success(request):
         context)
 
 def download(request, token):
-    if not request.user.is_authenticated:
-        return HttpResponseRedirect("/")
-    filename = get_file_from_token(token, request.user.id)
-    if filename is None:
-        return HttpResponseRedirect("/download_error")
-    response = FileResponse(open(filename, 'rb'))
-    return response
+
+    if request.method == "POST":
+
+        username = request.POST['username']
+        password = request.POST['password']
+        user = authenticate(request, username=username, password=password)
+
+        if user is None:
+            return HttpResponseRedirect("/")
+        filename = get_file_from_token(token, request.user.id)
+        if filename is None:
+            return HttpResponseRedirect("/download_error")
+        response = FileResponse(open(filename, 'rb'))
+        return response
+    else:
+
+        context = {}
+        return render(request, 
+            "pass_app/download.html",
+            context)
 
 def download_error(request):
     
