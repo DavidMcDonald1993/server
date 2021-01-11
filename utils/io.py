@@ -78,7 +78,7 @@ def process_input_file(
     input_file, 
     desired_format,
     output_dir, 
-    valid_input_file_types=(".smi", ".sdf")):
+    valid_input_file_types=(".smi", ".txt", ".sdf")):
     '''
     process input file from client
     '''
@@ -106,24 +106,34 @@ def process_input_file(
 
     # convert if necessary
     if input_file_type != desired_format:
-        if input_file_type == ".sdf" and desired_format == ".smi":
-            # convert SDF to smiles
-            print ("converting SDF to SMILES")
-            print ("SDF filename:", temp_file)
-            sdf_df = LoadSDF(temp_file, smilesName="SMILES")
-            # write smiles
-            smiles = [(row["ID"], row["SMILES"])
-                for _, row in sdf_df.iterrows()]
-            # write smiles to temp_file
-            temp_file = temp_file_name + desired_format
-            write_smiles(smiles, temp_file)
-        elif input_file_type == ".smi" and desired_format == ".sdf":
-            # convert from SMILES to SDF
-            print ("converting SMILES to SDF")
-            smiles_filename = temp_file
-            print ("SMILES filename:", smiles_filename)
-            temp_file = temp_file_name + desired_format
-            smiles_to_sdf(smiles_filename, temp_file)
+        if desired_format == ".smi":
+            if input_file_type == ".sdf":
+                # convert SDF to smiles
+                print ("converting SDF to SMILES")
+                print ("SDF filename:", temp_file)
+                sdf_df = LoadSDF(temp_file, smilesName="SMILES")
+                # write smiles
+                smiles = [(row["ID"], row["SMILES"])
+                    for _, row in sdf_df.iterrows()]
+                # write smiles to temp_file
+                temp_file = temp_file_name + desired_format
+                write_smiles(smiles, temp_file)
+            elif input_file_type == ".txt":
+                # rename .txt smiles format to .smi
+                os.rename(temp_file, temp_file_name + desired_format)
+            else:
+                raise NotImplementedError
+
+        elif desired_format == ".sdf":
+            if input_file_type in {".smi", ".txt"}:
+                # convert from SMILES to SDF
+                print ("converting SMILES to SDF")
+                smiles_filename = temp_file
+                print ("SMILES filename:", smiles_filename)
+                temp_file = temp_file_name + desired_format
+                smiles_to_sdf(smiles_filename, temp_file)
+            else:
+                raise NotImplementedError
         else:
             raise NotImplementedError #conversion not yet implemented
     else:

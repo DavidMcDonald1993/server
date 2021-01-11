@@ -20,12 +20,8 @@ from utils.mysql_utils import (get_all_targets_and_categories,
 
 # Create your views here.
 
-# with open("PASS_targets.txt", "r") as f:
-#     pass_targets = [line.rstrip()
-#         for line in f.readlines()]
-
 MAX_VAL = 950
-MIN_VAL = 450
+MIN_VAL = 650
 STEP = -50
 
 def index(request):
@@ -42,7 +38,7 @@ def target_select(request):
         for c, t in targets
     )
 
-    thresholds = range(MAX_VAL, MIN_VAL, STEP)
+    thresholds = range(MAX_VAL, MIN_VAL-1, STEP)
 
     context = {
         "targets": targets,
@@ -94,7 +90,7 @@ def pathway_select(request):
         for p, o in pathways
     )
 
-    thresholds = range(MAX_VAL, MIN_VAL, STEP)
+    thresholds = range(MAX_VAL, MIN_VAL-1, STEP)
     context = {
         "pathways": pathways,
         "thresholds": thresholds}
@@ -124,6 +120,29 @@ def show_pathway_hits(request, ):
         # limit=100,
         )
 
+    # information requested for each pathway 
+    pathway_columns = ("targets", "num_targets", "accs", "num_accs", "pathway_name", "organism", "url")
+    num_cols = len(pathway_columns)
+    num_pathways = len(pathways)
+
+    pathway_hits = [
+        
+        {
+            "id": compound_id, 
+            "name": compound_name, 
+            "formula": compound_formula, 
+            "smiles": compound_smiles,
+            "pathways": [
+                {   
+                    col: pathway_values[pathway_number*num_cols+col_num]
+                        for col_num, col in enumerate(pathway_columns)} 
+                for pathway_number in range(num_pathways)   
+            ]
+        }
+        for compound_id, compound_name, compound_formula, compound_smiles,
+            *pathway_values in pathway_hits
+    ]
+
     request.session["targets"] = pathways # for downloading
     request.session["thresholds"] = [threshold]
     request.session["hits"] = pathway_hits
@@ -149,7 +168,7 @@ def reaction_select(request):
         for r, o in reactions
     )
 
-    thresholds = range(MAX_VAL, MIN_VAL, STEP)
+    thresholds = range(MAX_VAL, MIN_VAL-1, STEP)
     context = {
         "reactions": reactions,
         "thresholds": thresholds,
@@ -185,6 +204,29 @@ def show_reaction_hits(request, ):
     request.session["thresholds"] = [threshold]
     request.session["hits"] = reaction_hits
     request.session["columns"] = columns
+
+        # information requested for each pathway 
+    reaction_columns = ("targets", "num_targets", "accs", "num_accs", "reaction_name", "organism", "url")
+    num_cols = len(reaction_columns)
+    num_reactions = len(reactions)
+
+    reaction_hits = [
+        
+        {
+            "id": compound_id, 
+            "name": compound_name, 
+            "formula": compound_formula, 
+            "smiles": compound_smiles,
+            "reactions": [
+                {   
+                    col: reaction_values[reaction_number*num_cols+col_num]
+                        for col_num, col in enumerate(reaction_columns)} 
+                for reaction_number in range(num_reactions)   
+            ]
+        }
+        for compound_id, compound_name, compound_formula, compound_smiles,
+            *reaction_values in reaction_hits
+    ]
 
     context = {
         "reactions": reactions,

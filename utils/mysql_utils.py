@@ -653,14 +653,36 @@ def add_uniprot_to_reactions():
         existing_conn=conn)
 
 def get_all_pathways(
-    actives=True,
+    filter_actives=True,
     organism=None, 
     existing_conn=None):
+    active_filter = f'''
+        INNER JOIN uniprot_to_pathway AS up ON (up.pathway_id=p.pathway_id)
+        INNER JOIN targets_to_uniprot AS tu ON (up.uniprot_id=tu.uniprot_id)
+        INNER JOIN targets AS t ON (t.target_id=tu.target_id)
+    '''
     query = f'''
-        SELECT pathway_name, organism
-        FROM pathway
-        {"WHERE pathway_id IN (SELECT DISTINCT pathway_id from uniprot_to_pathway)"
-            if actives else ""}
+        SELECT DISTINCT p.pathway_name, p.organism
+        FROM pathway AS p
+        {active_filter if filter_actives else ""}
+        {f"WHERE p.organism='{organism}'" if organism is not None else ""}
+    '''
+    return mysql_query(query, existing_conn=existing_conn)
+
+def get_all_reactions(
+    filter_actives=True,
+    organism=None, 
+    existing_conn=None):
+    active_filter = f'''
+        INNER JOIN uniprot_to_reaction AS ur ON (ur.reaction_id=r.reaction_id)
+        INNER JOIN targets_to_uniprot AS tu ON (ur.uniprot_id=tu.uniprot_id)
+        INNER JOIN targets AS t ON (t.target_id=tu.target_id)
+    '''
+    query = f'''
+        SELECT DISTINCT r.reaction_name, r.organism
+        FROM reaction AS r
+        {active_filter if filter_actives else ""}
+        {f"WHERE r.organism='{organism}'" if organism is not None else ""}
     '''
     if organism is not None:
         query += f"AND organism=\"{organism}\""
@@ -729,19 +751,6 @@ def get_all_reactions_for_compounds(
     return mysql_query(query, existing_conn=existing_conn)
 
 
-def get_all_reactions(
-    actives=True,
-    organism=None, 
-    existing_conn=None):
-    query = f'''
-        SELECT reaction_name, organism
-        FROM reaction
-        {"WHERE reaction_id IN (SELECT DISTINCT reaction_id from uniprot_to_reaction)"
-            if actives else ""}
-    '''
-    if organism is not None:
-        query += f"AND organism=\"{organism}\""
-    return mysql_query(query, existing_conn=existing_conn)
 
 
 if __name__ == "__main__":
@@ -755,9 +764,9 @@ if __name__ == "__main__":
     #     print (record)
 
     # records = get_uniprots_for_targets(targets=("Diarrhea", "Yawning"))
-    records = get_all_reactions_for_compounds("CNP0000002", threshold=900)
-    for record in records[:10]:
-        print (record)
+    # records = get_all_reactions_for_compounds("CNP0000002", threshold=900)
+    # for record in records[:10]:
+        # print (record)
 
     # pathway_name = "Urea cycle"
     # reaction_name = "Expression of ABCA1"
@@ -770,3 +779,9 @@ if __name__ == "__main__":
     # # print (len(set((record[0] for record in records))))
     # for record in records[:10]:
     #     print (record)
+
+    records = get_all_reactions(organism="Homo sapiens")
+
+    print (len(records))
+    for record in records[:5]:
+        print (record)
