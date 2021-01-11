@@ -4,8 +4,7 @@
       {% load static %}
     <title>NPAIEngine</title>
     <script type="text/javascript" 
-      src="{% static 'pass_app/download.js' %}">
-    </script>
+      src="{% static 'pass_app/download.js' %}"></script>
   </head>
   <body style="text-align: center;">
  
@@ -18,7 +17,7 @@
             <!-- <button type="submit">Download</button> -->
          <!-- </form> -->
          <p>The download should begin shortly. If it doesn't, click
-            <a data-auto-download href="{{token}}">here</a>.</p>
+            <a data-auto-download href="/download/{{token}}">here</a>.</p>
        
          <br>
          <br>
