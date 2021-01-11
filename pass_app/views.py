@@ -99,7 +99,7 @@ def download(request, token):
 
         if user is None:
             return HttpResponseRedirect("/")
-        filename = get_file_from_token(token, request.user.id)
+        filename = get_file_from_token(token, user.id)
         if filename is None:
             return HttpResponseRedirect("/download_error")
         response = FileResponse(open(filename, 'rb'))
