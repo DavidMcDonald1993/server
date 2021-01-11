@@ -120,6 +120,11 @@ def show_pathway_hits(request, ):
         # limit=100,
         )
 
+    request.session["targets"] = pathways # for downloading
+    request.session["thresholds"] = [threshold]
+    request.session["hits"] = pathway_hits
+    request.session["columns"] = columns
+
     # information requested for each pathway 
     pathway_columns = ("targets", "num_targets", "accs", "num_accs", "pathway_name", "organism", "url")
     num_cols = len(pathway_columns)
@@ -142,11 +147,6 @@ def show_pathway_hits(request, ):
         for compound_id, compound_name, compound_formula, compound_smiles,
             *pathway_values in pathway_hits
     ]
-
-    request.session["targets"] = pathways # for downloading
-    request.session["thresholds"] = [threshold]
-    request.session["hits"] = pathway_hits
-    request.session["columns"] = columns
 
     context = {
         "pathways": pathways,
@@ -211,7 +211,6 @@ def show_reaction_hits(request, ):
     num_reactions = len(reactions)
 
     reaction_hits = [
-        
         {
             "id": compound_id, 
             "name": compound_name, 
@@ -297,6 +296,8 @@ def download_hits(request):
     thresholds = request.session["thresholds"]
     hits = request.session["hits"]
     columns = request.session["columns"]
+
+    print (hits[:6])
 
     hits = pd.DataFrame(hits, columns=columns)
 

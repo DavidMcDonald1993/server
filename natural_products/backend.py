@@ -64,7 +64,7 @@ def query_target_hits(
     conditions = "\n".join((
         f'''
         AND `{target_name}_activity`.above_{threshold}=(1) 
-        AND `{target_name}_target`.target_name='{target}'"
+        AND `{target_name}_target`.target_name='{target}'
         '''
         for target_name, target, threshold in zip(target_names[1:], targets[1:], thresholds[1:])      
     ))
