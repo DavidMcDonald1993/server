@@ -20,4 +20,6 @@ urlpatterns = [
         
     path("download/<str:token>", views.download, 
         name="download",),
+    path("download_error", views.download_error, 
+        name="download_error",),
 ]

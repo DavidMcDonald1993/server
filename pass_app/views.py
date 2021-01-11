@@ -93,8 +93,18 @@ def download(request, token):
     if not request.user.is_authenticated:
         return HttpResponseRedirect("/")
     filename = get_file_from_token(token, request.user.id)
+    if filename is None:
+        return HttpResponseRedirect("/download_error")
     response = FileResponse(open(filename, 'rb'))
     return response
+
+def download_error(request):
+    
+    context = {}
+
+    return render(request, 
+        "pass_app/download_error.html",
+        context)
 
 def favicon(request):
     return HttpResponse("/favicon")
