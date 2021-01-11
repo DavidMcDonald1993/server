@@ -106,7 +106,7 @@ def download(request, token):
         return response
     else:
 
-        context = {}
+        context = {"token": token}
         return render(request, 
             "pass_app/download.html",
             context)

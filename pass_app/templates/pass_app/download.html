@@ -9,7 +9,7 @@
     <br>
     <div>   
        <h2>Please log in to download file:</h2>
-      <form action="/download" method="post">
+      <form action="/download/{{token}}" method="post">
         {% csrf_token %}
         <label for=username >Username:</label>
         <input type="text" id="username" 
