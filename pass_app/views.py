@@ -57,12 +57,14 @@ def upload_file(request):
         if form.is_valid():
             # username = request.POST["username"]
             # user_email = request.POST["user_email"]
-            uploaded_file = request.FILES['file_field'] # name of attribute
+            uploaded_file = request.FILES["file_field"] # name of attribute
+            threshold = int(request.POST["threshold"])
 
             # handle with multi processing 
 
             p = mp.Process(target=pass_predict,
-                args=(request.user, uploaded_file))
+                args=(request.user, uploaded_file),
+                kwargs={"threshold": threshold})
             p.start()
             print ("process spawned")
 

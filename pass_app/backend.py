@@ -175,6 +175,7 @@ def pass_predict(
         ret = perform_enrichment_on_PASS_file(pass_out_file,
             output_dir=output_dir, threshold=threshold)
         # delete pass out file
+        print ("deleting pass output file:", pass_out_file)
         os.remove(pass_out_file)
 
     # build zip file containing all targets / run settings / run output
