@@ -10,9 +10,14 @@
     {% if filename %}
 
     <div>
-        <form method="get" action={{filename}}>
-            <button type="submit">Download</button>
-         </form>
+        <h2>Download should start automatically</h2>>
+        <!-- <form method="get" action={{filename}}> -->
+            <!-- <button type="submit">Download</button> -->
+         <!-- </form> -->
+         <a href={{filename}}>Start automatic download!</a>
+
+         <br>
+         <br>
 
         <form action="/pass_app">
             <input type="submit" value="Go to NPAIEngine home">
