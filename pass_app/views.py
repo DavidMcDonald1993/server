@@ -110,17 +110,17 @@ def download(request, token):
             #     return response
 
             context["authenticated"] = True # change page 
-            request.session["authenticated_user"] = user
+            request.session["authenticated_user_id"] = user.id
 
             
             # context["filename"] = filename
         else:
             context["login_error"] = True
     
-    elif "authenticated_user" in request.session.keys():
-        del request.session["authenticated_user"]
-        authenticated_user = request.session["authenticated_user"]
-        filename = get_file_from_token(token, authenticated_user.id)
+    elif "authenticated_user_id" in request.session.keys():
+        authenticated_user_id = request.session["authenticated_user_id"]
+        del request.session["authenticated_user_id"]
+        filename = get_file_from_token(token, authenticated_user_id)
         if filename is None:
             return HttpResponseRedirect("/download_error")
         response = FileResponse(open(filename, 'rb'))

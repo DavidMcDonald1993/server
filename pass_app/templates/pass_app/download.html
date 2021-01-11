@@ -1,16 +1,10 @@
 <!doctype html>
 <html>
   <head>
+      {% load static %}
     <title>NPAIEngine</title>
-    <script>
-        $(function() {
-            $('a[data-auto-download]').each(function(){
-                var $this = $(this);
-                setTimeout(function() {
-                    window.location = $this.attr('href');
-                 }, 1000);
-            });
-            });
+    <script type="text/javascript" 
+      src="{% static 'pass_app/download.js' %}">
     </script>
   </head>
   <body style="text-align: center;">
