@@ -109,22 +109,24 @@ def perform_enrichment_on_PASS_file(
     with open(unique_uniprots_filename, "w") as f:
         f.write("\n".join(unique_uniprots))
 
-    # declare filenames to output enrichment
-    output_csv_filename = os.path.join(output_dir, 
-        "enrichment.csv")
-    found_filename = os.path.join(output_dir,
-        "found.txt")
-    not_found_filename = os.path.join(output_dir,
-        "not_found.txt")
-    pdf_filename = os.path.join(output_dir,
-        "enrichment_summary.pdf")
+    if len(unique_uniprots) > 0:
 
-    perform_enrichment_analysis(
-        unique_uniprots_filename,
-        output_csv_filename,
-        found_filename,
-        not_found_filename,
-        pdf_filename)
+        # filenames to output enrichment
+        output_csv_filename = os.path.join(output_dir, 
+            "enrichment.csv")
+        found_filename = os.path.join(output_dir,
+            "found.txt")
+        not_found_filename = os.path.join(output_dir,
+            "not_found.txt")
+        pdf_filename = os.path.join(output_dir,
+            "enrichment_summary.pdf")
+
+        perform_enrichment_analysis(
+            unique_uniprots_filename,
+            output_csv_filename,
+            found_filename,
+            not_found_filename,
+            pdf_filename)
 
     return 0
 
