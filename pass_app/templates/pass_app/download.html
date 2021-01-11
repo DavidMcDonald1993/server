@@ -9,6 +9,9 @@
     <br>
     <div>   
        <h2>Please log in to download file:</h2>
+       {% if login_error %}
+        <h3>Authetication error!</h3>
+        {% endif %}
       <form action="/download/{{token}}" method="post">
         {% csrf_token %}
         <label for=username >Username:</label>
