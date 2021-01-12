@@ -753,7 +753,7 @@ def get_all_reactions_for_compounds(
     return mysql_query(query, existing_conn=existing_conn)
 
 def sanitise_names(names):
-    return  [re.sub(r"( |\+|-|=|<|>|\(|\))", "_", name)
+    return  [re.sub(r"( |\+|-|\*|/|=|<|>|\(|\))", "_", name)
         for name in names]
 
 if __name__ == "__main__":
