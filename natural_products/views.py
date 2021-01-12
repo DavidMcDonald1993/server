@@ -285,7 +285,8 @@ def compound_info(request, compound_id):
     })
 
     return render(request,
-        "natural_products/compound_info.html", context)
+        "natural_products/compound_info.html", 
+        context)
 
 def download_hits(request):
 
@@ -296,8 +297,6 @@ def download_hits(request):
     thresholds = request.session["thresholds"]
     hits = request.session["hits"]
     columns = request.session["columns"]
-
-    print (hits[:6])
 
     hits = pd.DataFrame(hits, columns=columns)
 

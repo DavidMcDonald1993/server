@@ -481,9 +481,7 @@ def draw_molecule(smiles,
     static_dir="natural_products/static",
     img_filename="natural_products/temp.png", 
     ):
-
     mol = Chem.MolFromSmiles(smiles)
-    # mol = standardise_smi(smiles)
     if mol is not None:
         img = MolToImage(mol)
 
@@ -493,8 +491,6 @@ def draw_molecule(smiles,
         return img_filename
     else:
         return None
-
-
 
 def write_records_to_file(
     user_id,
