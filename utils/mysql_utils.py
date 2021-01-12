@@ -11,6 +11,8 @@ from utils.pass_utils import remove_invalid_characters, parse_pass_spectra, get_
 
 from functools import partial
 
+import re
+
 def load_mysql_credentials():
     return load_json("mysql_credentials.json")
 
@@ -750,8 +752,9 @@ def get_all_reactions_for_compounds(
     '''
     return mysql_query(query, existing_conn=existing_conn)
 
-
-
+def sanitise_names(names):
+    return  [re.sub(r"( |\+|-|=|<|>|\(|\))", "_", name)
+        for name in names]
 
 if __name__ == "__main__":
     # create_tables()

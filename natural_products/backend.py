@@ -18,7 +18,7 @@ import urllib.parse as urlparse
 
 from utils.io import load_json, write_json, write_smiles
 from utils.mongodb_utils import connect_to_mongodb
-from utils.mysql_utils import mysql_query, mysql_create_table, mysql_insert_many, connect_to_mysqldb
+from utils.mysql_utils import mysql_query, mysql_create_table, mysql_insert_many, connect_to_mysqldb, sanitise_names
 from utils.pass_utils import get_categories, get_all_targets, get_targets_for_category, get_all_compounds
 from utils.enrichment_utils import perform_enrichment_analysis
 
@@ -43,8 +43,7 @@ def query_target_hits(
          "with Pa greater than or equal to",
         "thresholds", thresholds)
 
-    target_names = [re.sub(r"( |-|\(|\))", "_", target)
-        for target in targets]
+    target_names = sanitise_names(targets)
     columns = ", ".join((
         f'''
         `{target}_activity`.Pa AS `{target}-Pa`, `{target}_activity`.Pi AS `{target}-Pi`, 
@@ -103,9 +102,7 @@ def query_pathway_hits(pathways,
         assert isinstance(pathways, str)
         pathways = [pathways]
 
-    pathway_names = [re.sub(r"( |-|\(|\)|/)", "_", pathway)
-        for pathway in pathways]
-
+    pathway_names = sanitise_names(pathways)
     columns = ", ".join((
         f'''
         GROUP_CONCAT(DISTINCT(`{pathway}_target`.target_name)) AS `{pathway} Target Names`, 
@@ -254,9 +251,7 @@ def query_reaction_hits(reactions,
         assert isinstance(reactions, str)
         reactions = [reactions]
 
-    reaction_names = [re.sub(r"( |-|\(|\)|/)", "_", reaction)
-        for reaction in reactions]
-
+    reaction_names = sanitise_names(reactions)
     columns = ", ".join((
         f'''
         GROUP_CONCAT(DISTINCT(`{reaction}_target`.target_name)) AS `{reaction} Target Names`, 
