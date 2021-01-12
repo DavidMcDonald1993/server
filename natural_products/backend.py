@@ -63,18 +63,18 @@ def query_target_hits(
     conditions = "\n".join((
         f'''
         AND `{target_name}_activity`.above_{threshold}=(1) 
-        AND `{target_name}_target`.target_name='{target}'
+        AND `{target_name}_target`.target_name="{target}"
         '''
         for target_name, target, threshold in zip(target_names[1:], targets[1:], thresholds[1:])      
     ))
     query = f'''
-        SELECT c.compound_id, c.coconut_id AS `ID`, c.name AS `Molecule Name`, 
+        SELECT c.compound_id, c.coconut_id AS `ID`, c.image_path AS `Image`, c.name AS `Molecule Name`, 
             c.formula AS `Molecular Formula`, c.clean_smiles AS `SMILES`,
         {columns}
         FROM compounds AS c
         {tables}
         WHERE `{target_names[0]}_activity`.above_{thresholds[0]}=(1)
-        AND `{target_names[0]}_target`.target_name='{targets[0]}'
+        AND `{target_names[0]}_target`.target_name="{targets[0]}"
         {conditions}
         {f"LIMIT {limit}" if limit is not None else ""}
     '''
@@ -137,8 +137,8 @@ def query_pathway_hits(pathways,
     conditions = "\n".join((
         f'''
         AND `{pathway_name}_activity`.above_{threshold}=(1) 
-        AND `{pathway_name}_pathway`.pathway_name='{pathway}'
-        AND `{pathway_name}_pathway`.organism='{organism}'
+        AND `{pathway_name}_pathway`.pathway_name="{pathway}"
+        AND `{pathway_name}_pathway`.organism="{organism}"
         '''
         for pathway_name, pathway in zip(pathway_names[1:], pathways[1:])
     ))
@@ -153,14 +153,14 @@ def query_pathway_hits(pathways,
     ))
 
     query = f'''
-        SELECT c.compound_id, c.coconut_id AS `ID`, c.name AS `Molecule Name`, 
+        SELECT c.compound_id, c.coconut_id AS `ID`, c.image_path AS `Image`, c.name AS `Molecule Name`, 
             c.formula AS `Molecular Formula`, c.clean_smiles AS `SMILES`,
         {columns}
         FROM compounds AS c
         {tables}
         WHERE `{pathway_names[0]}_activity`.above_{threshold}=(1)
-        AND `{pathway_names[0]}_pathway`.pathway_name='{pathways[0]}'
-        AND `{pathway_names[0]}_pathway`.organism='{organism}'
+        AND `{pathway_names[0]}_pathway`.pathway_name="{pathways[0]}"
+        AND `{pathway_names[0]}_pathway`.organism="{organism}"
         {conditions}
         GROUP BY c.compound_id, c.coconut_id, c.name, c.formula, c.clean_smiles, {group_by}
         {f"LIMIT {limit}" if limit is not None else ""}
@@ -286,8 +286,8 @@ def query_reaction_hits(reactions,
     conditions = "\n".join((
         f'''
         AND `{reaction_name}_activity`.above_{threshold}=(1) 
-        AND `{reaction_name}_reaction`.reaction_name='{reaction}'
-        AND `{reaction_name}_reaction`.organism='{organism}'
+        AND `{reaction_name}_reaction`.reaction_name="{reaction}"
+        AND `{reaction_name}_reaction`.organism="{organism}"
         '''
         for reaction_name, reaction in zip(reaction_names[1:], reactions[1:])
     ))
@@ -302,14 +302,14 @@ def query_reaction_hits(reactions,
     ))
 
     query = f'''
-        SELECT c.compound_id, c.coconut_id AS `ID`, c.name AS `Molecule Name`, 
+        SELECT c.compound_id, c.coconut_id AS `ID`, c.image_path AS `Image`, c.name AS `Molecule Name`, 
             c.formula AS `Molecular Formula`, c.clean_smiles AS `SMILES`,
         {columns}
         FROM compounds AS c
         {tables}
         WHERE `{reaction_names[0]}_activity`.above_{threshold}=(1)
-        AND `{reaction_names[0]}_reaction`.reaction_name='{reactions[0]}'
-        AND `{reaction_names[0]}_reaction`.organism='{organism}'
+        AND `{reaction_names[0]}_reaction`.reaction_name="{reactions[0]}"
+        AND `{reaction_names[0]}_reaction`.organism="{organism}"
         {conditions}
         GROUP BY c.compound_id, c.coconut_id, c.name, c.formula, c.clean_smiles, {group_by}
         {f"LIMIT {limit}" if limit is not None else ""}
@@ -391,20 +391,23 @@ def get_multiple_compound_info(
     columns=("coconut_id", "name", "formula", "clean_smiles")):
 
     if compounds is not None:
-        if not isinstance(compounds, tuple):
-            compounds = tuple(compounds)
+        if not isinstance(compounds, str):
+            if isinstance(compounds, list) or isinstance(compounds, set):
+                compounds = tuple(compounds)
+            assert isinstance(compounds, tuple)
+            if len(compounds) == 1:
+                compounds = compounds[0]
 
     compound_query = f'''
         SELECT {(", ".join(columns))}
         FROM compounds
-        {f"WHERE coconut_id IN {compounds}" if compounds is not None else ""}
+        {f"WHERE coconut_id IN {compounds}" if isinstance(compounds, tuple)
+        else f'WHERE coconut_id="{compounds}"' if isinstance(compounds, str) else ""}
     '''
 
-    records = mysql_query(compound_query)
+    return mysql_query(compound_query)
 
-    return records
-
-def get_compound_info( # use mongo
+def get_coconut_compound_info_from_mongo( # use mongo
     compound_id, 
     projection={"_id": 0},
     get_activities=True,
@@ -468,19 +471,26 @@ def get_all_activities_for_compound(
     ]
     
     return category_activities
-    
 
-def draw_molecule(smiles, 
+def draw_molecule(
+    compound_id,
+    smiles, 
     static_dir="natural_products/static",
-    img_filename="natural_products/temp.png", 
+    output_dir="compound_images",
+    # img_filename="natural_products/temp.png", 
     ):
+    output_dir = os.path.join(output_dir, f"{compound_id//1024}")
+    os.makedirs(os.path.join(static_dir, output_dir), exist_ok=True)
+
+    img_filename = os.path.join(output_dir, f"{compound_id}.png")
+    img_full_path = os.path.join(static_dir, img_filename)
+    if os.path.exists(img_full_path):
+        return img_filename
+   
     mol = Chem.MolFromSmiles(smiles)
     if mol is not None:
         img = MolToImage(mol)
-
-        img.save(os.path.join(static_dir,
-            img_filename))
-
+        img.save(img_full_path)
         return img_filename
     else:
         return None
@@ -490,10 +500,12 @@ def write_records_to_file(
     targets, 
     thresholds,
     records,
-    static_dir="natural_products/static/natural_products",
-    output_dir="results",
+    static_dir="natural_products/static",
+    output_dir="records",
     ):
     assert isinstance(records, pd.DataFrame)
+    if "Image" in records.columns:
+        del records["Image"]
 
     output_dir = os.path.join(static_dir, output_dir, f"user={user_id}")
     os.makedirs(output_dir, exist_ok=True)
@@ -517,7 +529,7 @@ def write_smiles_to_file(
     output_dir="smiles",
     ):  
 
-    output_dir = os.path.join(static_dir, output_dir, f"user_id={user_id}")
+    output_dir = os.path.join(static_dir, output_dir, f"{user_id}")
     os.makedirs(output_dir, exist_ok=True)
 
     targets = ",".join(map(lambda s: s.replace(" ", "_"), targets))
@@ -565,20 +577,29 @@ if __name__ == "__main__":
     # for record in records[:5]:
     #     print (record)
 
-    pathway_hits, cols = query_pathway_hits([
-        "Zinc transporters", 
-        "Xenobiotics",
-        # "Disease",
-        "Signaling by Erbb2",
-        # "PI3K phosphorylates PIP2 to PIP3", # reaction
-        # "Recruitment of PLCgamma to membrane"
-        ],
-        organism="Homo sapiens", 
-        filter_pa_pi=True, threshold=950, 
-        # limit=10
-    )
+    # pathway_hits, cols = query_pathway_hits([
+    #     "Zinc transporters", 
+    #     "Xenobiotics",
+    #     # "Disease",
+    #     "Signaling by Erbb2",
+    #     # "PI3K phosphorylates PIP2 to PIP3", # reaction
+    #     # "Recruitment of PLCgamma to membrane"
+    #     ],
+    #     organism="Homo sapiens", 
+    #     filter_pa_pi=True, threshold=950, 
+    #     # limit=10
+    # )
 
-    print (len(pathway_hits))
-    # for hit in pathway_hits[:1]:
-        # print (hit)
-    print (cols)
+    # print (len(pathway_hits))
+    # # for hit in pathway_hits[:1]:
+    #     # print (hit)
+    # print (cols)
+
+    query = '''
+        SELECT compound_id, clean_smiles
+        FROM compounds
+    '''
+    records = mysql_query(query)
+
+    for _id, smiles in records:
+        draw_molecule(_id, smiles)

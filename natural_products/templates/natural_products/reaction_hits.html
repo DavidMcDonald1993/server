@@ -40,13 +40,20 @@
         style="width:100%;text-align:center;display:none;">
         <thead>
           <tr>
+            {% if num_hits < 5000 %}
+            <th colspan="4">Molecule</th>
+            {% else %}
             <th colspan="3">Molecule</th>
+            {% endif %}
             {% for reaction in reactions %}
             <th colspan="6">{{reaction}}</th>
             {% endfor %}
           </tr>
           <tr>
             <th>ID</th>
+            {% if num_hits < 5000 %}
+            <th>Image</th>
+            {% endif %}
             <th>Compound Name</th>
             <th>Molecular Formula</th>
             <!-- <th>SMILES</th> -->
@@ -64,6 +71,10 @@
           {% for hit in reaction_hits %}
           <tr>
             <td> <a href="/natural_products/compounds/{{hit.id}}"> {{ hit.id }} </a> </td>
+            {% if num_hits < 5000 %}
+            <td> <img src="{% static hit.image %}" alt=""
+              style="width: 100pt; height: 100pt;"></img> </td>
+            {% endif %}
             <td> {{ hit.name }} </td>
             <td> {{ hit.formula }} </td>
             <!-- <td> {{ hit.smiles }} </td> -->

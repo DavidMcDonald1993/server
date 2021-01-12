@@ -12,7 +12,7 @@ import html
 import urllib.parse as urlparse
 
 from natural_products.backend import (write_records_to_file, write_smiles_to_file, 
-    query_target_hits, get_compound_info, draw_molecule, get_multiple_compound_info,
+    query_target_hits, get_coconut_compound_info_from_mongo, draw_molecule, get_multiple_compound_info,
     query_pathway_hits, query_reaction_hits)
 
 from utils.mysql_utils import (get_all_targets_for_categories, 
@@ -51,7 +51,6 @@ def show_target_hits_view(request, ):
     targets = request.GET.getlist("targets")
     threshold = request.GET["threshold"]
     filter_pa_pi = request.GET.get("checkbox") == "on" #TODO
-    # filter_pa_pi = False
 
     try:
         threshold = int(threshold)
@@ -102,7 +101,6 @@ def show_pathway_hits_view(request, ):
     pathways = request.GET.getlist("pathways")
     threshold = request.GET["threshold"]
     filter_pa_pi = request.GET.get("checkbox") == "on" #TODO
-    # filter_pa_pi = False
     organism = "Homo sapiens"
 
     try:
@@ -134,6 +132,7 @@ def show_pathway_hits_view(request, ):
         
         {
             "id": compound_id, 
+            "image": image,
             "name": compound_name, 
             "formula": compound_formula, 
             "smiles": compound_smiles,
@@ -144,7 +143,7 @@ def show_pathway_hits_view(request, ):
                 for pathway_number in range(num_pathways)   
             ]
         }
-        for compound_id, compound_name, compound_formula, compound_smiles,
+        for compound_id, image, compound_name, compound_formula, compound_smiles,
             *pathway_values in pathway_hits
     ]
 
@@ -160,9 +159,9 @@ def show_pathway_hits_view(request, ):
 
 def reaction_select_view(request):
 
-    organism = "Homo sapiens"
+    organisms = "Homo sapiens"
 
-    reactions = get_all_reactions(organism=organism)
+    reactions = get_all_reactions(organisms=organisms)
     reactions = (
             (r, urlparse.quote(r), o, urlparse.quote(o))
         for r, o in reactions
@@ -174,14 +173,14 @@ def reaction_select_view(request):
         "thresholds": thresholds,
     }
     return render(request,
-        "natural_products/reaction_select.html", context)
+        "natural_products/reaction_select.html", 
+        context)
 
 def show_reaction_hits_view(request, ):
 
     reactions = request.GET.getlist("reactions")
     threshold = request.GET["threshold"]
-    filter_pa_pi = request.GET.get("checkbox") == "on" #TODO
-    # filter_pa_pi = False
+    filter_pa_pi = request.GET.get("checkbox") == "on"
     organism = "Homo sapiens"
 
     try:
@@ -213,6 +212,7 @@ def show_reaction_hits_view(request, ):
     reaction_hits = [
         {
             "id": compound_id, 
+            "image": image,
             "name": compound_name, 
             "formula": compound_formula, 
             "smiles": compound_smiles,
@@ -223,7 +223,7 @@ def show_reaction_hits_view(request, ):
                 for reaction_number in range(num_reactions)   
             ]
         }
-        for compound_id, compound_name, compound_formula, compound_smiles,
+        for compound_id, image, compound_name, compound_formula, compound_smiles,
             *reaction_values in reaction_hits
     ]
 
@@ -254,7 +254,7 @@ def compound_info_view(request, compound_id):
     compound_id = "CNP" + compound_id
 
     # query database
-    info, activities = get_compound_info(compound_id)
+    info, activities = get_coconut_compound_info_from_mongo(compound_id)
 
     context = {}
 
@@ -265,12 +265,13 @@ def compound_info_view(request, compound_id):
 
     smiles = info["clean_smiles"]
     if smiles is not None:
-        img_filename = draw_molecule(smiles)
+        _compound_id = get_multiple_compound_info(compound_id, columns=("compound_id", ))[0][0]
+        img_filename = draw_molecule(_compound_id, smiles)
         if img_filename is not None:
             context["img_filename"] = img_filename
 
-    pathways = get_all_pathways_for_compounds(compound_id)
-    reactions = get_all_reactions_for_compounds(compound_id)
+    pathways = get_all_pathways_for_compounds(compound_id, organism="Homo sapiens")
+    reactions = get_all_reactions_for_compounds(compound_id,  organism="Homo sapiens")
 
     # convert to list of dicts for easy presentation
     info = info.items()

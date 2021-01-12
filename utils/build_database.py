@@ -356,7 +356,8 @@ def populate_targets_to_uniprot(chunksize=50):
             assert len(target_rows) == len(uniprots)
             rows.extend(target_rows)
 
-            print ("completed target", i+1, "/", len(targets_to_uniprots))
+            print ("completed target", i+1, "/", len(targets_to_uniprots),
+                "for chunk number", chunk_no+1, "/", n_chunks)
 
         mysql_insert_many(insert_targets_to_uniprot_sql, rows)
         print ("completed chunk no", chunk_no+1, "/", n_chunks)
@@ -423,7 +424,7 @@ def populate_reactions():
             for _, row in reactions.iterrows() 
     )
 
-   return mysql_insert_many(insert_reactions_sql, rows)
+    return mysql_insert_many(insert_reactions_sql, rows)
 
 def create_uniprot_to_pathway_table():
 

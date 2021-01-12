@@ -117,7 +117,7 @@ def mysql_insert_many(sql, rows, existing_conn=None, chunksize=1000000):
     return 0
 
 def sanitise_names(names):
-    return  [re.sub(r"( |\+|-|\*|/|=|<|>|\(|\))", "_", name)
+    return  [re.sub(r"( |\+|-|\*|/|=|<|>|\(|\)|,|\.|'|\[|\]|:|;)", "_", name)
         for name in names]
 
 def get_all_targets_for_categories(categories=None, existing_conn=None):
@@ -223,8 +223,16 @@ def get_all_pathway_organisms(existing_conn=None):
 
 def get_all_reactions(
     filter_actives=True,
-    organism=None, 
+    organisms=None, 
     existing_conn=None):
+    if organisms is not None:
+        if not isinstance(organisms, str):
+            if isinstance(organisms, list) or isinstance(organisms, set):
+                organisms = tuple(organisms)
+            assert isinstance(organisms, tuple)
+            print ("returning pathways for", len(organisms), "organisms")
+            if len(organisms) == 1:
+                organisms = organisms[0]
     active_filter = f'''
         INNER JOIN uniprot_to_reaction AS ur ON (ur.reaction_id=r.reaction_id)
         INNER JOIN targets_to_uniprot AS tu ON (ur.uniprot_id=tu.uniprot_id)
@@ -234,10 +242,10 @@ def get_all_reactions(
         SELECT DISTINCT r.reaction_name, r.organism
         FROM reaction AS r
         {active_filter if filter_actives else ""}
-        {f"WHERE r.organism='{organism}'" if organism is not None else ""}
+        {f"WHERE r.organism IN {organisms}" 
+            if isinstance(organisms, tuple) else f"WHERE r.organism='{organisms}'" 
+                if isinstance(organisms, str) else ""}
     '''
-    if organism is not None:
-        query += f"AND organism=\"{organism}\""
     return mysql_query(query, existing_conn=existing_conn)
 
 def get_all_reaction_organisms(existing_conn=None):
@@ -275,6 +283,7 @@ def get_all_pathways_for_compounds(
             else f'c.coconut_id="{coconut_ids}"'}
         {"AND a.Pa>a.Pi" if filter_pa_pi else ""}
         {f"AND a.Pa>{threshold}" if threshold>0 else ""}
+        {f"AND p.organism='{organism}'" if organism is not None else ""}
         {f"LIMIT {limit}" if limit is not None else ""}
     '''
     return mysql_query(query, existing_conn=existing_conn)
@@ -306,6 +315,7 @@ def get_all_reactions_for_compounds(
             else f'c.coconut_id="{coconut_ids}"'}
         {"AND a.Pa>a.Pi" if filter_pa_pi else ""}
         {f"AND a.Pa>{threshold}" if threshold>0 else ""}
+        {f"AND r.organism='{organism}'" if organism is not None else ""}
         {f"LIMIT {limit}" if limit is not None else ""}
     '''
     return mysql_query(query, existing_conn=existing_conn)
