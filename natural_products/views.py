@@ -24,6 +24,8 @@ MAX_VAL = 950
 MIN_VAL = 650
 STEP = -50
 
+MAX_HITS_FOR_IMAGE = 2000
+
 def index_view(request):
     context = {}
     return render(request, 
@@ -63,6 +65,7 @@ def show_target_hits_view(request, ):
 
     thresholds = [threshold]
     target_hits, columns = query_target_hits(targets, thresholds, filter_pa_pi=filter_pa_pi)
+    num_hits = len(target_hits)
 
     request.session["targets"] = targets
     request.session["thresholds"] = thresholds
@@ -73,7 +76,8 @@ def show_target_hits_view(request, ):
         "targets": targets,
         "thresholds": thresholds,
         "target_hits": target_hits,
-        "num_hits": len(target_hits)
+        "num_hits": num_hits,
+        "show_images": num_hits<MAX_HITS_FOR_IMAGE
     }
 
     return render(request,
@@ -117,6 +121,7 @@ def show_pathway_hits_view(request, ):
         organism=organism, 
         # limit=100,
         )
+    num_hits = len(pathway_hits)
 
     request.session["targets"] = pathways # for downloading
     request.session["thresholds"] = [threshold]
@@ -151,7 +156,8 @@ def show_pathway_hits_view(request, ):
         "pathways": pathways,
         "threshold": threshold,
         "pathway_hits": pathway_hits,
-        "num_hits": len(pathway_hits),
+        "num_hits": num_hits,
+        "show_images": num_hits<MAX_HITS_FOR_IMAGE
     }
 
     return render(request,
@@ -198,6 +204,7 @@ def show_reaction_hits_view(request, ):
         organism=organism,
         # limit=100
         )
+    num_hits = len(reaction_hits)
 
     request.session["targets"] = reactions # for downloading
     request.session["thresholds"] = [threshold]
@@ -231,7 +238,8 @@ def show_reaction_hits_view(request, ):
         "reactions": reactions,
         "threshold": threshold,
         "reaction_hits": reaction_hits,
-        "num_hits": len(reaction_hits),
+        "num_hits": num_hits,
+        "show_images": num_hits<MAX_HITS_FOR_IMAGE
     }
 
     return render(request,

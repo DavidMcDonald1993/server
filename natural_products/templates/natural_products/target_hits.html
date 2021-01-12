@@ -40,7 +40,7 @@
         style="width:100%;text-align:center;display:none;">
         <thead>
           <tr>
-            {% if num_hits < 5000 %}
+            {% if show_images %}
             <th colspan="5">Molecule</th>
             {% else %}
             <th colspan="4">Molecule</th>
@@ -51,7 +51,7 @@
           </tr>
           <tr>
             <th>ID</th>
-            {% if num_hits < 5000 %}
+            {% if show_images %}
             <th>Image</th>
             {% endif %}
             <th>Compound Name</th>
@@ -72,7 +72,7 @@
                 <td> <a href="/natural_products/compounds/{{element}}"> 
                   {{ element }} </a> </td>
               {% elif forloop.counter == 2 %}
-                {% if num_hits < 5000 %}
+                {% if show_images %}
                 <td> <img src="{% static element %}" alt=""
                   style="width: 100pt; height: 100pt;"></img> </td>
                 {% endif %}
