@@ -11,6 +11,9 @@ from utils.email_utils import send_mail
 def get_token(token_length=128): # token is double length
     return secrets.token_hex(token_length)
 
+def generate_password(password_length=8):
+    return secrets.token_hex(password_length)
+
 def create_files_table():
 
     create_files_table_sql = '''
@@ -87,10 +90,12 @@ if __name__ == "__main__":
 
     # token = add_file_to_database(1, path="test.sdf")
 
-    token = "f5cfd4845379b498755a7fa4f683776be8c1aa8949aa219809f78bec7c0ee59532561ab033421417fea30d81437538ec5fe47cfd4881e4dd16009e0676812a954855210daeb13f0f0f9f6136cbaa82814dd63b2cb8998e41b8fcc434eeb64446d208e0146fa94393fd7cbdf8c406a04a6fca069ae0fa668caaeade3b35197311"
+    # token = "f5cfd4845379b498755a7fa4f683776be8c1aa8949aa219809f78bec7c0ee59532561ab033421417fea30d81437538ec5fe47cfd4881e4dd16009e0676812a954855210daeb13f0f0f9f6136cbaa82814dd63b2cb8998e41b8fcc434eeb64446d208e0146fa94393fd7cbdf8c406a04a6fca069ae0fa668caaeade3b35197311"
 
-    print (token)
+    # print (token)
 
-    path = get_file_from_token(token, user_id=1)
+    # path = get_file_from_token(token, user_id=1)
 
-    print (path)
+    # print (path)
+
+    print (generate_password())

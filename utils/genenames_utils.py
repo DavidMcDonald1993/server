@@ -38,7 +38,7 @@ def search_for_hgnc_id(hgnc_id, key="symbol"):
 
     h = http.Http()
 
-    print ("searching url", uri + path + hgnc_id)
+    print ("fetching data from URL:", uri + path + hgnc_id)
 
     target = urlparse(uri + path + hgnc_id)
     method = 'GET'
@@ -92,7 +92,7 @@ def search_for_targets(search_terms, key="symbol", max_hits=100, only_best_scori
     for term_no, (search_term, search_term_prepared)\
         in enumerate(zip(search_terms, search_terms_prepared)):
         print ("processing term", search_term)
-        print ("searching url", uri + path + search_term_prepared)
+        print ("performing search using URL:", uri + path + search_term_prepared)
 
         target = urlparse(uri + path + search_term_prepared) # handles converting to HTML
         method = 'GET'
@@ -172,7 +172,8 @@ if __name__ == "__main__":
     # ["Alpha 1a adrenoreceptor antagonist"], prepare=True ))
     # print (search_for_hgnc_id("HGNC:3018"))
 
-    targets = ["1,2-alpha-L-fucosidase inhibitor"]
+    # targets = ["1,2-alpha-L-fucosidase inhibitor"]
+    targets = ["ACTG1"]
 
     search_terms = prepare_search_terms(targets)
     print (list(search_terms))

@@ -386,7 +386,6 @@ def query_reaction_hits(reactions,
 
     return records, cols[1:]
 
-
 def get_multiple_compound_info(
     compounds=None, 
     columns=("coconut_id", "name", "formula", "clean_smiles")):
@@ -405,7 +404,7 @@ def get_multiple_compound_info(
 
     return records
 
-def get_compound_info( # used mongo
+def get_compound_info( # use mongo
     compound_id, 
     projection={"_id": 0},
     get_activities=True,
@@ -432,7 +431,6 @@ def get_compound_info( # used mongo
         filter_pa_pi=filter_pa_pi)
 
     return compound_info, pass_activities
-
 
 def get_all_activities_for_compound(
     coconut_id, 

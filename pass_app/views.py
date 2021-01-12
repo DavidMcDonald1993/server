@@ -17,12 +17,12 @@ import multiprocessing as mp
 
 from django.contrib.auth import authenticate, login, logout
 
-def index(request):
+def index_view(request):
     context = {}
     return render(request, 
         "pass_app/index.html", context)
 
-def login_page(request):
+def login_page_view(request):
     if request.method == "POST":
         username = request.POST['username']
         password = request.POST['password']
@@ -38,17 +38,17 @@ def login_page(request):
         context = {}
         return render(request, "pass_app/login.html", context)
 
-def logout_page(request):
+def logout_page_view(request):
     logout(request)
     return HttpResponseRedirect("/")
 
-def login_unsuccessful(request):
+def login_unsuccessful_view(request):
     context = {}
     return render(request, 
     "pass_app/login_unsuccessful.html",
         context)
 
-def upload_file(request):
+def upload_file_view(request):
     if not request.user.is_authenticated:
         return HttpResponseRedirect("login_unsucessful")
 
@@ -81,7 +81,7 @@ def upload_file(request):
         'pass_app/upload.html', 
         context)
 
-def success(request):
+def success_view(request):
 
     context = {}
 
@@ -89,7 +89,7 @@ def success(request):
         "pass_app/success.html",
         context)
 
-def download(request, token):
+def download_view(request, token):
 
     context = {"token": token}
 
@@ -130,13 +130,10 @@ def download(request, token):
         "pass_app/download.html",
         context)
 
-def download_error(request):
+def download_error_view(request):
     
     context = {}
 
     return render(request, 
         "pass_app/download_error.html",
         context)
-
-def favicon(request):
-    return HttpResponse("/favicon")

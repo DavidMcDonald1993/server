@@ -15,7 +15,7 @@ from natural_products.backend import (write_records_to_file, write_smiles_to_fil
     query_target_hits, get_compound_info, draw_molecule, get_multiple_compound_info,
     query_pathway_hits, query_reaction_hits)
 
-from utils.mysql_utils import (get_all_targets_and_categories, 
+from utils.mysql_utils import (get_all_targets_for_categories, 
     get_all_pathways, get_all_reactions, get_all_pathways_for_compounds, get_all_reactions_for_compounds)
 
 # Create your views here.
@@ -24,14 +24,14 @@ MAX_VAL = 950
 MIN_VAL = 650
 STEP = -50
 
-def index(request):
+def index_view(request):
     context = {}
     return render(request, 
         "natural_products/index.html", context)
         
-def target_select(request):
+def target_select_view(request):
 
-    targets = get_all_targets_and_categories(
+    targets = get_all_targets_for_categories(
         categories={"MECHANISMS", "GENE_EXPRESSION"})
     targets = (
             (c, t, urlparse.quote(t))
@@ -46,7 +46,7 @@ def target_select(request):
     return render(request,
         "natural_products/target_select.html", context)
 
-def show_target_hits(request, ):
+def show_target_hits_view(request, ):
 
     targets = request.GET.getlist("targets")
     threshold = request.GET["threshold"]
@@ -80,11 +80,11 @@ def show_target_hits(request, ):
     return render(request,
         "natural_products/target_hits.html", context)
         
-def pathway_select(request):
+def pathway_select_view(request):
 
-    organism = "Homo sapiens"
+    organisms = "Homo sapiens"
 
-    pathways = get_all_pathways(organism=organism)
+    pathways = get_all_pathways(organisms=organisms, )
     pathways = (
             (p, urlparse.quote(p), o, urlparse.quote(o))
         for p, o in pathways
@@ -97,7 +97,7 @@ def pathway_select(request):
     return render(request,
         "natural_products/pathway_select.html", context)
 
-def show_pathway_hits(request, ):
+def show_pathway_hits_view(request, ):
 
     pathways = request.GET.getlist("pathways")
     threshold = request.GET["threshold"]
@@ -158,7 +158,7 @@ def show_pathway_hits(request, ):
     return render(request,
         "natural_products/pathway_hits.html", context)
 
-def reaction_select(request):
+def reaction_select_view(request):
 
     organism = "Homo sapiens"
 
@@ -176,7 +176,7 @@ def reaction_select(request):
     return render(request,
         "natural_products/reaction_select.html", context)
 
-def show_reaction_hits(request, ):
+def show_reaction_hits_view(request, ):
 
     reactions = request.GET.getlist("reactions")
     threshold = request.GET["threshold"]
@@ -238,7 +238,7 @@ def show_reaction_hits(request, ):
         "natural_products/reaction_hits.html", context)
 
 
-def all_compounds(request):
+def all_compounds_view(request):
 
     # get compound data from database
     compounds = get_multiple_compound_info() # returns list of tuples
@@ -249,7 +249,7 @@ def all_compounds(request):
     return render(request, 
         "natural_products/all_compounds.html", context)
 
-def compound_info(request, compound_id):
+def compound_info_view(request, compound_id):
 
     compound_id = "CNP" + compound_id
 
@@ -288,7 +288,7 @@ def compound_info(request, compound_id):
         "natural_products/compound_info.html", 
         context)
 
-def download_hits(request):
+def download_hits_view(request):
 
     assert request.user.is_authenticated
     
@@ -306,7 +306,7 @@ def download_hits(request):
             os.path.basename(record_filename), 
             os.path.dirname(record_filename))
 
-def optimise_target_hits(request):
+def optimise_target_hits_view(request):
 
     assert request.user.is_authenticated
     user_id = request.user.id

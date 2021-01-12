@@ -22,7 +22,7 @@
     <div>
     <h1>All natural products</h1>
     <form action="/natural_products/" >
-      <input type="submit" value="Return to natural product page">
+      <input type="submit" value="Return to natural products">
     </form>
     </div>
         
@@ -32,17 +32,17 @@
 
       <thead>
         <tr>
-            <th>Coconut ID</th>
+            <th>ID</th>
             <th>Name</th>
             <th>Molecular Formula</th>
             <th>SMILES</th>
         </tr>
       </thead>
       <tbody>
-        {% for coconut_id, name, formula, smiles in compounds %}
+        {% for id, name, formula, smiles in compounds %}
           <tr>
-            <td> <a href="/natural_products/compounds/{{coconut_id}}"> 
-            {{ coconut_id }} </a> </td>
+            <td> <a href="/natural_products/compounds/{{id}}"> 
+            {{ id }} </a> </td>
             <td>{{name}}</td> 
             <td>{{formula}}</td> 
             <td>{{smiles}}</td> 
