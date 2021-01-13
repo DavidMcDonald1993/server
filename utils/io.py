@@ -78,7 +78,7 @@ def process_input_file(
     input_file, 
     desired_format,
     output_dir, 
-    valid_input_file_types=(".smi", ".txt", ".sdf")):
+    valid_input_file_types=(".smi", ".txt", ".sml", ".sdf")):
     '''
     process input file from client
     '''
@@ -118,14 +118,14 @@ def process_input_file(
                 # write smiles to temp_file
                 temp_file = temp_file_name + desired_format
                 write_smiles(smiles, temp_file)
-            elif input_file_type == ".txt":
+            elif input_file_type in {".txt", ".sml"}:
                 # rename .txt smiles format to .smi
                 os.rename(temp_file, temp_file_name + desired_format)
             else:
                 raise NotImplementedError
 
         elif desired_format == ".sdf":
-            if input_file_type in {".smi", ".txt"}:
+            if input_file_type in {".smi", ".sml", ".txt"}:
                 # convert from SMILES to SDF
                 print ("converting SMILES to SDF")
                 smiles_filename = temp_file
