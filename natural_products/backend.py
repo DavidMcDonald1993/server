@@ -45,9 +45,9 @@ def query_target_hits(
 
     target_names = sanitise_names(targets)
     columns = ", ".join((
+        # `{target}_activity`.Pa AS `{target}-Pa`, `{target}_activity`.Pi AS `{target}-Pi`, 
         f'''
-        `{target}_activity`.Pa AS `{target}-Pa`, `{target}_activity`.Pi AS `{target}-Pi`, 
-            `{target}_activity`.Pa-`{target}_activity`.Pi AS `{target}-Pa-Pi`
+            `{target}_activity`.Pa-`{target}_activity`.Pi AS `{target}-Confidence Score`
         '''
         for target in target_names
     ))
