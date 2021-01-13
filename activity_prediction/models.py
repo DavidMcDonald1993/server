@@ -4,39 +4,6 @@ import numpy as np
 import pandas as pd
 from scipy import sparse as sp
 
-import functools
-
-from sklearn.base import BaseEstimator, ClassifierMixin
-
-from sklearn.dummy import DummyClassifier
-
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.naive_bayes import BernoulliNB
-from sklearn.multiclass import OneVsRestClassifier
-
-from sklearn.svm import SVC
-from sklearn.linear_model import LogisticRegression, LogisticRegressionCV, RidgeClassifierCV
-
-from sklearn.ensemble import (BaggingClassifier, ExtraTreesClassifier, 
-    AdaBoostClassifier, GradientBoostingClassifier)
-
-from xgboost import XGBClassifier
-
-from sklearn.base import clone
-
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
-
-from sklearn.utils.validation import check_is_fitted
-
-from sklearn.metrics import pairwise_distances
-
-from sklearn.model_selection import StratifiedKFold
-from skmultilearn.model_selection import IterativeStratification
-
-from sklearn.exceptions import NotFittedError
-
-from activity_prediction.get_fingerprints import compute_fp, load_training_fingerprints
-
 import multiprocessing as mp
 
 import pickle as pkl
@@ -44,6 +11,30 @@ import pickle as pkl
 import gzip
 
 from joblib import parallel_backend
+
+import functools
+
+from sklearn.base import BaseEstimator, ClassifierMixin
+from sklearn.dummy import DummyClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.naive_bayes import BernoulliNB
+from sklearn.multiclass import OneVsRestClassifier
+from sklearn.svm import SVC
+from sklearn.linear_model import LogisticRegression, LogisticRegressionCV, RidgeClassifierCV
+from sklearn.ensemble import (BaggingClassifier, ExtraTreesClassifier, 
+    AdaBoostClassifier, GradientBoostingClassifier)
+from sklearn.base import clone
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.utils.validation import check_is_fitted
+from sklearn.metrics import pairwise_distances
+from sklearn.model_selection import StratifiedKFold
+from skmultilearn.model_selection import IterativeStratification
+from sklearn.exceptions import NotFittedError
+
+from xgboost import XGBClassifier
+
+from activity_prediction.get_fingerprints import compute_fp, load_training_fingerprints
+
 
 dense_input = {"nn", "lda"}
 support_multi_label = {"nn", "etc", }

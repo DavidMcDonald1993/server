@@ -15,9 +15,22 @@
 
     <script type="text/javascript" 
       src="{% static 'natural_products/tables.js' %}"></script>
+    
+    <link rel="stylesheet" type="text/css" 
+        href="{% static 'natural_products/sidebar.css' %}">
   </head>
 
   <body style="text-align: center;" onload="setDataTablesVisible();">
+
+    <div class="sidenav">
+      <a href="/activity_prediction">Home</a>
+      <a href="/activity_prediction/upload">Activity prediction</a>
+      <a href="/natural_products/target_selection">Target screening</a>
+      <a href="/natural_products/pathway_selection">Pathway screening</a>
+      <a href="/natural_products/reaction_selection">Reaction screening</a>
+      <a href="/hit_optimisation/upload">Hit optimisation</a>
+      <a href="/logout">Logout</a>
+    </div>
 
     <div>
     <h1>All natural products</h1>

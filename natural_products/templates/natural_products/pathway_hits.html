@@ -15,9 +15,24 @@
        
     <script type="text/javascript" 
       src="{% static 'natural_products/tables.js' %}"></script>
+
+    <link rel="stylesheet" type="text/css" 
+      href="{% static 'natural_products/sidebar.css' %}">
+
   </head>
 
   <body style="text-align: center;" onload="setDataTablesVisible()">
+
+    <div class="sidenav">
+      <a href="/activity_prediction">Home</a>
+      <a href="/activity_prediction/upload">Activity prediction</a>
+      <a href="/natural_products/target_selection">Target screening</a>
+      <a href="/natural_products/pathway_selection">Pathway screening</a>
+      <a href="/natural_products/reaction_selection">Reaction screening</a>
+      <a href="/hit_optimisation/upload">Hit optimisation</a>
+      <a href="/logout">Logout</a>
+    </div>
+
 
     <div>
       <h1>Results</h1>
@@ -28,6 +43,8 @@
  
     </div>
 
+    <div  style="width:75%; margin:0 auto;">
+
     <div style="text-align: left;">
       <h2>Looking at hits for pathways(s): {{pathways}}<br>Using threshold: {{threshold}}</h2> 
       <h2>Number of hits: {{num_hits}}</h2> 
@@ -35,7 +52,7 @@
 
     <br>
  
-    <div class="table-responsive">
+    <div class="table-responsive" >
       <table id=resultsTable class="display table data"
         style="width:100%;text-align:center;display:none;">
         <thead>
@@ -94,19 +111,13 @@
       </table>
     </div>
 
+    </div>
 
-  <div>
 
-    <form action="/natural_products/download/" >
-      <input type="submit" id="downloadButton" value="Download results">
-    </form>
-
-    <!-- <br> -->
-<!--  -->
-    <!-- <form action="/natural_products/optimise/"> -->
-      <!-- <input type="submit" value="Optimise results"> -->
-    <!-- </form> -->
-
-  </div>
+    <div>
+      <form action="/natural_products/download/" >
+        <input type="submit" id="downloadButton" value="Download results">
+      </form>
+    </div>
   </body>
 </html>
