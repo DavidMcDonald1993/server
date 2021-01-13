@@ -41,8 +41,8 @@ def read_smiles(smiles_filename):
     smiles_df = pd.read_csv(smiles_filename, 
         names=["SMILES", "compound"],
         sep="\t", header=None)
+    smiles_df = smiles_df.loc[~pd.isnull(smiles_df["SMILES"])]
     return smiles_df.set_index("compound", drop=True)
-
 
 def standardise_smi(smi, return_smiles=False):
     mol = Chem.MolFromSmiles(smi)

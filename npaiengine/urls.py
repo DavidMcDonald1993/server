@@ -18,10 +18,10 @@ from django.urls import path, include
 
 urlpatterns = [
     path("", #include("npaiengine.urls"))
-        include("pass_app.urls", )),
+        include("activity_prediction.urls", )),
     path('admin/', admin.site.urls),
-    path("pass_app/", 
-        include("pass_app.urls")),
+    path("activity_prediction/", 
+        include("activity_prediction.urls")),
     path("natural_products/", 
         include("natural_products.urls")),
     path("hit_optimisation/",

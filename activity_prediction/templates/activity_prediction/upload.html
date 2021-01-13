@@ -1,0 +1,60 @@
+<!doctype html>
+<html>
+  <head>
+    <title>NPAIEngine Upload</title>
+  </head>
+  <body style="text-align: center;">
+    <div>
+        <h1>Welcome to NPAIEngine's SDF file upload page!</h1>
+        {% if form %}
+            <form enctype="multipart/form-data" action="/activity_prediction/upload/" method="post">
+                {% csrf_token %}
+
+                <div>
+                  <h2>User Details</h2>
+                    <label for="username">Username:</label>
+                    <input type="text" id="username" 
+                      name="username" value={{username}} readonly> 
+                    <br>
+                    <label for="user_email">Desired email address:</label>
+                    <input type="text" id="user_email" 
+                      name="user_email" value={{user_email}} readonly> 
+                    <br>
+                </div>
+          
+                <div>
+                  <h2>File Upload</h2>
+                  {{ form }}
+                </div>
+
+                <br>
+                <br>
+
+                <div>
+                  <h2>Activity Threshold</h2>
+                  <label for="threshold">Threshold (0-1000):</label>
+                  <input type="text" id="threshold" name="threshold" value="500">
+                </div>
+
+                <br>
+                <br>
+
+                <input type="submit" value="Submit">
+            </form>
+        {% else %}
+            <p>No form.</p>
+        {% endif %}
+      </div>
+
+      <br>
+      <br>
+
+      <div>
+      
+        <form action="/activity_prediction">
+          <input type="submit" value="Go to NPAIEngine home">
+        </form> 
+
+      </div>
+  </body>
+</html>

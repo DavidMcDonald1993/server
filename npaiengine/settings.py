@@ -37,7 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     # custom apps
-    "pass_app.apps.PassAppConfig",
+    "activity_prediction.apps.ActivityPredictionConfig",
     "natural_products.apps.NaturalProductsConfig",
     "hit_optimisation.apps.HitOptimisationConfig",
     
