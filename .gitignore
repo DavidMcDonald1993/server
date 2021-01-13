@@ -9,8 +9,19 @@ hit_optimisation/static/hit_optimisation/archives
 natural_products/static/records
 natural_products/static/compound_images
 
-*/static/*
 */__pycache__/*
+
+
+activity_prediction/static/activity_prediction/archives
+activity_prediction/static/activity_prediction/files
+activity_prediction/static/activity_prediction/models
+
+natural_products/static/compound_images
+natural_products/static/records
+natural_products/static/smiles
+
+hit_optimisation/static/hit_optimisation/output
+hit_optimisation/static/hit_optimisation/archives
 
 *_credentials.json
 

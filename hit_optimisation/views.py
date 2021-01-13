@@ -84,7 +84,8 @@ def upload_view(request):
 
     if "targets" in request.session:
         targets = request.session["targets"]
-        targets_to_gene_symbols = search_for_targets(targets, only_best_scoring=False)
+        targets_to_gene_symbols = search_for_targets(targets, 
+            only_best_scoring=True, max_hits=100)
 
         pdb_ids = sorted(
             ((target, symbol, score, pdb_id)
