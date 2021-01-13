@@ -9,6 +9,8 @@ import json
 
 import pandas as pd
 
+from scipy import sparse as sp
+
 import shutil
 
 from standardiser import standardise
@@ -43,6 +45,12 @@ def read_smiles(smiles_filename):
         sep="\t", header=None)
     smiles_df = smiles_df.loc[~pd.isnull(smiles_df["SMILES"])]
     return smiles_df.set_index("compound", drop=True)
+
+def load_labels(labels_filename):
+    print ("loading labels from", labels_filename)
+    Y = sp.load_npz(labels_filename)
+    print ("labels shape is", Y.shape)
+    return Y # sparse format
 
 def standardise_smi(smi, return_smiles=False):
     mol = Chem.MolFromSmiles(smi)

@@ -9,6 +9,9 @@ hit_optimisation/static/hit_optimisation/archives
 natural_products/static/records
 natural_products/static/compound_images
 
+*/static/*
+*/__pycache__/*
+
 *_credentials.json
 
 *.smi

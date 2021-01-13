@@ -21,7 +21,7 @@ import functools
 
 from standardiser import standardise
 
-from data_utils import read_smiles, load_labels
+from utils.io import read_smiles, load_labels
 
 # RDK
 
