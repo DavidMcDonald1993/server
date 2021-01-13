@@ -324,7 +324,7 @@ def optimise_target_hits_view(request):
     hits = request.session["hits"]
 
     smiles = get_multiple_compound_info(
-        compounds=(hit[0] for hit in hits),
+        compounds=[hit[0] for hit in hits],
         columns=("coconut_id", "clean_smiles"))
 
     smiles_filename = write_smiles_to_file(user_id, targets, thresholds, smiles)
