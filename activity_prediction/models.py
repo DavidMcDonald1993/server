@@ -35,7 +35,7 @@ from skmultilearn.model_selection import IterativeStratification
 
 from sklearn.exceptions import NotFittedError
 
-from get_fingerprints import compute_fp, load_training_fingerprints
+from activity_prediction.get_fingerprints import compute_fp, load_training_fingerprints
 
 import multiprocessing as mp
 

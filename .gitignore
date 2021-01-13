@@ -18,3 +18,5 @@ natural_products/static/compound_images
 *.ico
 
 oe_license.txt
+
+main.py
