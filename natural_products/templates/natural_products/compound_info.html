@@ -34,11 +34,14 @@
     
       <div>
         <h1>{{compound_name}}</h1>
+        <h2>Activities for threshold: {{threshold}}</h2>
         <form action="/natural_products">
           <input type="submit" 
             value="Return to screening selection">
         </form>
       </div>
+
+      <br>
 
       {% if img_filename %}
       <div>
@@ -47,6 +50,8 @@
           style="width: 20%; height: 20%;" >
       </div>
       {% endif %}
+
+      <br>
 
       <div class="hiddenDiv" style="display: none;">
 
@@ -99,7 +104,7 @@
           </tr>
         </thead>
         <tbody>
-          {% for key, value in info %}
+          {% for key, value in compound_info %}
           <tr>
             <td>{{key}}</td>
             <td>{{value}}</td>
@@ -161,30 +166,20 @@
             
           <thead>
             <tr>
-              <th>Target</th>
-              <th>Pa</th>
-              <th>Pi</th>
-              <th>Pa - Pi</th>
-              <th>Uniprot ACC</th>
-              <th>Association Score</th>
+              <th>Uniprot ACCs</th>
+              <th>Number Uniprot ACCs</th>
               <th>Pathway Name</th>
               <th>Pathway Organism</th>
-              <th>Evidence</th>
             </tr>
           </thead>
             
           <tbody>
-            {% for target, pa, pi, diff, acc, score, pathway_name, organism, evidence, url in pathways %}
+            {% for accs, num_accs, pathway_name, organism, url in pathways %}
             <tr>
-              <td>{{target}}</td>
-              <td>{{pa}}</td>
-              <td>{{pi}}</td>
-              <td>{{diff}}</td>
-              <td>{{acc}}</td>
-              <td>{{score}}</td>
+              <td>{{accs}}</td>
+              <td>{{num_accs}}</td>
               <td><a href={{url}}>{{pathway_name}}</a></td>
               <td>{{organism}}</td>
-              <td>{{evidence}}</td>
             </tr>
             {% endfor %}
           </tbody>
@@ -206,30 +201,20 @@
           
           <thead>
           <tr>
-            <th>Target</th>
-            <th>Pa</th>
-            <th>Pi</th>
-            <th>Pa - Pi</th>
-            <th>Uniprot ACC</th>
-            <th>Association Score</th>
+            <th>Uniprot ACCs</th>
+            <th>Number Uniprot ACCs</th>
             <th>Reaction Name</th>
             <th>Reaction Organism</th>
-            <th>Evidence</th>
           </tr>
           </thead>
           
           <tbody>
-          {% for target, pa, pi, diff, acc, score, reaction_name, organism, evidence, url in reactions %}
+          {% for accs, num_accs, reaction_name, organism, url in pathways %}
           <tr>
-            <td>{{target}}</td>
-            <td>{{pa}}</td>
-            <td>{{pi}}</td>
-            <td>{{diff}}</td>
-            <td>{{acc}}</td>
-            <td>{{score}}</td>
+            <td>{{accs}}</td>
+            <td>{{num_accs}}</td>
             <td><a href={{url}}>{{reaction_name}}</a></td>
             <td>{{organism}}</td>
-            <td>{{evidence}}</td>
           </tr>
         {% endfor %}
         </tbody>

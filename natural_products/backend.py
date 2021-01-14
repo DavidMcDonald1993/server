@@ -279,7 +279,6 @@ def get_multiple_compound_info(
 def get_coconut_compound_info_from_mongo( # use mongo
     compound_id, 
     projection={"_id": 0},
-    get_activities=True,
     compound_info_collection="uniqueNaturalProduct",
     filter_pa_pi=True,
     ):
@@ -295,17 +294,12 @@ def get_coconut_compound_info_from_mongo( # use mongo
         {"coconut_id": compound_id},
         projection=projection) # get all info from mongo
 
-    if not get_activities:
-        return compound_info
 
-    pass_activities = get_all_activities_for_compound(
-        compound_id, 
-        filter_pa_pi=filter_pa_pi)
-
-    return compound_info, pass_activities
+    return compound_info
 
 def get_all_activities_for_compound(
     coconut_id, 
+    threshold=0,
     filter_pa_pi=True):
     print ("getting all activities for compound", coconut_id)
 
@@ -319,7 +313,7 @@ def get_all_activities_for_compound(
         INNER JOIN activities AS a ON (a.target_id=t.target_id)
         INNER JOIN compounds AS c ON (a.compound_id=c.compound_id)
         WHERE c.coconut_id='{coconut_id}'
-        {"AND a.Pa>a.Pi" if filter_pa_pi else ""}
+        {f"AND a.above_{threshold}=(1)" if threshold > 0 and filter_pa_pi else ""}
         '''
 
     compounds_hits = mysql_query(all_targets_query)

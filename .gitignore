@@ -16,7 +16,6 @@ models/*.pkl.gz
 *_credentials.json
 
 *.smi
-*.ico
 
 oe_license.txt
 

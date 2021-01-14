@@ -13,7 +13,7 @@ import urllib.parse as urlparse
 
 from natural_products.backend import (write_records_to_file, write_smiles_to_file, 
     query_target_hits, get_coconut_compound_info_from_mongo, draw_molecule, get_multiple_compound_info,
-    query_pathway_hits, query_reaction_hits)
+    query_pathway_hits, query_reaction_hits, get_all_activities_for_compound)
 
 from utils.mysql_utils import (get_all_targets_for_categories, 
     get_all_pathways, get_all_reactions, get_all_pathways_for_compounds, get_all_reactions_for_compounds)
@@ -261,33 +261,46 @@ def compound_info_view(request, compound_id):
 
     compound_id = "CNP" + compound_id
 
+    threshold = 750
+
     # query database
-    info, activities = get_coconut_compound_info_from_mongo(compound_id)
+    compound_info = get_coconut_compound_info_from_mongo(compound_id)
 
-    context = {}
+    context = {
+        "threshold": threshold
+    }
 
-    assert isinstance(info, dict), type(info)
-    assert "clean_smiles" in info
-    assert "name" in info 
-    compound_name = info["name"]
+    assert "clean_smiles" in compound_info
+    assert "name" in compound_info 
+    compound_name = compound_info["name"]
 
-    smiles = info["clean_smiles"]
-    if smiles is not None:
-        _compound_id = get_multiple_compound_info(compound_id, columns=("compound_id", ))[0][0]
-        img_filename = draw_molecule(_compound_id, smiles)
-        if img_filename is not None:
-            context["img_filename"] = img_filename
+    # smiles = info["clean_smiles"]
+    # if smiles is not None:
+        # _compound_id = get_multiple_compound_info(compound_id, columns=("compound_id", ))[0][0]
+        # img_filename = draw_molecule(_compound_id, smiles)
+    img_filename = get_multiple_compound_info(compound_id, columns=("image_path", ))[0][0]
+    if os.path.exists(os.path.join("static", img_filename)):
+        context["img_filename"] = img_filename
 
-    pathways = get_all_pathways_for_compounds(compound_id, organism="Homo sapiens")
-    reactions = get_all_reactions_for_compounds(compound_id,  organism="Homo sapiens")
+    activities = get_all_activities_for_compound(compound_id, 
+        threshold=threshold, )
+
+    pathways = get_all_pathways_for_compounds(compound_id, 
+        threshold=threshold,
+        # organism="Homo sapiens"
+        )
+    reactions = get_all_reactions_for_compounds(compound_id,  
+        threshold=threshold,
+        # organism="Homo sapiens"
+        )
 
     # convert to list of dicts for easy presentation
-    info = info.items()
+    compound_info = compound_info.items()
 
     context.update({
         "compound_id": compound_id,
         "compound_name": compound_name,
-        "info": info,
+        "compound_info": compound_info,
         "activities": activities,
         "pathways": pathways,
         "reactions": reactions,

@@ -264,26 +264,33 @@ def get_all_pathways_for_compounds(
     existing_conn=None,
     limit=None,
     ):
+    assert filter_pa_pi
     if isinstance(coconut_ids, list) or isinstance(coconut_ids, set):
         coconut_ids = tuple(coconut_ids)
     else:
         assert isinstance(coconut_ids, str)
-    filter_pa_pi = False
+    # SELECT DISTINCT t.target_name, a.Pa, a.Pi, a.Pa-a.Pi, 
+    # u.acc, tu.score, p.pathway_name, p.organism, up.evidence, p.pathway_url
+    # INNER JOIN targets AS t ON (a.target_id=t.target_id)
+    # {"AND a.Pa>a.Pi" if filter_pa_pi else ""}
+    # {f"AND a.Pa>{threshold}" if threshold>0 else ""}
+
     query = f'''
-        SELECT DISTINCT t.target_name, a.Pa, a.Pi, a.Pa-a.Pi, 
-            u.acc, tu.score, p.pathway_name, p.organism, up.evidence, p.pathway_url
+        SELECT GROUP_CONCAT(DISTINCT(u.acc)) AS `Uniprot ACCS`, 
+            COUNT(DISTINCT(u.acc)) AS `Number Uniprot ACCs`,
+            p.pathway_name AS `Pathway Name`, p.organism AS `Organism`, 
+            p.pathway_url AS `Pathway URL`
         FROM compounds AS c
         INNER JOIN activities AS a ON (c.compound_id=a.compound_id) 
-        INNER JOIN targets AS t ON (a.target_id=t.target_id)
         INNER JOIN targets_to_uniprot AS tu ON (a.target_id=tu.target_id)
         INNER JOIN uniprot AS u ON (tu.uniprot_id=u.uniprot_id)
         INNER JOIN uniprot_to_pathway AS up ON (tu.uniprot_id=up.uniprot_id)
         INNER JOIN pathway AS p ON (up.pathway_id=p.pathway_id)
         WHERE {f"c.coconut_id IN {coconut_ids}" if isinstance(coconut_ids, tuple)
             else f'c.coconut_id="{coconut_ids}"'}
-        {"AND a.Pa>a.Pi" if filter_pa_pi else ""}
-        {f"AND a.Pa>{threshold}" if threshold>0 else ""}
+        {f"AND a.above_{threshold}=(1)" if threshold>0 and filter_pa_pi else ""}
         {f"AND p.organism='{organism}'" if organism is not None else ""}
+        GROUP BY p.pathway_name, p.organism
         {f"LIMIT {limit}" if limit is not None else ""}
     '''
     return mysql_query(query, existing_conn=existing_conn)
@@ -296,26 +303,27 @@ def get_all_reactions_for_compounds(
     existing_conn=None,
     limit=None,
     ):
+    assert filter_pa_pi
     if isinstance(coconut_ids, list):
         coconut_ids = tuple(coconut_ids)
     else:
         assert isinstance(coconut_ids, str)
-    filter_pa_pi = False
     query = f'''
-        SELECT DISTINCT t.target_name, a.Pa, a.Pi, a.Pa-a.Pi, 
-            u.acc, tu.score, r.reaction_name, r.organism, ur.evidence, r.reaction_url
+        SELECT GROUP_CONCAT(DISTINCT(u.acc)) AS `Uniprot ACCS`, 
+            COUNT(DISTINCT(u.acc)) AS `Number Uniprot ACCs`,
+            r.reaction_name AS `Reaction Name`, r.organism AS `Organism`, 
+            r.reaction_url AS `Reaction URL`
         FROM compounds AS c
         INNER JOIN activities AS a ON (c.compound_id=a.compound_id) 
-        INNER JOIN targets AS t ON (a.target_id=t.target_id) 
         INNER JOIN targets_to_uniprot AS tu ON (a.target_id=tu.target_id)
         INNER JOIN uniprot AS u ON (tu.uniprot_id=u.uniprot_id)
         INNER JOIN uniprot_to_reaction AS ur ON (tu.uniprot_id=ur.uniprot_id)
         INNER JOIN reaction AS r ON (ur.reaction_id=r.reaction_id)
         WHERE {f"c.coconut_id IN {coconut_ids}" if isinstance(coconut_ids, tuple)
             else f'c.coconut_id="{coconut_ids}"'}
-        {"AND a.Pa>a.Pi" if filter_pa_pi else ""}
-        {f"AND a.Pa>{threshold}" if threshold>0 else ""}
+        {f"AND a.above_{threshold}=(1)" if threshold>0 and filter_pa_pi else ""}
         {f"AND r.organism='{organism}'" if organism is not None else ""}
+        GROUP BY r.reaction_name, r.organism
         {f"LIMIT {limit}" if limit is not None else ""}
     '''
     return mysql_query(query, existing_conn=existing_conn)
@@ -323,7 +331,7 @@ def get_all_reactions_for_compounds(
 
 if __name__ == "__main__":
 
-    records = get_all_reactions(organism="Homo sapiens")
+    records = get_all_reactions(organisms="Homo sapiens")
 
     print (len(records))
     for record in records[:5]:
