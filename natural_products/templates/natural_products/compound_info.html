@@ -18,6 +18,9 @@
     <script type="text/javascript" 
       src="{% static 'natural_products/categories.js' %}"></script>
 
+    <script type="text/javascript" 
+      src="{% static 'js/show_hidden.js' %}"></script>
+
       <link rel="stylesheet" type="text/css" 
         href="{% static 'css/sidebar.css' %}">
 
@@ -44,6 +47,8 @@
           style="width: 20%; height: 20%;" >
       </div>
       {% endif %}
+
+      <div class="hiddenDiv" style="display: none;">
 
       <div class="nav nav-tabs" id="nav-tab" role="tablist">
 
@@ -236,6 +241,8 @@
     </div>
 
     </div>
+
+  </div>
 
   </body>
 </html>
