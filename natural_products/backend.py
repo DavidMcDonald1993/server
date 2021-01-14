@@ -93,10 +93,6 @@ def query_pathway_hits(pathways,
     limit=None,
     existing_conn=None):
     assert filter_pa_pi
-    # assert threshold in (900, )
-
-    # if existing_conn is None:
-    #     existing_conn = connect_to_mysqldb()
 
     if not isinstance(pathways, list):
         assert isinstance(pathways, str)
@@ -166,72 +162,7 @@ def query_pathway_hits(pathways,
         {f"LIMIT {limit}" if limit is not None else ""}
     '''
 
-    # # get unique compounds that hit all pathways
-
-    #  # initial query
-    # pathway_name = pathway_names[0] 
-    # query = f'''
-    #     SELECT DISTINCT a.compound_id
-    #     FROM activities AS a
-    #     INNER JOIN targets_to_uniprot AS tu ON (a.target_id=tu.target_id)
-    #     INNER JOIN uniprot_to_pathway AS up ON (tu.uniprot_id=up.uniprot_id)
-    #     INNER JOIN pathway AS p ON (up.pathway_id=p.pathway_id)
-    #     WHERE p.pathway_name="{pathway_name}"
-    #     {f'AND p.organism="{organism}"' if organism is not None else ""}
-    #     AND a.above_{threshold}=(1)
-    #     {f"LIMIT {limit}" if limit is not None else ""}
-    # '''
-    # # save in case of need
-    # # {f"AND a.Pa>{threshold}" if threshold>0 else ""}
-    # # {"AND a.Pa>a.Pi" if filter_pa_pi else ""}
-
-    # for pathway_name in pathway_names[1:]:
-
-    #     query = f'''
-    #         SELECT DISTINCT q.compound_id
-    #         FROM ({query}) as q
-    #         INNER JOIN activities AS a ON (q.compound_id=a.compound_id)
-    #         INNER JOIN targets_to_uniprot AS tu ON (a.target_id=tu.target_id)
-    #         INNER JOIN uniprot_to_pathway AS up ON (tu.uniprot_id=up.uniprot_id)
-    #         INNER JOIN pathway AS p ON up.pathway_id=p.pathway_id
-    #         WHERE p.pathway_name="{pathway_name}"
-    #         {f'AND p.organism="{organism}"' if organism is not None else ""}
-    #         AND a.above_{threshold}=(1)
-    #         {f"LIMIT {limit}" if limit is not None else ""}
-    #     '''
-
-    # compound_hits = mysql_query(query, existing_conn=existing_conn)
-    # compound_hits = [hit[0] for hit in compound_hits]
-    # num_compound_hits = len(compound_hits)
-
-    # print ("number of unique compounds that hit all pathways:",  num_compound_hits)
-    # if num_compound_hits == 0:
-    #     return [], None
-
-    # query = f'''
-    #     SELECT DISTINCT c.coconut_id AS 'ID', c.name AS 'Molecule Name', c.formula AS 'Molecular Formula',
-    #         {f"t.target_name AS 'Target Name', u.acc AS 'Target UNIPROT ACC', a.Pa AS 'Pa', a.Pi AS 'Pi',"
-    #         if include_targets else ""}
-    #         up.evidence AS 'Evidence', p.pathway_name as 'Pathway Name', p.organism AS 'Organism', p.pathway_url AS 'Pathway URL'
-    #     FROM compounds AS c
-    #     INNER JOIN activities AS a ON (c.compound_id=a.compound_id)
-    #     INNER JOIN targets_to_uniprot AS tu ON (a.target_id=tu.target_id)
-    #     {"INNER JOIN targets AS t ON (a.target_id=t.target_id)" 
-    #         if include_targets else ""}
-    #     {"INNER JOIN uniprot AS u ON (tu.uniprot_id=u.uniprot_id)"
-    #         if include_targets else ""}
-    #     INNER JOIN uniprot_to_pathway AS up ON (tu.uniprot_id=up.uniprot_id)
-    #     INNER JOIN pathway AS p ON (up.pathway_id=p.pathway_id)
-    #     WHERE {f"p.pathway_name IN {tuple(pathway_names)}" if len(pathway_names)>1
-    #         else f'p.pathway_name="{pathway_names[0]}"'}
-    #     {f'AND p.organism="{organism}"' if organism is not None else ""}
-    #     AND a.above_{threshold}=(1)
-    #     AND c.compound_id IN {tuple(compound_hits)}
-    # ''' 
-
-    records, cols = mysql_query(query, return_cols=True, 
-        # existing_conn=existing_conn
-    )
+    records, cols = mysql_query(query, return_cols=True,)
 
     records = [
         record[1:] for record in records
@@ -245,7 +176,6 @@ def query_reaction_hits(reactions,
     limit=None,
     existing_conn=None):
     assert filter_pa_pi
-    # assert threshold in (900, )
 
     if not isinstance(reactions, list):
         assert isinstance(reactions, str)
@@ -315,70 +245,7 @@ def query_reaction_hits(reactions,
         {f"LIMIT {limit}" if limit is not None else ""}
     '''
 
-
-    # # get unique compounds that hit all reactions
-
-    #  # initial query
-    # reaction_name = reaction_names[0] 
-   
-    # query = f'''
-    #     SELECT DISTINCT a.compound_id
-    #     FROM activities AS a
-    #     INNER JOIN targets_to_uniprot AS tu ON (a.target_id=tu.target_id)
-    #     INNER JOIN uniprot_to_reaction AS ur ON (tu.uniprot_id=ur.uniprot_id)
-    #     INNER JOIN reaction AS r ON (ur.reaction_id=r.reaction_id)
-    #     WHERE r.reaction_name="{reaction_name}"
-    #     {f'AND r.organism="{organism}"' if organism is not None else ""}
-    #     AND a.above_{threshold}=(1)
-    #     {f"LIMIT {limit}" if limit is not None else ""}
-    # '''
-
-    # for reaction_name in reaction_names[1:]:
-    #     query = f'''
-    #         SELECT DISTINCT a.compound_id
-    #         FROM ({query}) as q
-    #         INNER JOIN activities AS a ON (q.compound_id=a.compound_id)
-    #         INNER JOIN targets_to_uniprot AS tu ON (a.target_id=tu.target_id)
-    #         INNER JOIN uniprot_to_reaction AS ur ON (tu.uniprot_id=ur.uniprot_id)
-    #         INNER JOIN reaction AS r ON ( ur.reaction_id=r.reaction_id)
-    #         WHERE r.reaction_name="{reaction_name}"
-    #         {f'AND r.organism="{organism}"' if organism is not None else ""}
-    #         AND a.above_{threshold}=(1)
-    #         {f"LIMIT {limit}" if limit is not None else ""}
-    #     '''
-
-    # compound_hits = mysql_query(query, existing_conn=existing_conn)
-    # compound_hits = [hit[0] for hit in compound_hits]
-    # num_compound_hits = len(compound_hits)
-
-    # print ("number of unique compounds that hit all reactions:",  num_compound_hits)
-    # if num_compound_hits == 0:
-    #     return [], None
-
-    # query = f'''
-    #     SELECT DISTINCT c.coconut_id AS 'ID', c.name AS 'Molecule Name', c.formula AS 'Molecular Formula',
-    #         {f"t.target_name AS 'Target Name', u.acc AS 'Target UNIPROT ACC', a.Pa AS 'Pa', a.Pi AS 'Pi',"
-    #         if include_targets else ""}
-    #         ur.evidence AS 'Evidence', r.reaction_name AS 'Reaction Name', r.organism AS 'Organism', r.reaction_url AS 'Reaction URL'
-    #     FROM compounds AS c
-    #     INNER JOIN activities AS a ON (c.compound_id=a.compound_id)
-    #     INNER JOIN targets_to_uniprot AS tu ON (a.target_id=tu.target_id)
-    #     {"INNER JOIN targets AS t ON (a.target_id=t.target_id)" 
-    #         if include_targets else ""}
-    #     {"INNER JOIN uniprot AS u ON (tu.uniprot_id=u.uniprot_id)"
-    #         if include_targets else ""}
-    #     INNER JOIN uniprot_to_reaction AS ur ON (tu.uniprot_id=ur.uniprot_id)
-    #     INNER JOIN reaction AS r ON (ur.reaction_id=r.reaction_id)
-    #     WHERE {f"r.reaction_name in {tuple(reaction_names)}" if len(reaction_names)>1
-    #         else f'r.reaction_name="{reaction_names[0]}"'}
-    #     {f'AND r.organism="{organism}"' if organism is not None else ""}
-    #     AND a.above_{threshold}=(1)
-    #     AND c.compound_id IN {tuple(compound_hits)}
-    # ''' 
-
-    records, cols = mysql_query(query, return_cols=True, 
-        # existing_conn=existing_conn
-    )
+    records, cols = mysql_query(query, return_cols=True, )
 
     records = [
         record[1:] for record in records
@@ -388,7 +255,8 @@ def query_reaction_hits(reactions,
 
 def get_multiple_compound_info(
     compounds=None, 
-    columns=("coconut_id", "name", "formula", "clean_smiles")):
+    columns=("coconut_id", "name", "formula", "clean_smiles"),
+    limit=None):
 
     if compounds is not None:
         if not isinstance(compounds, str):
@@ -403,6 +271,7 @@ def get_multiple_compound_info(
         FROM compounds
         {f"WHERE coconut_id IN {compounds}" if isinstance(compounds, tuple)
         else f'WHERE coconut_id="{compounds}"' if isinstance(compounds, str) else ""}
+        {f"LIMIT {limit}" if limit is not None else ""}
     '''
 
     return mysql_query(compound_query)
@@ -475,9 +344,8 @@ def get_all_activities_for_compound(
 def draw_molecule(
     compound_id,
     smiles, 
-    static_dir="natural_products/static",
+    static_dir="static",
     output_dir="compound_images",
-    # img_filename="natural_products/temp.png", 
     ):
     output_dir = os.path.join(output_dir, f"{compound_id//1024}")
     os.makedirs(os.path.join(static_dir, output_dir), exist_ok=True)
@@ -500,14 +368,13 @@ def write_records_to_file(
     targets, 
     thresholds,
     records,
-    static_dir="natural_products/static",
-    output_dir="records",
+    root_dir="user_files",
     ):
     assert isinstance(records, pd.DataFrame)
     if "Image" in records.columns:
         del records["Image"]
 
-    output_dir = os.path.join(static_dir, output_dir, f"user={user_id}")
+    output_dir = os.path.join(root_dir, f"user={user_id}", "hit_records")
     os.makedirs(output_dir, exist_ok=True)
 
     targets = ",".join(map(lambda s: s.replace(" ", "_"), targets))
@@ -525,11 +392,10 @@ def write_smiles_to_file(
     targets,
     thresholds,
     smiles,
-    static_dir="natural_products/static",
-    output_dir="smiles",
+    root_dir="user_files",
     ):  
 
-    output_dir = os.path.join(static_dir, output_dir, f"{user_id}")
+    output_dir = os.path.join(root_dir,f"user_id={user_id}", "smiles")
     os.makedirs(output_dir, exist_ok=True)
 
     targets = ",".join(map(lambda s: s.replace(" ", "_"), targets))

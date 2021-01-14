@@ -1,6 +1,5 @@
 <!doctype html>
 <html lang="en">
-
   <head>
     {% load static %}
 
@@ -14,107 +13,103 @@
     <script type="text/javascript"  src="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
        
     <script type="text/javascript" 
-      src="{% static 'natural_products/tables.js' %}"></script>
+      src="{% static 'js/make_datatables.js' %}"></script>
+
+    <script type="text/javascript" 
+      src="{% static 'js/show_hidden.js' %}"></script>
 
     <link rel="stylesheet" type="text/css" 
-      href="{% static 'natural_products/sidebar.css' %}">
+      href="{% static 'css/sidebar.css' %}">
+    <link rel="stylesheet" type="text/css" 
+      href="{% static 'css/tables.css' %}">
       
   </head>
 
-  <body style="text-align: center;" onload="setDataTablesVisible()">
+  <body style="text-align: center;">
 
-    <div class="sidenav">
-      <a href="/activity_prediction">Home</a>
-      <a href="/activity_prediction/upload">Activity prediction</a>
-      <a href="/natural_products/target_selection">Target screening</a>
-      <a href="/natural_products/pathway_selection">Pathway screening</a>
-      <a href="/natural_products/reaction_selection">Reaction screening</a>
-      <a href="/hit_optimisation/upload">Hit optimisation</a>
-      <a href="/logout">Logout</a>
-    </div>
-
+    {% include 'navbar.html' %}
 
     <div>
       <h1>Results</h1>
-
       <form action="/natural_products/reaction_selection/">
         <input type="submit" value="Back to reaction selection">
       </form>
- 
     </div>
 
-    <div style="width:75%; margin:0 auto;">
+    <div class="hiddenDiv">
 
-    <div style="text-align: left;">
-      <h2>Looking at hits for reactions(s): {{reactions}}<br>Using threshold: {{threshold}}</h2> 
-      <h2>Number of hits: {{num_hits}}</h2> 
+    <div class="results-table">
+
+      <div style="text-align: left;">
+        <h2>Looking at hits for reactions(s): {{reactions}}</h2>
+        <h2>Using threshold: {{threshold}}</h2> 
+        <h2>Number of hits: {{num_hits}}</h2> 
+      </div>
+
+      <br>
+  
+      <div class="table-responsive">
+        <table id=resultsTable class="display table data"
+          style="width:100%;text-align:center;display:inline;">
+          <thead>
+            <tr>
+              {% if show_images %}
+              <th colspan="4">Molecule</th>
+              {% else %}
+              <th colspan="3">Molecule</th>
+              {% endif %}
+              {% for reaction in reactions %}
+              <th colspan="6">{{reaction}}</th>
+              {% endfor %}
+            </tr>
+            <tr>
+              <th>ID</th>
+              {% if show_images %}
+              <th>Image</th>
+              {% endif %}
+              <th>Compound Name</th>
+              <th>Molecular Formula</th>
+              <!-- <th>SMILES</th> -->
+              {% for reaction in reactions %}
+              <th>Target(s)</th>
+              <th>Number Targets</th>
+              <th>Uniprot ACC(s)</th>
+              <th>Number Uniprot ACCs</th>
+              <th>Pathway Name</th>
+              <th>Organism</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for hit in reaction_hits %}
+            <tr>
+              <td> <a href="/natural_products/compounds/{{hit.id}}"> {{ hit.id }} </a> </td>
+              {% if show_images %}
+              <td> <img src="{% static hit.image %}" alt=""
+                style="width: 100pt; height: 100pt;"></img> </td>
+              {% endif %}
+              <td> {{ hit.name }} </td>
+              <td> {{ hit.formula }} </td>
+              <!-- <td> {{ hit.smiles }} </td> -->
+              {% for reaction in hit.reactions %}
+              <td> {{ reaction.targets }} </td>
+              <td> {{ reaction.num_targets }} </td>
+              <td> {{ reaction.accs }} </td>
+              <td> {{ reaction.num_accs }} </td>
+              <td> <a href="{{reaction.url}}"> {{ reaction.reaction_name }} </a> </td>
+              <td> {{ reaction.organism }} </td>
+              {% endfor %}
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </div>
-
-    <br>
- 
-    <div class="table-responsive">
-      <table id=resultsTable class="display table data"
-        style="width:100%;text-align:center;display:none;">
-        <thead>
-          <tr>
-            {% if show_images %}
-            <th colspan="4">Molecule</th>
-            {% else %}
-            <th colspan="3">Molecule</th>
-            {% endif %}
-            {% for reaction in reactions %}
-            <th colspan="6">{{reaction}}</th>
-            {% endfor %}
-          </tr>
-          <tr>
-            <th>ID</th>
-            {% if show_images %}
-            <th>Image</th>
-            {% endif %}
-            <th>Compound Name</th>
-            <th>Molecular Formula</th>
-            <!-- <th>SMILES</th> -->
-            {% for reaction in reactions %}
-            <th>Target(s)</th>
-            <th>Number Targets</th>
-            <th>Uniprot ACC(s)</th>
-            <th>Number Uniprot ACCs</th>
-            <th>Pathway Name</th>
-            <th>Organism</th>
-            {% endfor %}
-          </tr>
-        </thead>
-        <tbody>
-          {% for hit in reaction_hits %}
-          <tr>
-            <td> <a href="/natural_products/compounds/{{hit.id}}"> {{ hit.id }} </a> </td>
-            {% if show_images %}
-            <td> <img src="{% static hit.image %}" alt=""
-              style="width: 100pt; height: 100pt;"></img> </td>
-            {% endif %}
-            <td> {{ hit.name }} </td>
-            <td> {{ hit.formula }} </td>
-            <!-- <td> {{ hit.smiles }} </td> -->
-            {% for reaction in hit.reactions %}
-            <td> {{ reaction.targets }} </td>
-            <td> {{ reaction.num_targets }} </td>
-            <td> {{ reaction.accs }} </td>
-            <td> {{ reaction.num_accs }} </td>
-            <td> <a href="{{reaction.url}}"> {{ reaction.reaction_name }} </a> </td>
-            <td> {{ reaction.organism }} </td>
-            {% endfor %}
-          </tr>
-        {% endfor %}
-        </tbody>
-      </table>
+    <div>
+      <form action="/natural_products/download/" >
+        <input type="submit" id="downloadButton" value="Download results">
+      </form>
     </div>
   </div>
-
-  <div>
-    <form action="/natural_products/download/" >
-      <input type="submit" id="downloadButton" value="Download results">
-    </form>
-  </div>
-
   </body>
 </html>

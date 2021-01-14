@@ -8,6 +8,8 @@ import secrets
 from utils.mysql_utils import mysql_create_table, mysql_query, mysql_insert_many
 from utils.email_utils import send_mail
 
+from datetime import datetime
+
 def get_token(token_length=128): # token is double length
     return secrets.token_hex(token_length)
 
@@ -86,6 +88,14 @@ def send_file_to_user(user, filename, max_MB=1):
 
     return 0
 
+def determine_identifier(input_file):
+    if not isinstance(input_file, str):
+        assert hasattr(input_file, "name")
+        input_file = input_file.name 
+    input_file = os.path.basename(input_file)
+    return "{}-{}".format(input_file, 
+        str(datetime.now()).replace(" ", "-"))
+
 if __name__ == "__main__":
 
     # token = add_file_to_database(1, path="test.sdf")
@@ -98,4 +108,17 @@ if __name__ == "__main__":
 
     # print (path)
 
-    print (generate_password())
+    # print (generate_password())
+
+
+    # datetime object containing current date and time
+    # now = str(datetime.now()).replace(" ", "-")
+    # print (type (now))
+    # 
+    # print("now =", now)
+
+    # dd/mm/YY H:M:S
+    # dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
+    # print("date and time =", dt_string)	
+
+    print (determine_identifier("test.txt"))

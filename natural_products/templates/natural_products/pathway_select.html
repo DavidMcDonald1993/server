@@ -15,52 +15,45 @@
         integrity="sha256-+C0A5Ilqmu4QcSPxrlGpaZxJ04VjsRjKu+G82kl5UJk=" crossorigin="anonymous"></script>
        
     <script type="text/javascript" 
-      src="{% static 'natural_products/options.js' %}"></script>
-    <script type="text/javascript" 
-      src="{% static 'natural_products/forms.js' %}"></script>
+      src="{% static 'js/selectize_options.js' %}"></script>
 
     <link rel="stylesheet" type="text/css" 
-      href="{% static 'natural_products/sidebar.css' %}">
+      href="{% static 'css/select_forms.css' %}">
+    <script type="text/javascript" 
+      src="{% static 'js/select_forms.js' %}"></script>
+
+    <script type="text/javascript"
+      src="{% static 'js/show_hidden.js' %}"></script>
+
+    <link rel="stylesheet" type="text/css" 
+      href="{% static 'css/sidebar.css' %}">
+
 
   </head>
 
-  <body style="text-align: center;" onload="">
+  <body style="text-align: center;">
 
-    <div class="sidenav">
-      <a href="/activity_prediction">Home</a>
-      <a href="/activity_prediction/upload">Activity prediction</a>
-      <a href="/natural_products/target_selection">Target screening</a>
-      <a href="/natural_products/pathway_selection">Pathway screening</a>
-      <a href="/natural_products/reaction_selection">Reaction screening</a>
-      <a href="/hit_optimisation/upload">Hit optimisation</a>
-      <a href="/logout">Logout</a>
-    </div>
-
-
+    {% include 'navbar.html' %}
 
     <div>
-    <h1>Pathway selection</h1>
-    <form action="/natural_products/" >
-      <input type="submit" value="Go back">
-    </form>
-  </div>
+      <h1>Pathway selection</h1>
+      <form action="/natural_products/" >
+        <input type="submit" value="Go back">
+      </form>
+    </div>
 
-  <br>
+    <br>
 
-  <div>
-    <form style="width:800px; margin:0 auto;" action="/natural_products/pathway_hits/" method="get">
+    <div class="hiddenDiv" style="display: none;">
+    <form class="select-form" action="/natural_products/pathway_hits/" method="get">
+    
       <div>
-
         <label for="pathways">Select pathway(s):</label>
-
         <select name="pathways" id="pathways" multiple>
-          
           {% for pathway, pathway_encoded, organism, organism_encoded in pathways %}
-            <option value="{{pathway_encoded}}">{{organism}}: {{pathway}}</option>
+          <option value="{{pathway_encoded}}">{{organism}}: {{pathway}}</option>
           {% endfor %}
-          
         </select> 
-
       </div>
 
       <br>
@@ -69,7 +62,7 @@
       <label for="threshold">Threshold (Pa):</label>
       <select name="threshold" id="threshold">
         {% for threshold in thresholds %}
-          <option value={{threshold}}>{{threshold}}</option>
+        <option value={{threshold}}>{{threshold}}</option>
         {% endfor %}
       </select>
 
@@ -84,9 +77,7 @@
 
       <input type="submit" id="submit" value="Submit" disabled="disabled">
     </form> 
-
-  </div>
-
+    </div>
 
   </body>
 </html>

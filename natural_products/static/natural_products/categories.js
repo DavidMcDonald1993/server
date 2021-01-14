@@ -1,9 +1,3 @@
-$(document).ready(function () {
-    $('select').selectize({
-        sortField: 'text'
-    });
-});
-
 function showDiv(select){
 
     const categories = ["ANTITARGETS", "EFFECTS", 

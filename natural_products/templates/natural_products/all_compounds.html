@@ -13,24 +13,19 @@
     <script type="text/javascript" src="http://cdn.datatables.net/1.10.2/js/jquery.dataTables.min.js"></script>
     <script type="text/javascript" src="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
 
-    <script type="text/javascript" 
-      src="{% static 'natural_products/tables.js' %}"></script>
-    
-    <link rel="stylesheet" type="text/css" 
-        href="{% static 'natural_products/sidebar.css' %}">
+    <script type="text/javascript" src="{% static 'js/make_datatables.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/selectize_options.js' %}"></script>
+
+    <script type="text/javascript" src="{% static 'js/show_hidden.js' %}"></script>
+
+    <link rel="stylesheet" type="text/css" href="{% static 'css/sidebar.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/tables.css' %}">
+
   </head>
 
-  <body style="text-align: center;" onload="setDataTablesVisible();">
+  <body style="text-align: center;" >
 
-    <div class="sidenav">
-      <a href="/activity_prediction">Home</a>
-      <a href="/activity_prediction/upload">Activity prediction</a>
-      <a href="/natural_products/target_selection">Target screening</a>
-      <a href="/natural_products/pathway_selection">Pathway screening</a>
-      <a href="/natural_products/reaction_selection">Reaction screening</a>
-      <a href="/hit_optimisation/upload">Hit optimisation</a>
-      <a href="/logout">Logout</a>
-    </div>
+    {% include 'navbar.html' %}
 
     <div>
     <h1>All natural products</h1>
@@ -38,10 +33,11 @@
       <input type="submit" value="Return to natural products">
     </form>
     </div>
+
+    <div class="hiddenDiv">
         
-    <div class="table-responsive" >
-    <table class="display table data"
-      style="width:100%;text-align:center;display:none">
+    <div class="table-responsive results-table" >
+    <table class="display table data" style="width:100%;text-align:center;display:none">
 
       <thead>
         <tr>
@@ -65,6 +61,7 @@
     </table>
     </div>
 
+  </div>
    
 
 </body>

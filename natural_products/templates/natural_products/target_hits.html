@@ -13,25 +13,23 @@
     <script type="text/javascript"  src="http://cdn.datatables.net/1.10.2/js/jquery.dataTables.min.js"></script>
     <script type="text/javascript"  src="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
        
+    <link rel="stylesheet" type="text/css" 
+      href="{% static 'css/tables.css' %}">
     <script type="text/javascript" 
-      src="{% static 'natural_products/tables.js' %}"></script>
+      src="{% static 'js/make_datatables.js' %}"></script>
+
+    <script type="text/javascript" 
+    src="{% static 'js/show_hidden.js' %}"></script>
 
     <link rel="stylesheet" type="text/css" 
-      href="{% static 'natural_products/sidebar.css' %}">
+      href="{% static 'css/sidebar.css' %}">
       
   </head>
 
-  <body style="text-align: center;" onload="setDataTablesVisible()">
+  <body style="text-align: center;">
 
-    <div class="sidenav">
-      <a href="/activity_prediction">Home</a>
-      <a href="/activity_prediction/upload">Activity prediction</a>
-      <a href="/natural_products/target_selection">Target screening</a>
-      <a href="/natural_products/pathway_selection">Pathway screening</a>
-      <a href="/natural_products/reaction_selection">Reaction screening</a>
-      <a href="/hit_optimisation/upload">Hit optimisation</a>
-      <a href="/logout">Logout</a>
-    </div>
+    
+    {% include 'navbar.html' %}
 
 
     <div>
@@ -43,79 +41,81 @@
  
     </div>
 
-    <div style="width:75%; margin:0 auto;">
+  <div class="hiddenDiv" style="display: none;">
 
-    <div style="text-align: left;">
-      <h2>Looking at hits for target(s): {{targets}}<br>Using threshold(s): {{thresholds}}</h2> 
-      <h2>Number of hits: {{num_hits}}</h2> 
-    </div>
+    <div class="results-table" >
 
-    <br>
- 
-    <div class="table-responsive">
-      <table id=resultsTable class="display table data"
-        style="width:100%;text-align:center;display:none;">
-        <thead>
-          <tr>
-            {% if show_images %}
-            <th colspan="5">Molecule</th>
-            {% else %}
-            <th colspan="4">Molecule</th>
-            {% endif %}
-            {% for target in targets %}
-            <th colspan="1">{{target}}</th>
-            {% endfor %}
-          </tr>
-          <tr>
-            <th>ID</th>
-            {% if show_images %}
-            <th>Image</th>
-            {% endif %}
-            <th>Compound Name</th>
-            <th>Molecular Formula</th>
-            <th>SMILES</th>
-            {% for target in targets %}
-            <!-- <th>Pa</th> -->
-            <!-- <th>Pi</th> -->
-            <th>Confidence Score</th>
-            {% endfor %}
-          </tr>
-        </thead>
-        <tbody>
-        {% for hit in target_hits %}
-          <tr>
-            {% for element in hit %}
-              {% if forloop.counter == 1 %}
-                <td> <a href="/natural_products/compounds/{{element}}"> 
-                  {{ element }} </a> </td>
-              {% elif forloop.counter == 2 %}
-                {% if show_images %}
-                <td> <img src="{% static element %}" alt=""
-                  style="width: 100pt; height: 100pt;"></img> </td>
-                {% endif %}
+      <div style="text-align: left;">
+        <h2>Looking at hits for target(s): {{targets}}<br>Using threshold(s): {{thresholds}}</h2> 
+        <h2>Number of hits: {{num_hits}}</h2> 
+      </div>
+
+      <br>
+  
+      <div class="table-responsive">
+        <table id=resultsTable class="display table data"
+          style="width:100%;text-align:center;display:inline;">
+          <thead>
+            <tr>
+              {% if show_images %}
+              <th colspan="5">Molecule</th>
               {% else %}
-                <td>{{ element }}</td>
+              <th colspan="4">Molecule</th>
               {% endif %}
-            {% endfor %}
-          </tr>
-        {% endfor %}
-        </tbody>
-      </table>
+              {% for target in targets %}
+              <th colspan="1">{{target}}</th>
+              {% endfor %}
+            </tr>
+            <tr>
+              <th>ID</th>
+              {% if show_images %}
+              <th>Image</th>
+              {% endif %}
+              <th>Compound Name</th>
+              <th>Molecular Formula</th>
+              <th>SMILES</th>
+              {% for target in targets %}
+              <!-- <th>Pa</th> -->
+              <!-- <th>Pi</th> -->
+              <th>Confidence Score</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+          {% for hit in target_hits %}
+            <tr>
+              {% for element in hit %}
+                {% if forloop.counter == 1 %}
+                  <td> <a href="/natural_products/compounds/{{element}}"> 
+                    {{ element }} </a> </td>
+                {% elif forloop.counter == 2 %}
+                  {% if show_images %}
+                  <td> <img src="{% static element %}" alt=""
+                    style="width: 100pt; height: 100pt;"></img> </td>
+                  {% endif %}
+                {% else %}
+                  <td>{{ element }}</td>
+                {% endif %}
+              {% endfor %}
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </div>
+    <div>
 
-  </div>
+      <form action="/natural_products/download/" >
+        <input type="submit" id="downloadButton" value="Download results">
+      </form>
 
-  <div>
+      <br>
 
-    <form action="/natural_products/download/" >
-      <input type="submit" id="downloadButton" value="Download results">
-    </form>
+      <form action="/natural_products/optimise/">
+        <input type="submit" value="Optimise results">
+      </form>
 
-    <br>
-
-    <form action="/natural_products/optimise/">
-      <input type="submit" value="Optimise results">
-    </form>
+    </div>
 
   </div>
 

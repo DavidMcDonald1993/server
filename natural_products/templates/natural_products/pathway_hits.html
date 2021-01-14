@@ -14,25 +14,21 @@
     <script type="text/javascript"  src="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
        
     <script type="text/javascript" 
-      src="{% static 'natural_products/tables.js' %}"></script>
+      src="{% static 'js/make_datatables.js' %}"></script>
+
+    <script type="text/javascript" 
+      src="{% static 'js/show_hidden.js' %}"></script>
 
     <link rel="stylesheet" type="text/css" 
-      href="{% static 'natural_products/sidebar.css' %}">
+      href="{% static 'css/sidebar.css' %}">
+    <link rel="stylesheet" type="text/css" 
+      href="{% static 'css/tables.css' %}">
 
   </head>
 
-  <body style="text-align: center;" onload="setDataTablesVisible()">
+  <body style="text-align: center;">
 
-    <div class="sidenav">
-      <a href="/activity_prediction">Home</a>
-      <a href="/activity_prediction/upload">Activity prediction</a>
-      <a href="/natural_products/target_selection">Target screening</a>
-      <a href="/natural_products/pathway_selection">Pathway screening</a>
-      <a href="/natural_products/reaction_selection">Reaction screening</a>
-      <a href="/hit_optimisation/upload">Hit optimisation</a>
-      <a href="/logout">Logout</a>
-    </div>
-
+    {% include 'navbar.html' %}
 
     <div>
       <h1>Results</h1>
@@ -43,18 +39,21 @@
  
     </div>
 
-    <div  style="width:75%; margin:0 auto;">
+    <div class="hiddenDiv">
+
+    <div class="results-table">
 
     <div style="text-align: left;">
-      <h2>Looking at hits for pathways(s): {{pathways}}<br>Using threshold: {{threshold}}</h2> 
-      <h2>Number of hits: {{num_hits}}</h2> 
+      <h2>Looking at hits for pathways(s): {{pathways}}</h2>
+      <h2>Using threshold: {{threshold}}</h2> 
+      <h3>Number of hits: {{num_hits}}</h3> 
     </div>
 
     <br>
  
-    <div class="table-responsive" >
+    <div class="table-responsive">
       <table id=resultsTable class="display table data"
-        style="width:100%;text-align:center;display:none;">
+        style="width:100%;text-align:center;display:inline;">
         <thead>
           <tr>
             {% if show_images %}
@@ -119,5 +118,8 @@
         <input type="submit" id="downloadButton" value="Download results">
       </form>
     </div>
+
+  </div>
+
   </body>
 </html>

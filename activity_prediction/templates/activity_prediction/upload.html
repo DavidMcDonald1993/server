@@ -3,73 +3,63 @@
   <head>
     {% load static %}
     <title>NPAIEngine Upload</title>
-    <link rel="stylesheet" type="text/css" 
-      href="{% static 'activity_prediction/sidebar.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/sidebar.css' %}">
   </head>
   <body style="text-align: center;">
     <div>
 
-      <div class="sidenav">
-        <a href="/activity_prediction">Home</a>
-        <a href="/activity_prediction/upload">Activity prediction</a>
-        <a href="/natural_products/target_selection">Target screening</a>
-        <a href="/natural_products/pathway_selection">Pathway screening</a>
-        <a href="/natural_products/reaction_selection">Reaction screening</a>
-        <a href="/hit_optimisation/upload">Hit optimisation</a>
-        <a href="/logout">Logout</a>
-      </div>
+      {% include 'navbar.html' %}
 
+      <h1>Welcome to NPAIEngine's SDF file upload page!</h1>
+      {% if form %}
+          <form enctype="multipart/form-data" action="/activity_prediction/upload/" method="post">
+              {% csrf_token %}
 
-        <h1>Welcome to NPAIEngine's SDF file upload page!</h1>
-        {% if form %}
-            <form enctype="multipart/form-data" action="/activity_prediction/upload/" method="post">
-                {% csrf_token %}
+              <div>
+                <h2>User Details</h2>
+                  <label for="username">Username:</label>
+                  <input type="text" id="username" 
+                    name="username" value={{username}} readonly> 
+                  <br>
+                  <label for="user_email">Desired email address:</label>
+                  <input type="text" id="user_email" 
+                    name="user_email" value={{user_email}} readonly> 
+                  <br>
+              </div>
+        
+              <div>
+                <h2>File Upload</h2>
+                {{ form }}
+              </div>
 
-                <div>
-                  <h2>User Details</h2>
-                    <label for="username">Username:</label>
-                    <input type="text" id="username" 
-                      name="username" value={{username}} readonly> 
-                    <br>
-                    <label for="user_email">Desired email address:</label>
-                    <input type="text" id="user_email" 
-                      name="user_email" value={{user_email}} readonly> 
-                    <br>
-                </div>
-          
-                <div>
-                  <h2>File Upload</h2>
-                  {{ form }}
-                </div>
+              <br>
+              <br>
 
-                <br>
-                <br>
+              <div>
+                <h2>Activity Threshold</h2>
+                <label for="threshold">Threshold (0-1000):</label>
+                <input type="text" id="threshold" name="threshold" value="500">
+              </div>
 
-                <div>
-                  <h2>Activity Threshold</h2>
-                  <label for="threshold">Threshold (0-1000):</label>
-                  <input type="text" id="threshold" name="threshold" value="500">
-                </div>
+              <br>
+              <br>
 
-                <br>
-                <br>
+              <input type="submit" value="Submit">
+          </form>
+      {% else %}
+          <p>No form.</p>
+      {% endif %}
+    </div>
 
-                <input type="submit" value="Submit">
-            </form>
-        {% else %}
-            <p>No form.</p>
-        {% endif %}
-      </div>
+    <br>
+    <br>
 
-      <br>
-      <br>
+    <div>
+    
+      <form action="/activity_prediction">
+        <input type="submit" value="Go to NPAIEngine home">
+      </form> 
 
-      <div>
-      
-        <form action="/activity_prediction">
-          <input type="submit" value="Go to NPAIEngine home">
-        </form> 
-
-      </div>
+    </div>
   </body>
 </html>

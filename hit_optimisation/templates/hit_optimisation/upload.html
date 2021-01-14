@@ -15,7 +15,12 @@
       integrity="sha256-+C0A5Ilqmu4QcSPxrlGpaZxJ04VjsRjKu+G82kl5UJk=" crossorigin="anonymous"></script>
 
     <script type="text/javascript" 
-    src="{% static 'hit_optimisation/options.js' %}"></script>
+    src="{% static 'js/selectize_options.js' %}"></script>
+
+    <link rel="stylesheet" type="text/css" 
+      href="{% static 'css/select_forms.css' %}">
+    <script type="text/javascript" 
+      src="{% static 'js/select_forms.js' %}"></script>
 
     <script type="text/javascript">
       function setVisible() {
@@ -24,20 +29,12 @@
       </script>
 
     <link rel="stylesheet" type="text/css" 
-      href="{% static 'hit_optimisation/sidebar.css' %}">
+      href="{% static 'css/sidebar.css' %}">
   </head>
 
   <body style="text-align: center;" onload="setVisible()">
 
-    <div class="sidenav">
-      <a href="/activity_prediction">Home</a>
-      <a href="/activity_prediction/upload">Activity prediction</a>
-      <a href="/natural_products/target_selection">Target screening</a>
-      <a href="/natural_products/pathway_selection">Pathway screening</a>
-      <a href="/natural_products/reaction_selection">Reaction screening</a>
-      <a href="/hit_optimisation/upload">Hit optimisation</a>
-      <a href="/logout">Logout</a>
-    </div>
+    {% include 'navbar.html' %}
 
     <div>
       <h1>Hit Optimisation</h1>
@@ -45,7 +42,7 @@
 
     <div id="hiddenDiv" class="hidden" style="display: none;">
   
-        <form style="width:800px; margin:0 auto;" enctype="multipart/form-data" action="/hit_optimisation/upload/" method="post">
+        <form class="select-form" enctype="multipart/form-data" action="/hit_optimisation/upload/" method="post">
           {% csrf_token %}
 
           <div>
@@ -74,24 +71,16 @@
             <h2>Target Selection</h2>
             <label for="target">Select target (PDB ID):</label>
             {% if pdb_ids %}
-            <!-- <input type="text" id="target" 
-              name="target" value={{target}}>  -->
             <select name=target id=target>
-                {% for target, symbol, score, pdb_id in pdb_ids %}
-                  <option value={{pdb_id}}>{{target}}--{{symbol}}({{score}})--{{pdb_id}}</option>
-                {% endfor %}
+              {% for target, symbol, score, pdb_id in pdb_ids %}
+              <option value={{pdb_id}}>{{target}}--{{symbol}}({{score}})--{{pdb_id}}</option>
+              {% endfor %}
               </select> 
             {% else %}
             <input type="text" id="target" 
               name="target" value="4DQY"> 
             {% endif %}
             <br>
-            <!-- <select name=target id=target>
-              <option value="">Please choose a target...</option>
-              {% for target in targets %}
-                <option value={{target}}>{{target}}</option>
-              {% endfor %}
-            </select>  -->
 
             <label for="chain">Chain</label>
             <input type="text" id="chain" 
@@ -102,7 +91,7 @@
         <div>
           <h2>Seed Compounds</h2>
           {% if smiles_filename %}
-            <label for="input_smiles">Smiles file:</label>
+            <label for="input_smiles">Seed compounds:</label>
             <input type="text" id="input_smiles" 
               name="input_smiles" value="{{smiles_filename}}" readonly> 
           {% else %}
@@ -113,10 +102,10 @@
         <div>
           <h2>Optimisation Settings</h2>
           {% for setting, value in settings %}
-            <label for={{setting}}>{{setting}}:</label>
-            <input type="text" id={{setting}} 
-              name={{setting}} value={{value}}> 
-            <br>
+          <label for={{setting}}>{{setting}}:</label>
+          <input type="text" id={{setting}} 
+            name={{setting}} value={{value}}> 
+          <br>
           {% endfor %}
         </div>
           <br>

@@ -18,7 +18,7 @@ import shutil
 
 from utils.io import process_input_file
 from utils.email_utils import send_mail
-from utils.users import send_file_to_user
+from utils.users import send_file_to_user, determine_identifier
 
 class ChainSelect(Select):
     
@@ -130,29 +130,11 @@ def get_bounding_box_size(mol, allowance=2.):
     bounding_box = mol.get_bounding_box()
     return np.ceil(np.abs(bounding_box[0] - bounding_box[1])) + allowance 
 
-# def process_smiles(smiles_file, output_dir):
-#     '''process smiles file from client'''
-#     if not isinstance(smiles_file, str):
-#         assert hasattr(smiles_file, "name")
-#         assert smiles_file.name.endswith(".smi")
-#         # write compounds to server local directory
-#         temp_smiles_file = os.path.join(output_dir,
-#             smiles_file.name)
-#         with open(temp_smiles_file, "wb+") as out_file:
-#             for chunk in smiles_file.chunks():
-#                 out_file.write(chunk)
-#     else:
-#         temp_smiles_file = os.path.join(output_dir,
-#             os.path.basename(smiles_file)) # no uploaded file
-#         shutil.copyfile(smiles_file, temp_smiles_file)
-#     return temp_smiles_file
-
 def load_base_settings(
     settings_file=os.path.join("hit_optimisation", "static",
         "hit_optimisation", "base_settings", "base_settings.json")):
     assert os.path.exists(settings_file)
     print ("loading base settings from", settings_file)
-
     with open(settings_file, "r") as f:
         return json.load(f)
 
@@ -199,36 +181,29 @@ def save_settings(settings, filename):
     with open(filename, "w") as f:
         json.dump(settings, f, sort_keys=True, indent=4)
 
-def determine_identifier(user_id, pdb_id, smiles_file):
-    if not isinstance(smiles_file, str):
-        assert hasattr(smiles_file, "name")
-        smiles_file = smiles_file.name 
-    assert smiles_file.endswith(".smi")
-    return "{}-{}-{}".format(user_id, pdb_id, 
-        os.path.splitext(os.path.basename(smiles_file))[0])
 
 def hit_optimisation(
-    # receiver_name, 
     user,
     pdb_id, 
     input_file, 
     chain,
     user_settings={},
     compression="zip",
-    output_dir=os.path.join("hit_optimisation",
-        "static", "hit_optimisation", "output"),
-    archive_dir=os.path.join("hit_optimisation",
-        "static", "hit_optimisation", "archives"),):
-
+    root_dir="user_files"
+    ):
     ''' will run as a process ''' 
 
     assert len(pdb_id) == 4 
 
-    identifier = determine_identifier(user.id, pdb_id, input_file)
+    root_dir = os.path.join(root_dir, 
+        "user_id={}".format(user.id), "hit_optimisation")
+    os.makedirs(root_dir, exist_ok=True)
+
+    identifier = determine_identifier(input_file)
+    identifier += f"-{pdb_id}"
 
     # process output directory
-    output_dir = os.path.join(output_dir,
-        identifier)
+    output_dir = os.path.join(root_dir,identifier)
     os.makedirs(output_dir, exist_ok=True)
     print ("outputting to directory", output_dir)
 
@@ -277,8 +252,7 @@ def hit_optimisation(
         print ("error in run")
 
     # build zip file containing all targets / run settings / run output
-    archive_filename = os.path.join(archive_dir,
-        identifier)
+    archive_filename = os.path.join(root_dir, identifier)
     print ("writing archive to", 
         archive_filename + "." + compression)
 
@@ -292,19 +266,21 @@ def hit_optimisation(
 
 class User(object):
 
-    def __init__(self, name, email):
-        self.name = name 
+    def __init__(self, id, username, email):
+        self.id = id
+        self.username = username 
         self.email = email
 
 if __name__ == "__main__":
 
-    name = "David"
+    user_id = 1
+    username = "David"
     email = "davemcdonald93@gmail.com"
     pdb_id = "4DQY"
     smiles_file = "./all_ligands.smi"
     chain = "C"
 
-    user = User(name, email)
+    user = User(user_id, username, email)
 
     hit_optimisation(
         user, 

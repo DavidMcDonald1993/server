@@ -1,11 +1,10 @@
 <!doctype html>
 <html>
   <head>
-      {% load static %}
-        <title>NPAIEngine</title>
-        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
-        <script type="text/javascript" 
-        src="{% static 'activity_prediction/download.js' %}"></script>
+    {% load static %}
+    <title>NPAIEngine</title>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script type="text/javascript" src="{% static 'js/download.js' %}"></script>
   </head>
   <body style="text-align: center;">
  
@@ -14,9 +13,6 @@
     {% if authenticated %}
 
     <div>
-        <!-- <form method="get" action={{filename}}> -->
-            <!-- <button type="submit">Download</button> -->
-         <!-- </form> -->
          <p>The download should begin shortly. If it doesn't, click
             <a data-auto-download href="/download/{{token}}">here</a>.</p>
        

@@ -27,7 +27,7 @@ from utils.io import process_input_file, write_json
 from utils.genenames_utils import targets_to_uniprot_ids
 from utils.mysql_utils import get_uniprots_for_targets
 # from utils.rdkit_utils import LoadSDF
-from utils.users import send_file_to_user
+from utils.users import send_file_to_user, determine_identifier
 from utils.ppb2_utils import load_model
 
 # def write_PASS_hits_to_db(
@@ -75,14 +75,14 @@ from utils.ppb2_utils import load_model
 
 def uniprot_predict(
     smiles_file,
-    static_dir="activity_prediction/static/activity_prediction",
     model_filename="models/morg3-xgc.pkl.gz"):
     '''
     Predict with novel classifier
     '''
 
-    model_filename = os.path.join(static_dir, model_filename)
     model = load_model(model_filename)
+
+    # TODO
 
     return 0
 
@@ -144,36 +144,27 @@ def perform_enrichment_on_PASS_file(
 
     return 0
 
-def determine_identifier(user_id, input_file):
-    if not isinstance(input_file, str):
-        assert hasattr(input_file, "name")
-        input_file = input_file.name 
-    # assert smiles_file.endswith(".smi")
-    return "{}-{}".format(user_id, 
-        os.path.splitext(os.path.basename(input_file))[0])
-
 def activity_predict(
     user,
-    # user_email,
     input_file, 
     compression="zip",
-    static_dir="activity_prediction/static/activity_prediction",
-    output_dir="files",
-    archive_dir="archives",
+    root_dir="user_files",
+    # archive_dir="archives",
     threshold=500,
     enrichment=True):
 
     '''
-        Perform activity prediction with PASS
+    Perform activity prediction with PASS
     '''
 
-    identifier = determine_identifier(user.id, input_file)
+    root_dir = os.path.join(root_dir, 
+        "user_id={}".format(user.id), "activity_prediction")
+    os.makedirs(root_dir, exist_ok=True)
 
-    output_dir = os.path.join(static_dir, output_dir, identifier)
+    identifier = determine_identifier(input_file)
+
+    output_dir = os.path.join(root_dir, identifier)
     os.makedirs(output_dir, exist_ok=True)
-
-    archive_dir = os.path.join(static_dir, archive_dir)
-    os.makedirs(archive_dir, exist_ok=True)
 
     input_file = process_input_file(input_file, 
         desired_format=".sdf", output_dir=output_dir)
@@ -199,7 +190,7 @@ def activity_predict(
         os.remove(pass_out_file)
 
     # build zip file containing all targets / run settings / run output
-    archive_filename = os.path.join(archive_dir,
+    archive_filename = os.path.join(root_dir,
         identifier)
     print ("writing archive to", 
         archive_filename + "." + compression)
@@ -208,9 +199,14 @@ def activity_predict(
         compression, output_dir)
 
     attachment_filename = f"{archive_filename}.{compression}"
-    send_file_to_user(user,attachment_filename)
+    send_file_to_user(user, attachment_filename)
 
     return 0
+
+class User:
+
+    def __init__(self, id):
+        self.id = id
 
 if __name__ == "__main__":
     # name = "david"
@@ -220,5 +216,12 @@ if __name__ == "__main__":
     # # determine_targets(input_file)
     # perform_enrichment_on_PASS_file(input_file, output_dir="/home/david/Desktop", threshold=0)
 
-    smiles_file = None
-    ret = uniprot_predict(smiles_file)
+    # smiles_file = None
+    # ret = uniprot_predict(smiles_file)
+
+    # shutil.make_archive("test/test", 
+    #     "zip", "test")
+
+    u = User(123)
+
+    activity_predict(u, "test.smi", enrichment=False)

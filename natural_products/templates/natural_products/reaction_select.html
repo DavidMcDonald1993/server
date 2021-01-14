@@ -15,77 +15,70 @@
         integrity="sha256-+C0A5Ilqmu4QcSPxrlGpaZxJ04VjsRjKu+G82kl5UJk=" crossorigin="anonymous"></script>
        
     <script type="text/javascript" 
-      src="{% static 'natural_products/options.js' %}"></script>
-    <script type="text/javascript"
-      src="{% static 'natural_products/forms.js' %}"></script>
+      src="{% static 'js/selectize_options.js' %}"></script>
+   
+    <link rel="stylesheet" type="text/css" 
+      href="{% static 'css/select_forms.css' %}">
+   <script type="text/javascript"
+      src="{% static 'js/select_forms.js' %}"></script>
 
-      <link rel="stylesheet" type="text/css" 
-      href="{% static 'natural_products/sidebar.css' %}">
+    <script type="text/javascript"
+      src="{% static 'js/show_hidden.js' %}"></script>
+
+    <link rel="stylesheet" type="text/css" 
+      href="{% static 'css/sidebar.css' %}">
 
   </head>
 
-  <body style="text-align: center;" onload="">
+  <body style="text-align: center;">
 
-    <div class="sidenav">
-      <a href="/activity_prediction">Home</a>
-      <a href="/activity_prediction/upload">Activity prediction</a>
-      <a href="/natural_products/target_selection">Target screening</a>
-      <a href="/natural_products/pathway_selection">Pathway screening</a>
-      <a href="/natural_products/reaction_selection">Reaction screening</a>
-      <a href="/hit_optimisation/upload">Hit optimisation</a>
-      <a href="/logout">Logout</a>
+    {% include 'navbar.html' %}
+    
+    <div>
+      <h1>Reaction selection</h1>
+      <form action="/natural_products/" >
+        <input type="submit" value="Go back">
+      </form>
     </div>
 
+    <br>
 
-    <div>
-    <h1>Reaction selection</h1>
-    <form action="/natural_products/" >
-      <input type="submit" value="Go back">
-    </form>
-  </div>
-
-  <br>
-
-  <div>
-    <form style="width:800px; margin:0 auto;" action="/natural_products/reaction_hits/" method="get">
-      <div>
-
-        <label for="reactions">Select reaction(s):</label>
-
-        <select name="reactions" id="reactions" multiple>
-          
-          {% for reaction, reaction_encoded, organism, organism_encoded in reactions %}
-            <option value="{{reaction_encoded}}">{{organism}}: {{reaction}}</option>
-          {% endfor %}
-          
-        </select> 
-
-      </div>
-
-      <br>
-      <br>
-
-      <label for="threshold">Threshold (Pa):</label>
-      <select name="threshold" id="threshold">
-        {% for threshold in thresholds %}
-          <option value={{threshold}}>{{threshold}}</option>
-        {% endfor %}
-      </select>
+    <div class="hiddenDic" style="display: none;">
       
-      <br>
-       <br>
+      <form class="select-form" action="/natural_products/reaction_hits/" method="get">
+     
+        <div>
+          <label for="reactions">Select reaction(s):</label>
+          <select name="reactions" id="reactions" multiple>
+            {% for reaction, reaction_encoded, organism, organism_encoded in reactions %}
+            <option value="{{reaction_encoded}}">{{organism}}: {{reaction}}</option>
+            {% endfor %}
+          </select> 
+        </div>
 
-      <label for="checkbox">Pa>Pi?</label>
-      <input id="checkbox" name="checkbox" type="checkbox" checked>
+        <br>
+        <br>
 
-      <br>
-      <br>
+        <label for="threshold">Threshold (Pa):</label>
+        <select name="threshold" id="threshold">
+          {% for threshold in thresholds %}
+          <option value={{threshold}}>{{threshold}}</option>
+          {% endfor %}
+        </select>
+        
+        <br>
+        <br>
 
-      <input type="submit" id="submit" value="Submit" disabled="disabled">
-    </form> 
+        <label for="checkbox">Pa>Pi?</label>
+        <input id="checkbox" name="checkbox" type="checkbox" checked>
 
-  </div>
+        <br>
+        <br>
 
+        <input type="submit" id="submit" value="Submit" disabled="disabled">
+      </form> 
+
+    </div>
 
   </body>
 </html>

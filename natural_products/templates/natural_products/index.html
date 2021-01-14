@@ -1,26 +1,14 @@
 <!doctype html>
 <html>
   <head>
-
     {% load static %}
-
     <title>NPAIEngine</title>
-
-    <link rel="stylesheet" type="text/css" 
-      href="{% static 'natural_products/sidebar.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/sidebar.css' %}">
   </head>
+
   <body style="text-align: center;">
 
-    <div class="sidenav">
-      <a href="/activity_prediction">Home</a>
-      <a href="/activity_prediction/upload">Activity prediction</a>
-      <a href="/natural_products/target_selection">Target screening</a>
-      <a href="/natural_products/pathway_selection">Pathway screening</a>
-      <a href="/natural_products/reaction_selection">Reaction screening</a>
-      <a href="/hit_optimisation/upload">Hit optimisation</a>
-      <a href="/logout">Logout</a>
-    </div>
-
+   {% include 'navbar.html' %}
 
     <div>
       <h1>Natural products</h1>
@@ -69,12 +57,6 @@
       <br>
       <br>
 
-      <!-- <form action="/natural_products/pathway_enrichment/">
-        <input type="submit" value="Go to pathway enrichment">
-      </form> 
-
-      <br>
-      <br> -->
      <div>
        <h2>Return Home</h2>
       <form action="/activity_prediction">

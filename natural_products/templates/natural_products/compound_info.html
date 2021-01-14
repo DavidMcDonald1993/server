@@ -9,243 +9,229 @@
     <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
     <link rel="stylesheet" href="http://cdn.datatables.net/1.10.2/css/jquery.dataTables.min.css">
   
-  
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
     <script type="text/javascript"  src="http://cdn.datatables.net/1.10.2/js/jquery.dataTables.min.js"></script>
     <script type="text/javascript"  src="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
 
     <script type="text/javascript" 
-      src="{% static 'natural_products/tables.js' %}"></script>
-
+      src="{% static 'js/make_datatables.js' %}"></script>
     <script type="text/javascript" 
-      src="{% static 'natural_products/compounds.js' %}"></script>
+      src="{% static 'natural_products/categories.js' %}"></script>
 
       <link rel="stylesheet" type="text/css" 
-        href="{% static 'natural_products/sidebar.css' %}">
+        href="{% static 'css/sidebar.css' %}">
 
   </head>
 
-  <body style="text-align: center;" onload="setDataTablesVisible()">
+  <body style="text-align: center;">
 
-    <div class="sidenav">
-      <a href="/activity_prediction">Home</a>
-      <a href="/activity_prediction/upload">Activity prediction</a>
-      <a href="/natural_products/target_selection">Target screening</a>
-      <a href="/natural_products/pathway_selection">Pathway screening</a>
-      <a href="/natural_products/reaction_selection">Reaction screening</a>
-      <a href="/hit_optimisation/upload">Hit optimisation</a>
-      <a href="/logout">Logout</a>
-    </div>
+    {% include 'navbar.html' %}
 
-  
-    <p>
-      <h1>{{compound_id}}:<br>{{compound_name}}</h1>
+    <div style="width:75%; margin:0 auto;">
+    
+    <div>
+      <h1>{{compound_name}}</h1>
       <form action="/natural_products">
         <input type="submit" 
-          value="Return to natural product library home">
+          value="Return to screening selection">
       </form>
-    </p>
+    </div>
 
     {% if img_filename %}
+    <div>
     <h2>Molecule</h2>
       <img src="{% static img_filename %}" 
         style="width: 20%; height: 20%;" >
+    </div>
     {% endif %}
 
-      <div class="nav nav-tabs" id="nav-tab" role="tablist">
+    <div class="nav nav-tabs" id="nav-tab" role="tablist">
+
+      <input type="button" onclick="showDiv(this)" value="PROPERTIES">
+
+      {% if activities %}
+        {% for category, category_activities in activities %}
+          &nbsp;
+          &nbsp;
+          &nbsp;
+          &nbsp;
+          <input type="button" onclick="showDiv(this)" value={{category}}>
+          {% endfor %}
+      {% endif %}
+
+      {% if pathways %}
+      &nbsp;
+      &nbsp;
+      &nbsp;
+      &nbsp;
+      <!-- pathways -->
+      <input type="button" onclick="showDiv(this)" value="PATHWAYS">
+      {% endif %}
+
+      {% if pathways %}
+      &nbsp;
+      &nbsp;
+      &nbsp;
+      &nbsp;
+      <!-- reactions -->
+      <input type="button" onclick="showDiv(this)" value="REACTIONS">
+      {% endif %}
+    </div>
+
+  <div class="tab-content" id="nav-tabContent"> <!--class not used yet-->
+  
+    <div class="tab-pane active" id="nav-PROPERTIES" 
+      role="tabpanel" aria-labelledby="nav-PROPERTIES-tab"
+      style="display: none;">
       
-        <!-- <a class="nav-item nav-link active" id="nav-properties-tab" 
-          data-toggle="tab" href="#nav-properties" role="tab" 
-          aria-controls="nav-properties" aria-selected="true">
-          <b>PROPERTIES</b>
-        </a> -->
-        <input type="button" onclick="showDiv(this)" value="PROPERTIES">
+      <h2>MOLECULE PROPERTIES</h2>
+      <table class="display table"
+        style="width:100%;text-align:left">
+        <thead>
+        <tr>
+          <th>Property Name</th>
+          <th>Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for key, value in info %}
+        <tr>
+          <td>{{key}}</td>
+          <td>{{value}}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
 
-        {% if activities %}
-          {% for category, category_activities in activities %}
-            &nbsp;
-            &nbsp;
-            &nbsp;
-            &nbsp;
-            <!-- <a class="nav-item nav-link" id="nav-{{category}}-tab" 
-              data-toggle="tab" href="#nav-{{category}}" role="tab" 
-              aria-controls="nav-{{category}}" aria-selected="false">
-              <b>{{category}}</b>
-            </a> -->
-            <input type="button" onclick="showDiv(this)" value={{category}}>
-            {% endfor %}
-        {% endif %}
+    {% if activities %}
+    
+      {% for category, category_activities in activities %}
 
-        &nbsp;
-        &nbsp;
-        &nbsp;
-        &nbsp;
-        <!-- pathways -->
-        <input type="button" onclick="showDiv(this)" value="PATHWAYS">
+        <div class="tab-pane active" id="nav-{{category}}" 
+          role="tabpanel" aria-labelledby="nav-{{category}}-tab"
+          style="display: none;">
+          
+            <h2>{{category}}</h2>
+            <div class="table-responsive">
+              <table id="{{category}}Table" class="display table data"
+                style="width:100%;text-align:center;display:none;">
+                
+                <thead>
+                <tr>
+                  <th>Target</th>
+                  <th>Pa</th>
+                  <th>Pi</th>
+                  <th>Pa - Pi</th>
+                </tr>
+                </thead>
+                
+                <tbody>
+                {% for target, pa, pi, diff in category_activities %}
+                <tr>
+                  <td>{{target}}</td>
+                  <td>{{pa}}</td>
+                  <td>{{pi}}</td>
+                  <td>{{diff}}</td>
+                </tr>
+              {% endfor %}
+              </tbody>
+              </table>
+            </div>
 
-        &nbsp;
-        &nbsp;
-        &nbsp;
-        &nbsp;
-        <!-- reactions -->
-        <input type="button" onclick="showDiv(this)" value="REACTIONS">
-        
+        </div>
+      {% endfor %}
+    {% endif %}
 
-      </div>
+    <!-- pathways -->
 
-    <div class="tab-content" id="nav-tabContent">
-   
-      <div class="tab-pane active" id="nav-PROPERTIES" 
-        role="tabpanel" aria-labelledby="nav-PROPERTIES-tab"
-        style="display: none;">
-        
-        <h2>MOLECULE PROPERTIES</h2>
-        <table class="display table"
-          style="width:100%;text-align:left">
+    <div class="tab-pane active" id="nav-PATHWAYS" 
+    role="tabpanel" aria-labelledby="nav-PATHWAYS-tab"
+    style="display: none;">
+    
+      <h2>PATHWAYS</h2>
+      <div class="table-responsive">
+        <table id="PATHWAYSTable" class="display table data"
+          style="width:100%;text-align:center;display:none;">
+          
           <thead>
           <tr>
-            <th>Property Name</th>
-            <th>Value</th>
+            <th>Target</th>
+            <th>Pa</th>
+            <th>Pi</th>
+            <th>Pa - Pi</th>
+            <th>Uniprot ACC</th>
+            <th>Association Score</th>
+            <th>Pathway Name</th>
+            <th>Pathway Organism</th>
+            <th>Evidence</th>
           </tr>
-        </thead>
-        <tbody>
-          {% for key, value in info %}
-            <tr>
-              <td>{{key}}</td>
-              <td>{{value}}</td>
-            </tr>
-          {% endfor %}
-          </tbody>
+          </thead>
+          
+          <tbody>
+          {% for target, pa, pi, diff, acc, score, pathway_name, organism, evidence, url in pathways %}
+          <tr>
+            <td>{{target}}</td>
+            <td>{{pa}}</td>
+            <td>{{pi}}</td>
+            <td>{{diff}}</td>
+            <td>{{acc}}</td>
+            <td>{{score}}</td>
+            <td><a href={{url}}>{{pathway_name}}</a></td>
+            <td>{{organism}}</td>
+            <td>{{evidence}}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+        </table>
+      </div>
+  </div>
+
+
+      <!-- reactions -->
+
+    <div class="tab-pane active" id="nav-REACTIONS" 
+    role="tabpanel" aria-labelledby="nav-REACTIONS-tab"
+    style="display: none;">
+    
+      <h2>REACTIONS</h2>
+      <div class="table-responsive">
+        <table id="REACTIONSTable" class="display table data"
+          style="width:100%;text-align:center;display:none;">
+          
+          <thead>
+          <tr>
+            <th>Target</th>
+            <th>Pa</th>
+            <th>Pi</th>
+            <th>Pa - Pi</th>
+            <th>Uniprot ACC</th>
+            <th>Association Score</th>
+            <th>Reaction Name</th>
+            <th>Reaction Organism</th>
+            <th>Evidence</th>
+          </tr>
+          </thead>
+          
+          <tbody>
+          {% for target, pa, pi, diff, acc, score, reaction_name, organism, evidence, url in reactions %}
+          <tr>
+            <td>{{target}}</td>
+            <td>{{pa}}</td>
+            <td>{{pi}}</td>
+            <td>{{diff}}</td>
+            <td>{{acc}}</td>
+            <td>{{score}}</td>
+            <td><a href={{url}}>{{reaction_name}}</a></td>
+            <td>{{organism}}</td>
+            <td>{{evidence}}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
         </table>
       </div>
 
-      {% if activities %}
-      
-        {% for category, category_activities in activities %}
-
-          <div class="tab-pane active" id="nav-{{category}}" 
-            role="tabpanel" aria-labelledby="nav-{{category}}-tab"
-            style="display: none;">
-            
-              <h2>{{category}}</h2>
-              <div class="table-responsive">
-                <table id="{{category}}Table" class="display table data"
-                  style="width:100%;text-align:center;display:none;">
-                 
-                  <thead>
-                  <tr>
-                    <th>Target</th>
-                    <th>Pa</th>
-                    <th>Pi</th>
-                    <th>Pa - Pi</th>
-                  </tr>
-                  </thead>
-                 
-                  <tbody>
-                  {% for target, pa, pi, diff in category_activities %}
-                  <tr>
-                    <td>{{target}}</td>
-                    <td>{{pa}}</td>
-                    <td>{{pi}}</td>
-                    <td>{{diff}}</td>
-                  </tr>
-                {% endfor %}
-                </tbody>
-                </table>
-              </div>
-
-          </div>
-        {% endfor %}
-      {% endif %}
-
-      <!-- pathways -->
-
-      <div class="tab-pane active" id="nav-PATHWAYS" 
-      role="tabpanel" aria-labelledby="nav-PATHWAYS-tab"
-      style="display: none;">
-      
-        <h2>PATHWAYS</h2>
-        <div class="table-responsive">
-          <table id="PATHWAYSTable" class="display table data"
-            style="width:100%;text-align:center;display:none;">
-           
-            <thead>
-            <tr>
-              <th>Target</th>
-              <th>Pa</th>
-              <th>Pi</th>
-              <th>Pa - Pi</th>
-              <!-- u.acc, tu.score, p.pathway_name, p.organism, up.evidence, p.pathway_url -->
-              <th>Uniprot ACC</th>
-              <th>Association Score</th>
-              <th>Pathway Name</th>
-              <th>Pathway Organism</th>
-              <th>Evidence</th>
-            </tr>
-            </thead>
-           
-            <tbody>
-            {% for target, pa, pi, diff, acc, score, pathway_name, organism, evidence, url in pathways %}
-            <tr>
-              <td>{{target}}</td>
-              <td>{{pa}}</td>
-              <td>{{pi}}</td>
-              <td>{{diff}}</td>
-              <td>{{acc}}</td>
-              <td>{{score}}</td>
-              <td><a href={{url}}>{{pathway_name}}</a></td>
-              <td>{{organism}}</td>
-              <td>{{evidence}}</td>
-            </tr>
-          {% endfor %}
-          </tbody>
-          </table>
-        </div>
     </div>
-
-
-        <!-- reactions -->
-
-      <div class="tab-pane active" id="nav-REACTIONS" 
-      role="tabpanel" aria-labelledby="nav-REACTIONS-tab"
-      style="display: none;">
-      
-        <h2>REACTIONS</h2>
-        <div class="table-responsive">
-          <table id="REACTIONSTable" class="display table data"
-            style="width:100%;text-align:center;display:none;">
-           
-            <thead>
-            <tr>
-              <th>Target</th>
-              <th>Pa</th>
-              <th>Pi</th>
-              <th>Pa - Pi</th>
-              <th>Uniprot ACC</th>
-              <th>Association Score</th>
-              <th>Reaction Name</th>
-              <th>Reaction Organism</th>
-              <th>Evidence</th>
-            </tr>
-            </thead>
-           
-            <tbody>
-            {% for target, pa, pi, diff, acc, score, reaction_name, organism, evidence, url in reactions %}
-            <tr>
-              <td>{{target}}</td>
-              <td>{{pa}}</td>
-              <td>{{pi}}</td>
-              <td>{{diff}}</td>
-              <td>{{acc}}</td>
-              <td>{{score}}</td>
-              <td><a href={{url}}>{{reaction_name}}</a></td>
-              <td>{{organism}}</td>
-              <td>{{evidence}}</td>
-            </tr>
-          {% endfor %}
-          </tbody>
-          </table>
-        </div>
 
     </div>
 
