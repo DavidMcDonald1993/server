@@ -353,12 +353,14 @@ def draw_molecule(
     img_filename = os.path.join(output_dir, f"{compound_id}.png")
     img_full_path = os.path.join(static_dir, img_filename)
     if os.path.exists(img_full_path):
+        print (img_full_path, "already exists")
         return img_filename
    
     mol = Chem.MolFromSmiles(smiles)
     if mol is not None:
         img = MolToImage(mol)
         img.save(img_full_path)
+        print ("drawimg molecule to", img_full_path)
         return img_filename
     else:
         return None

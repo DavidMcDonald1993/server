@@ -1,14 +1,14 @@
 function showDiv(select){
 
-    const categories = ["ANTITARGETS", "EFFECTS", 
+    const categories = ["PROPERTIES", "ALL", "ANTITARGETS", "EFFECTS", 
         "GENE_EXPRESSION", "MECHANISMS", "METABOLISM", 
-        "TOXICITY", "TRANSPORTERS"];
+        "TOXICITY", "TRANSPORTERS", "PATHWAYS", "REACTIONS"];
     
     categories.forEach( category => {
 
         var style = select.value == category ? 'block' : 'none';
 
-        document.getElementById("div-" + category).style.cssText = "display:" + style + ";";
+        document.getElementById("nav-" + category).style.cssText = "display:" + style + ";";
 
     } );
 

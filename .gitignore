@@ -3,25 +3,15 @@ MGLTools-1.5.6
 jupyter_notebooks
 
 hit_optimisation/autogrow4
-hit_optimisation/static/hit_optimisation/output
-hit_optimisation/static/hit_optimisation/archives
-
-natural_products/static/records
-natural_products/static/compound_images
 
 */__pycache__/*
 
+/static/compound_images
 
-activity_prediction/static/activity_prediction/archives
-activity_prediction/static/activity_prediction/files
-activity_prediction/static/activity_prediction/models
+user_files/*
+staticfiles/*
 
-natural_products/static/compound_images
-natural_products/static/records
-natural_products/static/smiles
-
-hit_optimisation/static/hit_optimisation/output
-hit_optimisation/static/hit_optimisation/archives
+models/*.pkl.gz
 
 *_credentials.json
 
