@@ -25,7 +25,7 @@ from utils.pass_utils import (remove_invalid_characters, parse_pass_spectra,
 from utils.enrichment_utils import perform_enrichment_analysis
 from utils.io import process_input_file, write_json
 from utils.genenames_utils import targets_to_uniprot_ids
-from utils.mysql_utils import get_uniprots_for_targets
+from utils.queries import get_uniprots_for_targets
 # from utils.rdkit_utils import LoadSDF
 from utils.users import send_file_to_user, determine_identifier
 from utils.ppb2_utils import load_model

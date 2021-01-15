@@ -11,12 +11,24 @@ from django.views.static import serve
 import html
 import urllib.parse as urlparse
 
-from natural_products.backend import (write_records_to_file, write_smiles_to_file, 
-    query_target_hits, get_coconut_compound_info_from_mongo, draw_molecule, get_multiple_compound_info,
-    query_pathway_hits, query_reaction_hits, get_all_activities_for_compound)
-
-from utils.mysql_utils import (get_all_targets_for_categories, 
-    get_all_pathways, get_all_reactions, get_all_pathways_for_compounds, get_all_reactions_for_compounds)
+from natural_products.backend import (
+    write_records_to_file, 
+    write_smiles_to_file, 
+    get_coconut_compound_info_from_mongo,
+    draw_molecule, 
+)
+from utils.queries import (
+    get_all_targets_for_categories, 
+    get_all_pathways, 
+    get_all_reactions, 
+    get_all_pathways_for_compounds, 
+    get_all_reactions_for_compounds,
+    get_target_hits,
+    get_pathway_hits,
+    get_reaction_hits,
+    get_all_activities_for_compound,
+    get_info_for_multiple_compounds
+)
 
 # Create your views here.
 
@@ -64,7 +76,8 @@ def show_target_hits_view(request, ):
         for target in targets]
 
     thresholds = [threshold]
-    target_hits, columns = query_target_hits(targets, thresholds, filter_pa_pi=filter_pa_pi)
+    target_hits, columns = get_target_hits(
+        targets, thresholds, filter_pa_pi=filter_pa_pi)
     num_hits = len(target_hits)
 
     request.session["targets"] = targets
@@ -119,7 +132,8 @@ def show_pathway_hits_view(request, ):
     pathways = [urlparse.unquote(pathway) 
         for pathway in pathways]
 
-    pathway_hits, columns = query_pathway_hits(pathways, 
+    pathway_hits, columns = get_pathway_hits(
+        pathways, 
         threshold=threshold, filter_pa_pi=filter_pa_pi,
         organisms=organisms, 
         # limit=100,
@@ -223,7 +237,8 @@ def show_reaction_hits_view(request, ):
         for reaction in reactions]
 
     # thresholds = [threshold]
-    reaction_hits, columns = query_reaction_hits(reactions, 
+    reaction_hits, columns = get_reaction_hits(
+        reactions, 
         threshold=threshold, filter_pa_pi=filter_pa_pi,
         organisms=organisms,
         # limit=100
@@ -277,8 +292,7 @@ def show_reaction_hits_view(request, ):
 
 def all_compounds_view(request):
 
-    # get compound data from database
-    compounds = get_multiple_compound_info() # returns list of tuples
+    compounds = get_info_for_multiple_compounds()
     context = {
         "compounds": compounds
     }
@@ -303,29 +317,28 @@ def compound_info_view(request, compound_id):
     assert "name" in compound_info 
     compound_name = compound_info["name"]
 
-    # smiles = info["clean_smiles"]
-    # if smiles is not None:
-        # _compound_id = get_multiple_compound_info(compound_id, columns=("compound_id", ))[0][0]
-        # img_filename = draw_molecule(_compound_id, smiles)
-    img_filename = get_multiple_compound_info(compound_id, columns=("image_path", ))[0][0]
+    img_filename = get_info_for_multiple_compounds(
+        compound_id, columns=("image_path", ))[0][0]
     if os.path.exists(os.path.join("static", img_filename)):
         context["img_filename"] = img_filename
 
-    activities = get_all_activities_for_compound(compound_id, 
+    activities = get_all_activities_for_compound(
+        compound_id, 
         threshold=threshold, 
         )
 
-    pathways = get_all_pathways_for_compounds(compound_id, 
-        threshold=threshold,
-        # organism="Homo sapiens"
-        )
-    reactions = get_all_reactions_for_compounds(compound_id,  
+
+    pathways = get_all_pathways_for_compounds(
+        compound_id, 
         threshold=threshold,
         # organism="Homo sapiens"
         )
 
-    # convert to list of dicts for easy presentation
-    compound_info = compound_info.items()
+    reactions = get_all_reactions_for_compounds(
+        compound_id,  
+        threshold=threshold,
+        # organism="Homo sapiens"
+        )
 
     context.update({
         "compound_id": compound_id,
