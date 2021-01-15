@@ -331,12 +331,12 @@ def get_all_activities_for_compound(
     compound_hits = {i: (name, pa, pi, pa_pi) 
         for i, name, pa, pi, pa_pi in compounds_hits} #  convert to dict to avoid multiple queries
 
-    category_activities = [("ALL",
+    category_activities = [("All Targets",
         [(name, pa, pi, pa_pi)
             for name, pa, pi, pa_pi in compound_hits.values()]
     )]
 
-    category_activities += [(category,
+    category_activities += [(category.capitalize(),
         [(compound_hits[target_id][0], compound_hits[target_id][1], compound_hits[target_id][2], # name, pa, pi
             compound_hits[target_id][3]) # pa-pi
                 for target_id in targets.values()

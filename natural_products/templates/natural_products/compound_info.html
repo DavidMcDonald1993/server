@@ -15,9 +15,9 @@
     {% load static %}
 
     <script type="text/javascript"  src="{% static 'js/make_datatables.js' %}"></script>
-    <script type="text/javascript" src="{% static 'natural_products/categories.js' %}"></script>
-
     <script type="text/javascript" src="{% static 'js/show_hidden.js' %}"></script>
+
+    <script type="text/javascript" src="{% static 'natural_products/categories.js' %}"></script>
 
   </head>
 
@@ -50,179 +50,138 @@
 
       <div class="hiddenDiv" style="display: none;">
 
-      <div class="nav nav-tabs" id="nav-tab" role="tablist">
+        <div id="categorySidebar" class="sidenav sidenav-right">
+          <a href="#Molecule_properties" onclick="showDiv(this)">Molecule Properties</a>
+          {% if activities %}
+          {% for category, category_activities in activities %}
+          <a href="#{{category}}" onclick="showDiv(this)">{{category}}</a>
+          {% endfor %}
+          {% endif %}
+          {% if pathways %}
+          <a href="#Pathways" onclick="showDiv(this)">Pathways</a>
+          {% endif %}
+          {% if reactions %}
+          <a href="#Reactions" onclick="showDiv(this)">Reactions</a>
+          {% endif %}
+        </div>
 
-        <input type="button" onclick="showDiv(this)" value="PROPERTIES">
+        <div> <!--class not used yet-->
+    
+        <div id="nav-#Properties" style="display: none;">
+          
+          <h2>Molecule Properties</h2>
+          <table class="display table">
+            <thead>
+            <tr>
+              <th>Property Name</th>
+              <th>Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for key, value in compound_info %}
+            <tr>
+              <td>{{key}}</td>
+              <td>{{value}}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
 
         {% if activities %}
-          {% for category, category_activities in activities %}
-            &nbsp;
-            &nbsp;
-            &nbsp;
-            &nbsp;
-            <input type="button" onclick="showDiv(this)" value={{category}}>
-            {% endfor %}
-        {% endif %}
-
-        {% if pathways %}
-        &nbsp;
-        &nbsp;
-        &nbsp;
-        &nbsp;
-        <!-- pathways -->
-        <input type="button" onclick="showDiv(this)" value="PATHWAYS">
-        {% endif %}
-
-        {% if pathways %}
-        &nbsp;
-        &nbsp;
-        &nbsp;
-        &nbsp;
-        <!-- reactions -->
-        <input type="button" onclick="showDiv(this)" value="REACTIONS">
-        {% endif %}
-      </div>
-
-    <div class="tab-content" id="nav-tabContent"> <!--class not used yet-->
-    
-      <div class="tab-pane active" id="nav-PROPERTIES" 
-        role="tabpanel" aria-labelledby="nav-PROPERTIES-tab"
-        style="display: none;">
         
-        <h2>MOLECULE PROPERTIES</h2>
-        <table class="display table"
-          style="width:100%;text-align:left">
-          <thead>
-          <tr>
-            <th>Property Name</th>
-            <th>Value</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for key, value in compound_info %}
-          <tr>
-            <td>{{key}}</td>
-            <td>{{value}}</td>
-          </tr>
-          {% endfor %}
-          </tbody>
-        </table>
-      </div>
-
-      {% if activities %}
-      
         {% for category, category_activities in activities %}
 
-          <div class="tab-pane active" id="nav-{{category}}" 
-            role="tabpanel" aria-labelledby="nav-{{category}}-tab"
-            style="display: none;">
-            
-              <h2>{{category}}</h2>
-              <div class="table-responsive">
-                <table id="{{category}}Table" class="display table data"
-                  style="width:100%;text-align:center;display:inline;">
-                  
-                  <thead>
-                  <tr>
-                    <th>Target</th>
-                    <th>Pa</th>
-                    <th>Pi</th>
-                    <th>Pa - Pi</th>
-                  </tr>
-                  </thead>
-                  
-                  <tbody>
-                  {% for target, pa, pi, diff in category_activities %}
-                  <tr>
-                    <td>{{target}}</td>
-                    <td>{{pa}}</td>
-                    <td>{{pi}}</td>
-                    <td>{{diff}}</td>
-                  </tr>
-                {% endfor %}
-                </tbody>
-                </table>
-              </div>
+        <div id="nav-#{{category}}" style="display: none;">
+              
+          <h2>{{category}}</h2>
+          <table id="{{category}}Table" class="display table data" 
+              style="width:100%;text-align:center;display:inline;">
+                    
+            <thead>
+              <tr>
+                <th>Target</th>
+                <th>Pa</th>
+                <th>Pi</th>
+                <th>Pa - Pi</th>
+              </tr>
+            </thead>
+                    
+            <tbody>
+              {% for target, pa, pi, diff in category_activities %}
+              <tr>
+                <td>{{target}}</td>
+                <td>{{pa}}</td>
+                <td>{{pi}}</td>
+                <td>{{diff}}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
 
-          </div>
         {% endfor %}
-      {% endif %}
+        {% endif %}
+        <!-- pathways -->
+        <div id="nav-#Pathways"  style="display: none;">
+        
+          <h2>Pathways</h2>
+          <table id="PathwaysTable" class="display table data"
+              style="width:100%;text-align:center;display:inline;">
+              
+            <thead>
+              <tr>
+                <th>Uniprot ACCs</th>
+                <th>Number Uniprot ACCs</th>
+                <th>Pathway Name</th>
+                <th>Pathway Organism</th>
+              </tr>
+            </thead>
+              
+            <tbody>
+              {% for accs, num_accs, pathway_name, organism, url in pathways %}
+              <tr>
+                <td>{{accs}}</td>
+                <td>{{num_accs}}</td>
+                <td><a href={{url}}>{{pathway_name}}</a></td>
+                <td>{{organism}}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
 
-      <!-- pathways -->
+      <!-- reactions -->
 
-      <div class="tab-pane active" id="nav-PATHWAYS" 
-      role="tabpanel" aria-labelledby="nav-PATHWAYS-tab"
-      style="display: none;">
+      <div id="nav-#Reactions" style="display: none;">
       
-        <h2>PATHWAYS</h2>
-        <div class="table-responsive">
-        <table id="PATHWAYSTable" class="display table data"
-            style="width:100%;text-align:center;display:inline;">
-            
+        <h2>Reactions</h2>
+        <table id="ReactionsTable" class="display table data"
+          style="width:100%;text-align:center;display:inline;">
+          
           <thead>
             <tr>
               <th>Uniprot ACCs</th>
               <th>Number Uniprot ACCs</th>
-              <th>Pathway Name</th>
-              <th>Pathway Organism</th>
+              <th>Reaction Name</th>
+              <th>Reaction Organism</th>
             </tr>
           </thead>
-            
+          
           <tbody>
-            {% for accs, num_accs, pathway_name, organism, url in pathways %}
+            {% for accs, num_accs, reaction_name, organism, url in pathways %}
             <tr>
               <td>{{accs}}</td>
               <td>{{num_accs}}</td>
-              <td><a href={{url}}>{{pathway_name}}</a></td>
+              <td><a href={{url}}>{{reaction_name}}</a></td>
               <td>{{organism}}</td>
             </tr>
             {% endfor %}
           </tbody>
         </table>
       </div>
-    </div>
-
-
-      <!-- reactions -->
-
-    <div class="tab-pane active" id="nav-REACTIONS" 
-    role="tabpanel" aria-labelledby="nav-REACTIONS-tab"
-    style="display: none;">
-    
-      <h2>REACTIONS</h2>
-      <div class="table-responsive">
-        <table id="REACTIONSTable" class="display table data"
-          style="width:100%;text-align:center;display:inline;">
-          
-          <thead>
-          <tr>
-            <th>Uniprot ACCs</th>
-            <th>Number Uniprot ACCs</th>
-            <th>Reaction Name</th>
-            <th>Reaction Organism</th>
-          </tr>
-          </thead>
-          
-          <tbody>
-          {% for accs, num_accs, reaction_name, organism, url in pathways %}
-          <tr>
-            <td>{{accs}}</td>
-            <td>{{num_accs}}</td>
-            <td><a href={{url}}>{{reaction_name}}</a></td>
-            <td>{{organism}}</td>
-          </tr>
-        {% endfor %}
-        </tbody>
-        </table>
-      </div>
 
     </div>
-
-    </div>
-
-    </div>
-
-  </div>
 
   </body>
 </html>
