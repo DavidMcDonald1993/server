@@ -374,4 +374,4 @@ def optimise_target_hits_view(request):
     smiles_filename = write_smiles_to_file(user_id, targets, thresholds, smiles)
     request.session["smiles_filename"] = smiles_filename
 
-    return HttpResponseRedirect("/hit_optimisation/upload")
+    return HttpResponseRedirect("/hit_optimisation")
