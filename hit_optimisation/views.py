@@ -50,8 +50,7 @@ def upload_view(request):
 
             target = request.POST["target"]
             if "smiles_filename" in request.session:
-                uploaded_file = request.session["smiles_filename"] # string full location on server
-                del request.session["smiles_filename"]
+                uploaded_file = request.session.pop("smiles_filename") # string full location on server
             else:
                 # smiles file from client
                 uploaded_file = request.FILES["file_field"] # name of attribute
@@ -82,8 +81,8 @@ def upload_view(request):
         "user_email": request.user.email,
     }
 
-    if "targets" in request.session:
-        targets = request.session["targets"]
+    if "targets" in request.session.keys():
+        targets = request.session.pop("targets")
         targets_to_gene_symbols = search_for_targets(targets, 
             only_best_scoring=True, max_hits=100)
 
