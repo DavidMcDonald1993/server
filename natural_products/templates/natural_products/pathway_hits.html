@@ -2,9 +2,8 @@
 <html lang="en">
 
   <head>
-    {% load static %}
 
-    <title>NPAIEngine</title>
+    {% include 'header.html' %}
     
     <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
     <link rel="stylesheet" href="http://cdn.datatables.net/1.10.2/css/jquery.dataTables.min.css">
@@ -12,17 +11,14 @@
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
     <script type="text/javascript"  src="http://cdn.datatables.net/1.10.2/js/jquery.dataTables.min.js"></script>
     <script type="text/javascript"  src="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+
+    {% load static %}
        
-    <script type="text/javascript" 
-      src="{% static 'js/make_datatables.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/make_datatables.js' %}"></script>
 
-    <script type="text/javascript" 
-      src="{% static 'js/show_hidden.js' %}"></script>
+    <script type="text/javascript"  src="{% static 'js/show_hidden.js' %}"></script>
 
-    <link rel="stylesheet" type="text/css" 
-      href="{% static 'css/sidebar.css' %}">
-    <link rel="stylesheet" type="text/css" 
-      href="{% static 'css/tables.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/tables.css' %}">
 
   </head>
 
@@ -62,7 +58,7 @@
             <th colspan="3">Molecule</th>
             {% endif %}
             {% for pathway in pathways %}
-            <th colspan="6">{{pathway}}</th>
+            <th colspan="4">{{pathway}}</th>
             {% endfor %}
           </tr>
           <tr>
@@ -74,8 +70,8 @@
             <th>Molecular Formula</th>
             <!-- <th>SMILES</th> -->
             {% for pathway in pathways %}
-            <th>Target(s)</th>
-            <th>Number Targets</th>
+            <!-- <th>Target(s)</th> -->
+            <!-- <th>Number Targets</th> -->
             <th>Uniprot ACC(s)</th>
             <th>Number Uniprot ACCs</th>
             <th>Pathway Name</th>
@@ -97,8 +93,8 @@
             <td> {{ hit.formula }} </td>
             <!-- <td> {{ hit.smiles }} </td> -->
             {% for pathway in hit.pathways %}
-            <td> {{ pathway.targets }} </td>
-            <td> {{ pathway.num_targets }} </td>
+            <!-- <td> {{ pathway.targets }} </td> -->
+            <!-- <td> {{ pathway.num_targets }} </td> -->
             <td> {{ pathway.accs }} </td>
             <td> {{ pathway.num_accs }} </td>
             <td> <a href="{{pathway.url}}"> {{ pathway.pathway_name }} </a> </td>

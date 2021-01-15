@@ -3,9 +3,8 @@
 <html lang="en">
 
   <head>
-    {% load static %}
 
-    <title>NPAIEngine</title>
+    {% include 'header.html' %}
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.12.6/css/selectize.bootstrap3.min.css" 
       integrity="sha256-ze/OEYGcFbPRmvCnrSeKbRTtjG4vGLHXgOqsyLFTRjg=" crossorigin="anonymous" />
@@ -14,19 +13,15 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.12.6/js/standalone/selectize.min.js" 
         integrity="sha256-+C0A5Ilqmu4QcSPxrlGpaZxJ04VjsRjKu+G82kl5UJk=" crossorigin="anonymous"></script>
        
-    <script type="text/javascript" 
-      src="{% static 'js/selectize_options.js' %}"></script>
+    {% load static %}
+
+    <script type="text/javascript" src="{% static 'js/selectize_options.js' %}"></script>
    
-    <link rel="stylesheet" type="text/css" 
-      href="{% static 'css/select_forms.css' %}">
-   <script type="text/javascript"
-      src="{% static 'js/select_forms.js' %}"></script>
+    <link rel="stylesheet" type="text/css" href="{% static 'css/select_forms.css' %}">
+   <script type="text/javascript" src="{% static 'js/select_forms.js' %}"></script>
 
-    <script type="text/javascript"
-      src="{% static 'js/show_hidden.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/show_hidden.js' %}"></script>
 
-    <link rel="stylesheet" type="text/css" 
-      href="{% static 'css/sidebar.css' %}">
 
   </head>
 
@@ -51,7 +46,7 @@
           <label for="reactions">Select reaction(s):</label>
           <select name="reactions" id="reactions" multiple>
             {% for reaction, reaction_encoded, organism, organism_encoded in reactions %}
-            <option value="{{reaction_encoded}}">{{organism}}: {{reaction}}</option>
+            <option value="{{organism_encoded}}:_:{{reaction_encoded}}">{{organism}}: {{reaction}}</option>
             {% endfor %}
           </select> 
         </div>

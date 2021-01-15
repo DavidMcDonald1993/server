@@ -3,9 +3,8 @@
 <html lang="en">
 
   <head>
-    {% load static %}
 
-    <title>NPAIEngine</title>
+    {% include 'header.html' %}
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.12.6/css/selectize.bootstrap3.min.css" 
       integrity="sha256-ze/OEYGcFbPRmvCnrSeKbRTtjG4vGLHXgOqsyLFTRjg=" crossorigin="anonymous" />
@@ -13,21 +12,15 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.12.6/js/standalone/selectize.min.js" 
         integrity="sha256-+C0A5Ilqmu4QcSPxrlGpaZxJ04VjsRjKu+G82kl5UJk=" crossorigin="anonymous"></script>
+
+    {% load static %}
        
-    <script type="text/javascript" 
-      src="{% static 'js/selectize_options.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/selectize_options.js' %}"></script>
 
-    <link rel="stylesheet" type="text/css" 
-      href="{% static 'css/select_forms.css' %}">
-    <script type="text/javascript" 
-      src="{% static 'js/select_forms.js' %}"></script>
+    <link rel="stylesheet" type="text/css" href="{% static 'css/select_forms.css' %}">
+    <script type="text/javascript" src="{% static 'js/select_forms.js' %}"></script>
 
-    <script type="text/javascript"
-      src="{% static 'js/show_hidden.js' %}"></script>
-
-    <link rel="stylesheet" type="text/css" 
-      href="{% static 'css/sidebar.css' %}">
-
+    <script type="text/javascript" src="{% static 'js/show_hidden.js' %}"></script>
 
   </head>
 
@@ -51,7 +44,7 @@
         <label for="pathways">Select pathway(s):</label>
         <select name="pathways" id="pathways" multiple>
           {% for pathway, pathway_encoded, organism, organism_encoded in pathways %}
-          <option value="{{pathway_encoded}}">{{organism}}: {{pathway}}</option>
+          <option value="{{organism_encoded}}:_:{{pathway_encoded}}">{{organism}}: {{pathway}}</option>
           {% endfor %}
         </select> 
       </div>

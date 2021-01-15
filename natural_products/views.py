@@ -85,7 +85,7 @@ def show_target_hits_view(request, ):
         
 def pathway_select_view(request):
 
-    organisms = "Homo sapiens"
+    organisms = ("Homo sapiens", "Rattus norvegicus", "Mus musculus")
 
     pathways = get_all_pathways(organisms=organisms, )
     pathways = (
@@ -102,10 +102,11 @@ def pathway_select_view(request):
 
 def show_pathway_hits_view(request, ):
 
-    pathways = request.GET.getlist("pathways")
+    organisms, pathways = list(zip(*
+        (pathway.split(":_:") for pathway in request.GET.getlist("pathways"))))
     threshold = request.GET["threshold"]
-    filter_pa_pi = request.GET.get("checkbox") == "on" #TODO
-    organism = "Homo sapiens"
+    filter_pa_pi = request.GET.get("checkbox") == "on" 
+    # organism = "Homo sapiens"
 
     try:
         threshold = int(threshold)
@@ -113,12 +114,14 @@ def show_pathway_hits_view(request, ):
         return HttpResponse("Invalid threshold")
 
     # query database
+    organisms = [urlparse.unquote(organism) 
+        for organism in organisms]
     pathways = [urlparse.unquote(pathway) 
         for pathway in pathways]
 
     pathway_hits, columns = query_pathway_hits(pathways, 
         threshold=threshold, filter_pa_pi=filter_pa_pi,
-        organism=organism, 
+        organisms=organisms, 
         # limit=100,
         )
     num_hits = len(pathway_hits)
@@ -165,7 +168,7 @@ def show_pathway_hits_view(request, ):
 
 def reaction_select_view(request):
 
-    organisms = "Homo sapiens"
+    organisms = ("Homo sapiens", "Rattus norvegicus", "Mus musculus")
 
     reactions = get_all_reactions(organisms=organisms)
     reactions = (
@@ -184,10 +187,10 @@ def reaction_select_view(request):
 
 def show_reaction_hits_view(request, ):
 
-    reactions = request.GET.getlist("reactions")
+    organisms, reactions = list(zip(*
+        (reaction.split(":_:") for reaction in request.GET.getlist("reactions"))))
     threshold = request.GET["threshold"]
     filter_pa_pi = request.GET.get("checkbox") == "on"
-    organism = "Homo sapiens"
 
     try:
         threshold = int(threshold)
@@ -195,13 +198,15 @@ def show_reaction_hits_view(request, ):
         return HttpResponse("Invalid threshold")
 
     # query database
+    organisms = [urlparse.unquote(organism)
+        for organism in organisms]
     reactions = [urlparse.unquote(reaction) 
         for reaction in reactions]
 
     # thresholds = [threshold]
     reaction_hits, columns = query_reaction_hits(reactions, 
         threshold=threshold, filter_pa_pi=filter_pa_pi,
-        organism=organism,
+        organisms=organisms,
         # limit=100
         )
     num_hits = len(reaction_hits)

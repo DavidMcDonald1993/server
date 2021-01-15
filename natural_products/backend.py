@@ -87,9 +87,11 @@ def query_target_hits(
 
     return records, cols[1:]
 
-def query_pathway_hits(pathways,
-    organism=None, threshold=0, filter_pa_pi=True, 
-    include_targets=True,
+def query_pathway_hits(
+    pathways,
+    organisms, 
+    threshold=0, 
+    filter_pa_pi=True, 
     limit=None,
     existing_conn=None):
     assert filter_pa_pi
@@ -97,8 +99,12 @@ def query_pathway_hits(pathways,
     if not isinstance(pathways, list):
         assert isinstance(pathways, str)
         pathways = [pathways]
+    if not isinstance(organisms, list):
+        assert isinstance(organisms, str)
+        organisms = [organisms]
 
     pathway_names = sanitise_names(pathways)
+
     columns = ", ".join((
         f'''
         GROUP_CONCAT(DISTINCT(`{pathway}_target`.target_name)) AS `{pathway} Target Names`, 
@@ -136,7 +142,7 @@ def query_pathway_hits(pathways,
         AND `{pathway_name}_pathway`.pathway_name="{pathway}"
         AND `{pathway_name}_pathway`.organism="{organism}"
         '''
-        for pathway_name, pathway in zip(pathway_names[1:], pathways[1:])
+        for pathway_name, pathway, organism in zip(pathway_names[1:], pathways[1:], organisms[1:])
     ))
 
     group_by = ",".join((
@@ -156,7 +162,7 @@ def query_pathway_hits(pathways,
         {tables}
         WHERE `{pathway_names[0]}_activity`.above_{threshold}=(1)
         AND `{pathway_names[0]}_pathway`.pathway_name="{pathways[0]}"
-        AND `{pathway_names[0]}_pathway`.organism="{organism}"
+        AND `{pathway_names[0]}_pathway`.organism="{organisms[0]}"
         {conditions}
         GROUP BY c.compound_id, c.coconut_id, c.name, c.formula, c.clean_smiles, {group_by}
         {f"LIMIT {limit}" if limit is not None else ""}
@@ -170,9 +176,11 @@ def query_pathway_hits(pathways,
 
     return records, cols[1:]
 
-def query_reaction_hits(reactions,
-    organism=None, threshold=0, filter_pa_pi=True, 
-    include_targets=True,
+def query_reaction_hits(
+    reactions,
+    organisms,
+    threshold=0,
+    filter_pa_pi=True, 
     limit=None,
     existing_conn=None):
     assert filter_pa_pi
@@ -180,6 +188,9 @@ def query_reaction_hits(reactions,
     if not isinstance(reactions, list):
         assert isinstance(reactions, str)
         reactions = [reactions]
+    if not isinstance(organisms, list):
+        assert isinstance(organisms, str)
+        organisms = [organisms]
 
     reaction_names = sanitise_names(reactions)
     columns = ", ".join((
@@ -219,7 +230,7 @@ def query_reaction_hits(reactions,
         AND `{reaction_name}_reaction`.reaction_name="{reaction}"
         AND `{reaction_name}_reaction`.organism="{organism}"
         '''
-        for reaction_name, reaction in zip(reaction_names[1:], reactions[1:])
+        for reaction_name, reaction, organism in zip(reaction_names[1:], reactions[1:], organisms[1:])
     ))
 
     group_by = ",".join((
@@ -239,7 +250,7 @@ def query_reaction_hits(reactions,
         {tables}
         WHERE `{reaction_names[0]}_activity`.above_{threshold}=(1)
         AND `{reaction_names[0]}_reaction`.reaction_name="{reactions[0]}"
-        AND `{reaction_names[0]}_reaction`.organism="{organism}"
+        AND `{reaction_names[0]}_reaction`.organism="{organisms[0]}"
         {conditions}
         GROUP BY c.compound_id, c.coconut_id, c.name, c.formula, c.clean_smiles, {group_by}
         {f"LIMIT {limit}" if limit is not None else ""}

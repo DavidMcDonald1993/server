@@ -16,6 +16,11 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 
+from django.views.generic.base import RedirectView
+from django.contrib.staticfiles.storage import staticfiles_storage
+
+from django.views.generic.base import TemplateView
+
 urlpatterns = [
     path("", #include("npaiengine.urls"))
         include("activity_prediction.urls", )),
@@ -25,6 +30,12 @@ urlpatterns = [
     path("natural_products/", 
         include("natural_products.urls")),
     path("hit_optimisation/",
-        include("hit_optimisation.urls"))
+        include("hit_optimisation.urls")),
+    
+    
+    path("favicon.ico", 
+        RedirectView.as_view(url=staticfiles_storage.url("favicon.ico")),),
+    path("robots.txt",
+        TemplateView.as_view(template_name="robots.txt", content_type="text/plain"),),
     
 ]

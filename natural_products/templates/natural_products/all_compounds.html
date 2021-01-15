@@ -2,9 +2,7 @@
 <html lang="en">
 
   <head>
-    {% load static %}
-
-    <title>NPAIEngine</title>
+    {% include 'header.html' %}
     
     <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
     <link rel="stylesheet" href="http://cdn.datatables.net/1.10.2/css/jquery.dataTables.min.css">
@@ -13,11 +11,12 @@
     <script type="text/javascript" src="http://cdn.datatables.net/1.10.2/js/jquery.dataTables.min.js"></script>
     <script type="text/javascript" src="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
 
+    {% load static %}
+
     <script type="text/javascript" src="{% static 'js/make_datatables.js' %}"></script>
 
     <script type="text/javascript" src="{% static 'js/show_hidden.js' %}"></script>
 
-    <link rel="stylesheet" type="text/css" href="{% static 'css/sidebar.css' %}">
     <link rel="stylesheet" type="text/css" href="{% static 'css/tables.css' %}">
 
   </head>
