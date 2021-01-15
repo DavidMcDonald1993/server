@@ -175,18 +175,6 @@ def show_pathway_hits_view(request, ):
             *pathway_values) in pathway_hits
     ]
 
-    # from decimal import Decimal
-
-    # for hit in pathway_hits[:1]:
-    #     for key in hit:
-    #         # assert not isinstance(hit[key], Decimal)
-    #         print (key, hit[key], type(hit[key]))
-
-    #     for pathway in hit["pathways"]:
-    #         for key in pathway:
-    #             # assert not isinstance(pathway[key], Decimal)
-    #             print (key, pathway[key], type(pathway[key]))
-
     context = {
         "pathways": pathways,
         "threshold": threshold,
@@ -379,7 +367,7 @@ def optimise_target_hits_view(request):
     thresholds = request.session["thresholds"]
     hits = request.session["hits"]
 
-    smiles = get_multiple_compound_info(
+    smiles = get_info_for_multiple_compounds(
         compounds=[hit[0] for hit in hits],
         columns=("coconut_id", "clean_smiles"))
 
