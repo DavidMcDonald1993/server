@@ -132,7 +132,12 @@ def show_pathway_hits_view(request, ):
     request.session["columns"] = columns
 
     # information requested for each pathway 
-    pathway_columns = ("targets", "num_targets", "accs", "num_accs", "pathway_name", "organism", "url")
+    pathway_columns = (
+        "targets", "num_targets", 
+        "accs", "num_accs", 
+        "total_accs", "coverage", 
+        "pathway_name", "organism", "url"
+    )
     num_cols = len(pathway_columns)
     num_pathways = len(pathways)
 
@@ -151,9 +156,22 @@ def show_pathway_hits_view(request, ):
                 for pathway_number in range(num_pathways)   
             ]
         }
-        for compound_id, image, compound_name, compound_formula, compound_smiles,
-            *pathway_values in pathway_hits
+        for (compound_id, image, 
+            compound_name, compound_formula, compound_smiles,
+            *pathway_values) in pathway_hits
     ]
+
+    # from decimal import Decimal
+
+    # for hit in pathway_hits[:1]:
+    #     for key in hit:
+    #         # assert not isinstance(hit[key], Decimal)
+    #         print (key, hit[key], type(hit[key]))
+
+    #     for pathway in hit["pathways"]:
+    #         for key in pathway:
+    #             # assert not isinstance(pathway[key], Decimal)
+    #             print (key, pathway[key], type(pathway[key]))
 
     context = {
         "pathways": pathways,
@@ -164,7 +182,8 @@ def show_pathway_hits_view(request, ):
     }
 
     return render(request,
-        "natural_products/pathway_hits.html", context)
+        "natural_products/pathway_hits.html", 
+        context)
 
 def reaction_select_view(request):
 
@@ -217,7 +236,12 @@ def show_reaction_hits_view(request, ):
     request.session["columns"] = columns
 
         # information requested for each pathway 
-    reaction_columns = ("targets", "num_targets", "accs", "num_accs", "reaction_name", "organism", "url")
+    reaction_columns = (
+        "targets", "num_targets", 
+        "accs", "num_accs", 
+        "total_accs", "coverage",
+        "reaction_name", "organism", "url"
+    )
     num_cols = len(reaction_columns)
     num_reactions = len(reactions)
 
@@ -288,7 +312,8 @@ def compound_info_view(request, compound_id):
         context["img_filename"] = img_filename
 
     activities = get_all_activities_for_compound(compound_id, 
-        threshold=threshold, )
+        threshold=threshold, 
+        )
 
     pathways = get_all_pathways_for_compounds(compound_id, 
         threshold=threshold,

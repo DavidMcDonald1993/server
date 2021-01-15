@@ -58,7 +58,7 @@
             <th colspan="3">Molecule</th>
             {% endif %}
             {% for pathway in pathways %}
-            <th colspan="4">{{pathway}}</th>
+            <th colspan="6">{{pathway}}</th>
             {% endfor %}
           </tr>
           <tr>
@@ -74,6 +74,8 @@
             <!-- <th>Number Targets</th> -->
             <th>Uniprot ACC(s)</th>
             <th>Number Uniprot ACCs</th>
+            <th>Total Uniprot ACCs</th>
+            <th>Uniprot Coverage</th>
             <th>Pathway Name</th>
             <th>Organism</th>
             {% endfor %}
@@ -97,6 +99,8 @@
             <!-- <td> {{ pathway.num_targets }} </td> -->
             <td> {{ pathway.accs }} </td>
             <td> {{ pathway.num_accs }} </td>
+            <td> {{ pathway.total_accs }} </td>
+            <td> {{ pathway.coverage }} </td>
             <td> <a href="{{pathway.url}}"> {{ pathway.pathway_name }} </a> </td>
             <td> {{ pathway.organism }} </td>
             {% endfor %}

@@ -29,7 +29,7 @@
     
       <div>
         <h1>{{compound_name}}</h1>
-        <h2>Activities for threshold: {{threshold}}</h2>
+        <h2>Activities for Pa threshold: {{threshold}}</h2>
         <form action="/natural_products">
           <input type="submit" 
             value="Return to screening selection">
@@ -67,10 +67,10 @@
 
         <div> <!--class not used yet-->
     
-        <div id="nav-#Properties" style="display: none;">
+        <div id="nav-#Molecule_properties" style="display: none;">
           
           <h2>Molecule Properties</h2>
-          <table class="display table">
+          <table class="display table" style="width: 75%; margin:0 auto; text-align: left;">
             <thead>
             <tr>
               <th>Property Name</th>
@@ -133,16 +133,20 @@
               <tr>
                 <th>Uniprot ACCs</th>
                 <th>Number Uniprot ACCs</th>
+                <th>Total ACCs</th>
+                <th>Uniprot Coverage</th>
                 <th>Pathway Name</th>
                 <th>Pathway Organism</th>
               </tr>
             </thead>
               
             <tbody>
-              {% for accs, num_accs, pathway_name, organism, url in pathways %}
+              {% for accs, num_accs, total_accs, coverage, pathway_name, organism, url in pathways %}
               <tr>
                 <td>{{accs}}</td>
                 <td>{{num_accs}}</td>
+                <td>{{total_accs}}</td>
+                <td>{{coverage}}</td>
                 <td><a href={{url}}>{{pathway_name}}</a></td>
                 <td>{{organism}}</td>
               </tr>
@@ -163,16 +167,20 @@
             <tr>
               <th>Uniprot ACCs</th>
               <th>Number Uniprot ACCs</th>
+              <th>Total ACCs</th>
+              <th>Uniprot Coverage</th>
               <th>Reaction Name</th>
               <th>Reaction Organism</th>
             </tr>
           </thead>
           
           <tbody>
-            {% for accs, num_accs, reaction_name, organism, url in pathways %}
+            {% for accs, num_accs, total_accs, coverage, reaction_name, organism, url in reactions %}
             <tr>
               <td>{{accs}}</td>
               <td>{{num_accs}}</td>
+              <td>{{total_accs}}</td>
+              <td>{{coverage}}</td>
               <td><a href={{url}}>{{reaction_name}}</a></td>
               <td>{{organism}}</td>
             </tr>

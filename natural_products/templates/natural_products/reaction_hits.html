@@ -55,7 +55,7 @@
               <th colspan="3">Molecule</th>
               {% endif %}
               {% for reaction in reactions %}
-              <th colspan="4">{{reaction}}</th>
+              <th colspan="6">{{reaction}}</th>
               {% endfor %}
             </tr>
             <tr>
@@ -71,7 +71,9 @@
               <!-- <th>Number Targets</th> -->
               <th>Uniprot ACC(s)</th>
               <th>Number Uniprot ACCs</th>
-              <th>Pathway Name</th>
+              <th>Total Uniprot ACCs</th>
+              <th>Uniprot Coverage</th>
+              <th>Reaction Name</th>
               <th>Organism</th>
               {% endfor %}
             </tr>
@@ -92,6 +94,8 @@
               <!-- <td> {{ reaction.num_targets }} </td> -->
               <td> {{ reaction.accs }} </td>
               <td> {{ reaction.num_accs }} </td>
+              <td> {{ reaction.total_accs }} </td>
+              <td> {{ reaction.coverage }} </td>
               <td> <a href="{{reaction.url}}"> {{ reaction.reaction_name }} </a> </td>
               <td> {{ reaction.organism }} </td>
               {% endfor %}

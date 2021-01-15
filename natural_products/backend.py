@@ -103,14 +103,20 @@ def query_pathway_hits(
         assert isinstance(organisms, str)
         organisms = [organisms]
 
-    pathway_names = sanitise_names(pathways)
+    pathway_names = sanitise_names(
+        [   f"{pathway}_{organism}"
+            for pathway, organism in zip(pathways, organisms)]
+    )
 
     columns = ", ".join((
         f'''
-        GROUP_CONCAT(DISTINCT(`{pathway}_target`.target_name)) AS `{pathway} Target Names`, 
+        GROUP_CONCAT(DISTINCT(`{pathway}_target`.target_name) SEPARATOR '-') AS `{pathway} Target Names`, 
         COUNT(DISTINCT(`{pathway}_target`.target_name)) AS `{pathway} Number Targets`, 
-        GROUP_CONCAT(DISTINCT(`{pathway}_uniprot`.acc)) AS `{pathway} Uniprot ACCs`, 
+        GROUP_CONCAT(DISTINCT(`{pathway}_uniprot`.acc) SEPARATOR '-') AS `{pathway} Uniprot ACCs`, 
         COUNT(DISTINCT(`{pathway}_uniprot`.acc)) AS `{pathway} Number Uniprot ACCs`, 
+        `{pathway}_counts`.counts AS `{pathway} Total Uniprot ACCs`,
+        CAST(COUNT(DISTINCT(`{pathway}_uniprot`.acc)) / `{pathway}_counts`.counts AS CHAR)
+            AS `{pathway} Uniprot Coverage`,   
         `{pathway}_pathway`.pathway_name AS `{pathway} Name`,
         `{pathway}_pathway`.organism AS `{pathway} Organism`,
         `{pathway}_pathway`.pathway_url AS `{pathway} URL`
@@ -130,6 +136,11 @@ def query_pathway_hits(
                 ON (`{pathway}_targets_to_uniprot`.uniprot_id=`{pathway}_uniprot`.uniprot_id)
             INNER JOIN uniprot_to_pathway AS `{pathway}_uniprot_to_pathway` 
                 ON (`{pathway}_targets_to_uniprot`.uniprot_id=`{pathway}_uniprot_to_pathway`.uniprot_id)
+            INNER JOIN (
+                SELECT pathway_id, COUNT(uniprot_id) AS `counts`
+                FROM uniprot_to_pathway
+                GROUP BY pathway_id
+            ) AS `{pathway}_counts` ON `{pathway}_counts`.pathway_id=`{pathway}_uniprot_to_pathway`.pathway_id
             INNER JOIN pathway AS `{pathway}_pathway`
                 ON (`{pathway}_uniprot_to_pathway`.pathway_id={pathway}_pathway.pathway_id)
         '''
@@ -173,7 +184,6 @@ def query_pathway_hits(
     records = [
         record[1:] for record in records
     ]
-
     return records, cols[1:]
 
 def query_reaction_hits(
@@ -192,13 +202,19 @@ def query_reaction_hits(
         assert isinstance(organisms, str)
         organisms = [organisms]
 
-    reaction_names = sanitise_names(reactions)
+    reaction_names = sanitise_names(
+        [   f"{reaction}_{organism}"
+            for reaction, organism in zip(reactions, organisms)]
+    )
     columns = ", ".join((
         f'''
-        GROUP_CONCAT(DISTINCT(`{reaction}_target`.target_name)) AS `{reaction} Target Names`, 
+        GROUP_CONCAT(DISTINCT(`{reaction}_target`.target_name) SEPARATOR '-') AS `{reaction} Target Names`, 
         COUNT(DISTINCT(`{reaction}_target`.target_name)) AS `{reaction} Number Targets`, 
-        GROUP_CONCAT(DISTINCT(`{reaction}_uniprot`.acc)) AS `{reaction} Uniprot ACCs`, 
-        COUNT(DISTINCT(`{reaction}_uniprot`.acc)) AS `{reaction} Number Uniprot ACCs`, 
+        GROUP_CONCAT(DISTINCT(`{reaction}_uniprot`.acc) SEPARATOR '-') AS `{reaction} Uniprot ACCs`, 
+        COUNT(DISTINCT(`{reaction}_uniprot`.acc)) AS `{reaction} Number Uniprot ACCs`,
+        `{reaction}_counts`.counts AS `{reaction} Total Uniprot ACCs`,
+        CAST(COUNT(DISTINCT(`{reaction}_uniprot`.acc)) / `{reaction}_counts`.counts AS CHAR)
+            AS `{reaction} Uniprot Coverage`,    
         `{reaction}_reaction`.reaction_name AS `{reaction} Name`,
         `{reaction}_reaction`.organism AS `{reaction} Organism`,
         `{reaction}_reaction`.reaction_url AS `{reaction} URL`
@@ -218,6 +234,11 @@ def query_reaction_hits(
                 ON (`{reaction}_targets_to_uniprot`.uniprot_id=`{reaction}_uniprot`.uniprot_id)
             INNER JOIN uniprot_to_reaction AS `{reaction}_uniprot_to_reaction` 
                 ON (`{reaction}_targets_to_uniprot`.uniprot_id=`{reaction}_uniprot_to_reaction`.uniprot_id)
+            INNER JOIN (
+                SELECT reaction_id, COUNT(uniprot_id) AS `counts`
+                FROM uniprot_to_reaction
+                GROUP BY reaction_id
+            ) AS `{reaction}_counts` ON `{reaction}_counts`.reaction_id=`{reaction}_uniprot_to_reaction`.reaction_id
             INNER JOIN reaction AS `{reaction}_reaction`
                 ON (`{reaction}_uniprot_to_reaction`.reaction_id={reaction}_reaction.reaction_id)
         '''

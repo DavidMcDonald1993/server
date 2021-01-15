@@ -20,6 +20,10 @@
     color:#f1f1f1;
 }	
 
+.sidenav h2 {
+    color: #818181;
+}
+
 .sidenav-left {
     left:0;
 }

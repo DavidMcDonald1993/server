@@ -276,8 +276,10 @@ def get_all_pathways_for_compounds(
     # {f"AND a.Pa>{threshold}" if threshold>0 else ""}
 
     query = f'''
-        SELECT GROUP_CONCAT(DISTINCT(u.acc)) AS `Uniprot ACCS`, 
+        SELECT GROUP_CONCAT(DISTINCT(u.acc) SEPARATOR '-') AS `Uniprot ACCS`, 
             COUNT(DISTINCT(u.acc)) AS `Number Uniprot ACCs`,
+            counts.counts AS `Total Uniprot ACCs`,
+            COUNT(DISTINCT(u.acc)) / counts.counts AS `Uniprot Coverage`,      
             p.pathway_name AS `Pathway Name`, p.organism AS `Organism`, 
             p.pathway_url AS `Pathway URL`
         FROM compounds AS c
@@ -285,6 +287,11 @@ def get_all_pathways_for_compounds(
         INNER JOIN targets_to_uniprot AS tu ON (a.target_id=tu.target_id)
         INNER JOIN uniprot AS u ON (tu.uniprot_id=u.uniprot_id)
         INNER JOIN uniprot_to_pathway AS up ON (tu.uniprot_id=up.uniprot_id)
+        INNER JOIN (
+            SELECT pathway_id, count(uniprot_id) AS `counts`
+            FROM uniprot_to_pathway
+            GROUP BY pathway_id
+        ) AS `counts` ON (counts.pathway_id=up.pathway_id)
         INNER JOIN pathway AS p ON (up.pathway_id=p.pathway_id)
         WHERE {f"c.coconut_id IN {coconut_ids}" if isinstance(coconut_ids, tuple)
             else f'c.coconut_id="{coconut_ids}"'}
@@ -309,8 +316,10 @@ def get_all_reactions_for_compounds(
     else:
         assert isinstance(coconut_ids, str)
     query = f'''
-        SELECT GROUP_CONCAT(DISTINCT(u.acc)) AS `Uniprot ACCS`, 
+        SELECT GROUP_CONCAT(DISTINCT(u.acc) SEPARATOR '-') AS `Uniprot ACCS`, 
             COUNT(DISTINCT(u.acc)) AS `Number Uniprot ACCs`,
+            counts.counts AS `Total Uniprot ACCs`,
+            COUNT(DISTINCT(u.acc)) / counts.counts AS `Uniprot Coverage`,   
             r.reaction_name AS `Reaction Name`, r.organism AS `Organism`, 
             r.reaction_url AS `Reaction URL`
         FROM compounds AS c
@@ -318,6 +327,11 @@ def get_all_reactions_for_compounds(
         INNER JOIN targets_to_uniprot AS tu ON (a.target_id=tu.target_id)
         INNER JOIN uniprot AS u ON (tu.uniprot_id=u.uniprot_id)
         INNER JOIN uniprot_to_reaction AS ur ON (tu.uniprot_id=ur.uniprot_id)
+        INNER JOIN (
+            SELECT reaction_id, count(uniprot_id) AS `counts`
+            FROM uniprot_to_reaction
+            GROUP BY reaction_id
+        ) AS `counts` ON (counts.reaction_id=ur.reaction_id)
         INNER JOIN reaction AS r ON (ur.reaction_id=r.reaction_id)
         WHERE {f"c.coconut_id IN {coconut_ids}" if isinstance(coconut_ids, tuple)
             else f'c.coconut_id="{coconut_ids}"'}
