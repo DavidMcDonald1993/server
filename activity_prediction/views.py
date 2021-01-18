@@ -18,11 +18,13 @@ import multiprocessing as mp
 from django.contrib.auth import authenticate, login, logout
 
 def index_view(request):
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect("/login")
     context = {}
     return render(request, 
         "activity_prediction/index.html", context)
 
-def login_page_view(request):
+def login_view(request):
     if request.method == "POST":
         username = request.POST['username']
         password = request.POST['password']
@@ -30,7 +32,7 @@ def login_page_view(request):
         if user is not None:
             login(request, user)
             # Redirect to a success page.
-            return HttpResponseRedirect("/activity_prediction")
+            return HttpResponseRedirect("/")
         else:
             # Return an 'invalid login' error message.
             return HttpResponseRedirect("/login_unsuccessful")
@@ -38,7 +40,7 @@ def login_page_view(request):
         context = {}
         return render(request, "activity_prediction/login.html", context)
 
-def logout_page_view(request):
+def logout_view(request):
     logout(request)
     return HttpResponseRedirect("/")
 

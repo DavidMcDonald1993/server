@@ -253,9 +253,9 @@ def get_target_hits(
 
     target_names = sanitise_names(targets)
     columns = ", ".join((
-        # `{target}_activity`.Pa AS `{target}-Pa`, `{target}_activity`.Pi AS `{target}-Pi`, 
         f'''
-            `{target}_activity`.Pa-`{target}_activity`.Pi AS `{target}-Confidence Score`
+            `{target}_activity`.Pa AS `{target}-Pa`, `{target}_activity`.Pi AS `{target}-Pi`, 
+            `{target}_activity`.confidence_score AS `{target}-Confidence Score`
         '''
         for target in target_names
     ))
@@ -530,12 +530,8 @@ def get_all_activities_for_compound(
     filter_pa_pi=True):
     print ("getting all activities for compound", coconut_id)
 
-    # categories = get_categories()
-    # category_targets = {category: get_targets_for_category(category)
-        # for category in categories}
-
     all_targets_query = f'''
-        SELECT cat.category_name, t.target_name, a.Pa, a.Pi, a.Pa-a.Pi
+        SELECT cat.category_name, t.target_name, a.Pa, a.Pi, a.confidence_score
         FROM categories AS cat
         INNER JOIN category_members AS cm ON (cat.category_id=cm.category_id)
         INNER JOIN targets AS t ON (cm.target_id=t.target_id) 
@@ -553,32 +549,10 @@ def get_all_activities_for_compound(
         category_activities["ALL_TARGETS"].add(hit)
         category_activities[category].add(hit)
    
-    # compound_hits = {i: (name, pa, pi, pa_pi) 
-    #     for i, name, pa, pi, pa_pi in compounds_hits} #  convert to dict to avoid multiple queries
-
-    # category_activities = [("All Targets",
-    #     [(name, pa, pi, pa_pi)
-    #         for name, pa, pi, pa_pi in compound_hits.values()]
-    # )]
-
-    # category_activities += [(category.capitalize(),
-    #     [(compound_hits[target_id][0], compound_hits[target_id][1], compound_hits[target_id][2], # name, pa, pi
-    #         compound_hits[target_id][3]) # pa-pi
-    #             for target_id in targets.values()
-    #                 if target_id in compound_hits])
-    #     for category, targets in category_targets.items()
-    # ]
-    
     return dict(category_activities)
 
 if __name__ == "__main__":
 
-    # records = get_all_reactions(organisms="Homo sapiens")
-
-    # print (len(records))
-    # for record in records[:5]:
-    #     print (record)
-    # print (get_categories())
     hits = get_all_activities_for_compound("CNP0000002", threshold=650)
 
     print (hits["All_targets"])

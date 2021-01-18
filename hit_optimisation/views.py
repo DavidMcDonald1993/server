@@ -23,11 +23,6 @@ import urllib.parse as urlparse
 # Create your views here.
 from django.http import HttpResponse, HttpResponseRedirect
 
-def index_view(request):
-    context = {}
-    return render(request, 
-        "hit_optimisation/index.html", context)
-
 def upload_view(request):
 
     assert request.user.is_authenticated

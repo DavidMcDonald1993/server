@@ -53,9 +53,9 @@
           <thead>
             <tr>
               {% if show_images %}
-              <th colspan="5">Molecule</th>
-              {% else %}
               <th colspan="4">Molecule</th>
+              {% else %}
+              <th colspan="3">Molecule</th>
               {% endif %}
               {% for target in targets %}
               <th colspan="1">{{target}}</th>
@@ -68,7 +68,7 @@
               {% endif %}
               <th>Compound Name</th>
               <th>Molecular Formula</th>
-              <th>SMILES</th>
+              <!-- <th>SMILES</th> -->
               {% for target in targets %}
               <!-- <th>Pa</th> -->
               <!-- <th>Pi</th> -->
@@ -78,21 +78,21 @@
           </thead>
           <tbody>
           {% for hit in target_hits %}
-            <tr>
-              {% for element in hit %}
-                {% if forloop.counter == 1 %}
-                  <td> <a href="/natural_products/compounds/{{element}}"> 
-                    {{ element }} </a> </td>
-                {% elif forloop.counter == 2 %}
-                  {% if show_images %}
-                  <td> <img src="{% static element %}" alt=""
-                    style="width: 100pt; height: 100pt;"></img> </td>
-                  {% endif %}
-                {% else %}
-                  <td>{{ element }}</td>
-                {% endif %}
-              {% endfor %}
-            </tr>
+          <tr>
+            <td> <a href="/natural_products/compounds/{{hit.id}}"> {{ hit.id }} </a> </td>
+            {% if show_images %}
+            <td> <img src="{% static hit.image %}" alt=""
+              style="width: 100pt; height: 100pt;"></img> </td>
+            {% endif %}
+            <td> {{ hit.name }} </td>
+            <td> {{ hit.formula }} </td>
+            <!-- <td> {{ hit.smiles }} </td> -->
+            {% for target in hit.targets %}
+            <!-- <td> {{ target.pa }} </td> -->
+            <!-- <td> {{ target.pi }} </td> -->
+            <td> {{ target.confidence_score }} </td>
+            {% endfor %}
+          </tr>
           {% endfor %}
           </tbody>
         </table>

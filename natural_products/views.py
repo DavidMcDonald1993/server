@@ -85,6 +85,34 @@ def show_target_hits_view(request, ):
     request.session["hits"] = target_hits
     request.session["columns"] = columns
 
+    # information requested for each pathway 
+    target_columns = (
+        "pa", "pi",  
+        "confidence_score",
+    )
+    num_cols = len(target_columns)
+    num_targets = len(targets)
+
+    target_hits = [
+
+        {
+            "id": compound_id, 
+            "image": image,
+            "name": compound_name, 
+            "formula": compound_formula, 
+            "smiles": compound_smiles,
+            "targets": [
+                {   
+                    col: activities[target_number*num_cols+col_num]
+                        for col_num, col in enumerate(target_columns)} 
+                for target_number in range(num_targets)   
+            ]
+        }
+
+        for compound_id, image, compound_name, compound_formula, compound_smiles,
+            *activities in target_hits
+    ]
+
     context = {
         "targets": targets,
         "thresholds": thresholds,
