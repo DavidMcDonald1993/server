@@ -11,6 +11,8 @@ urlpatterns = [
         views.show_target_hits_view, name='target_hits'),
     path('download/', 
         views.download_hits_view, name='download_hits'),
+    path("smiles/",
+        views.download_hit_smiles_view, name="download_smiles"),
     path('optimise/', 
         views.optimise_target_hits_view, name='optimise_target_hits'),
  

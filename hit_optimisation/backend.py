@@ -203,7 +203,7 @@ def hit_optimisation(
     identifier += f"-{pdb_id}"
 
     # process output directory
-    output_dir = os.path.join(root_dir,identifier)
+    output_dir = os.path.join(root_dir, identifier)
     os.makedirs(output_dir, exist_ok=True)
     print ("outputting to directory", output_dir)
 

@@ -23,7 +23,7 @@ from rdkit.Chem.PandasTools import LoadSDF
 from utils.pass_utils import (remove_invalid_characters, parse_pass_spectra, 
     get_all_targets, determine_targets)
 from utils.enrichment_utils import perform_enrichment_analysis
-from utils.io import process_input_file, write_json
+from utils.io import process_input_file, write_json, read_smiles, load_json
 from utils.genenames_utils import targets_to_uniprot_ids
 from utils.queries import get_uniprots_for_targets
 # from utils.rdkit_utils import LoadSDF
@@ -73,18 +73,37 @@ from utils.ppb2_utils import load_model
 
 #     db.client.close()
 
-def uniprot_predict(
-    smiles_file,
-    model_filename="models/morg3-xgc.pkl.gz"):
+def perform_predicton_with_novel_classifier(
+    # smiles_file,
+    smiles,
+    model_filename="models/morg3-xgc.pkl.gz",
+    n_proc=6,
+    max_confidence=1000):
     '''
     Predict with novel classifier
     '''
+    # assert smiles_file.endswith(".smi")
+    # # read (and filter smiles)
+    # smiles = read_smiles(
+    #     smiles_file,
+    #     filter_valid=True, 
+    #     return_series=True)
 
     model = load_model(model_filename)
+    if hasattr(model, "n_proc"):
+        model.set_n_proc(n_proc)
+    
+    # make prediction using pretrained model
+    predictions = model.predict_proba(smiles)
 
-    # TODO
+    # rescale by max confidence
+    predictions = (predictions * max_confidence / predictions.max(axis=0, keepdims=True)).astype(int)
 
-    return 0
+    id_to_db_id = load_json("id_to_db_id.json")
+
+    return pd.DataFrame(predictions, 
+        index=smiles.index, 
+        columns=[id_to_db_id[str(i)] for i in range(predictions.shape[1])])
 
 def perform_enrichment_on_PASS_file(
     pass_out_file, 
@@ -216,12 +235,28 @@ if __name__ == "__main__":
     # # determine_targets(input_file)
     # perform_enrichment_on_PASS_file(input_file, output_dir="/home/david/Desktop", threshold=0)
 
-    # smiles_file = None
-    # ret = uniprot_predict(smiles_file)
+    # smiles_file = "/home/david/Desktop/pdb_ligands.smi"
+    smiles_file = "coconut_smiles.smi"
 
-    # shutil.make_archive("test/test", 
-    #     "zip", "test")
+    # read (and filter smiles)
+    smiles = read_smiles(
+        smiles_file,
+        filter_valid=True, 
+        return_series=True)
 
-    u = User(123)
+    n_compounds = smiles.shape[0]
 
-    activity_predict(u, "test.smi", enrichment=False)
+    chunksize = 40000
+    n_chunks = n_compounds // chunksize + 1
+    for chunk_no in range(n_chunks):
+        predictions_filename = f"coconut_uniprot_predictions_chunk_{chunk_no}.csv.gz"
+        if os.path.exists(predictions_filename):
+            continue
+        print ("processing chunk", chunk_no+1)
+
+        chunk = smiles[chunk_no*chunksize:(chunk_no+1)*chunksize]
+
+        predictions = perform_predicton_with_novel_classifier(chunk)
+
+        print ("writing predictions to", predictions_filename)
+        predictions.to_csv(predictions_filename)

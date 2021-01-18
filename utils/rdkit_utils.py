@@ -90,6 +90,7 @@ def LoadSDF(filename, idName='ID', molColName='ROMol', includeFingerprints=False
         yield pd.DataFrame(records, index=indices)
 
 
+
 if __name__ == "__main__":
 
     smiles_to_sdf("/home/david/Desktop/test_compounds.smi", "/home/david/Desktop/test_compounds.sdf")

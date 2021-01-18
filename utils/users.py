@@ -19,15 +19,15 @@ def generate_password(password_length=8):
 def create_files_table():
 
     create_files_table_sql = '''
-        CREATE TABLE user_files 
-        (
-            id int NOT NULL UNIQUE AUTO_INCREMENT,
-            token VARCHAR(300) UNIQUE NOT NULL, 
-            user_id INT NOT NULL, 
-            path VARCHAR(255) NOT NULL,
-            PRIMARY KEY (id),
-            FOREIGN KEY(user_id) REFERENCES auth_user(id)
-        )
+    CREATE TABLE user_files 
+    (
+        id int NOT NULL UNIQUE AUTO_INCREMENT,
+        token VARCHAR(300) UNIQUE NOT NULL, 
+        user_id INT NOT NULL, 
+        path VARCHAR(255) NOT NULL,
+        PRIMARY KEY (id),
+        FOREIGN KEY(user_id) REFERENCES auth_user(id)
+    )
         
     '''
 
@@ -54,11 +54,11 @@ def add_file_to_database(user_id, path, existing_conn=None):
 def get_file_from_token(token, user_id, existing_conn=None):
 
     query = f'''
-        SELECT path
-        FROM user_files
-        WHERE token="{token}"
-        AND user_id={user_id}
-        LIMIT 1
+    SELECT path
+    FROM user_files
+    WHERE token="{token}"
+    AND user_id={user_id}
+    LIMIT 1
     '''
     
     records = mysql_query(query, existing_conn=existing_conn)
@@ -93,6 +93,8 @@ def determine_identifier(input_file):
         assert hasattr(input_file, "name")
         input_file = input_file.name 
     input_file = os.path.basename(input_file)
+    input_file, _ = os.path.splitext(input_file) # remove extension
+    # return input_file
     return "{}-{}".format(input_file, 
         str(datetime.now()).replace(" ", "-"))
 

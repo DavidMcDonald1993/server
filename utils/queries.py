@@ -553,6 +553,36 @@ def get_all_activities_for_compound(
 
 if __name__ == "__main__":
 
-    hits = get_all_activities_for_compound("CNP0000002", threshold=650)
+    # hits = get_all_activities_for_compound("CNP0000002", threshold=650)
 
-    print (hits["All_targets"])
+    # print (hits["All_targets"])
+
+    # smiles = get_info_for_multiple_compounds(compounds=None,
+    #     columns=("compound_id", "clean_smiles"))
+
+    # from utils.io import write_smiles
+    # write_smiles(smiles, "coconut_smiles.smi")
+
+    import pandas as pd
+    targets = pd.read_csv("models/target_ids.txt", 
+        index_col=0, header=None, names=["uniprot"])
+    targets = targets["uniprot"]
+
+    query = f'''
+        SELECT acc, uniprot_id
+        FROM uniprot
+        WHERE acc IN {tuple(targets)} 
+    '''
+
+    records = mysql_query(query)
+
+    acc_to_db_id = {acc: _id for acc, _id in records}
+
+    id_to_db_id = {_id: acc_to_db_id[acc]
+        for _id, acc in targets.items()}
+
+    import json 
+    with open("id_to_db_id.json", "w") as f:
+        json.dump(id_to_db_id, f, sort_keys=True, indent=4)
+   
+ 

@@ -1,3 +1,8 @@
+import sys
+import os.path
+sys.path.insert(1, 
+    os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
+
 import os
 
 import gzip
@@ -24,11 +29,12 @@ from standardiser import standardise
 from utils.io import read_smiles, load_labels
 
 # RDK
-
 def get_rdk_mol(smi, perform_standardisation=True):
     mol = Chem.MolFromSmiles(smi)
-    if mol is None:
-        raise Exception
+    # if mol is None:
+    #     mol = Chem.MolFromSmiles(smi, sanitize=False)
+        # mol.UpdatePropertyCache()
+    assert mol is not None, ("MOL IS NONE", smi)
     if mol is not None and perform_standardisation:
         try:
             mol = standardise.run(mol)
@@ -57,8 +63,7 @@ def get_rdk_maccs(smiles, n_proc=8):
             )
 
     else:
-        rdk_maccs_fingerprints = smiles.map(
-            rdk_maccs_wrapper, )
+        rdk_maccs_fingerprints = smiles.map(rdk_maccs_wrapper, )
         rdk_maccs_fingerprints = list(rdk_maccs_fingerprints.loc[smiles.index])
 
     rdk_maccs_fingerprints = filter(lambda fp: fp is not None,
@@ -312,4 +317,10 @@ def main():
         print ()
 
 if __name__ == "__main__":
-    main()
+    # main()
+
+    smiles = "O=C1OC2C(C(=C)C)CC1C3(O)CC4OC54C(=O)OC[CH]253C"
+
+    mol = Chem.MolFromSmiles(smiles, dkmwoldm)
+
+    print (mol)

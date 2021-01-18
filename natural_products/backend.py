@@ -79,7 +79,7 @@ def write_records_to_file(
     if "Image" in records.columns:
         del records["Image"]
 
-    output_dir = os.path.join(root_dir, f"user={user_id}", "hit_records")
+    output_dir = os.path.join(root_dir, f"user_id={user_id}", "hit_records")
     os.makedirs(output_dir, exist_ok=True)
 
     targets = ",".join(map(lambda s: s.replace(" ", "_"), targets))

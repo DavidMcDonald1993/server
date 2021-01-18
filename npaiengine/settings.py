@@ -150,3 +150,7 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = (
     os.path.join(PROJECT_ROOT, 'static'),
 )
+
+
+# session timeout
+SESSION_COOKIE_AGE = 3600 # on hour in seconds

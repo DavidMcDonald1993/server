@@ -38,12 +38,36 @@
 
   <div class="hiddenDiv" style="display: none;">
 
+    <div id="sidebar" class="sidenav sidenav-right">
+      <h2>Hits<h2>
+      <a href="/natural_products/download/">Download All</a>
+      <a href="/natural_products/smiles/">Download SMILES</a>
+      <a href="/natural_products/optimise/">Optimise</a>
+    </div>
+
+
     <div class="results-table" >
 
       <div style="text-align: left;">
         <h2>Looking at hits for target(s): {{targets}}<br>Using threshold(s): {{thresholds}}</h2> 
         <h2>Number of hits: {{num_hits}}</h2> 
       </div>
+
+      <!-- <br> -->
+
+      <!-- <div>
+
+        <form action="/natural_products/download/" >
+          <input type="submit" id="downloadButton" value="Download results">
+        </form>
+  
+        <br>
+  
+        <form action="/natural_products/optimise/">
+          <input type="submit" value="Optimise results">
+        </form>
+  
+      </div> -->
 
       <br>
   
@@ -98,19 +122,7 @@
         </table>
       </div>
     </div>
-    <div>
-
-      <form action="/natural_products/download/" >
-        <input type="submit" id="downloadButton" value="Download results">
-      </form>
-
-      <br>
-
-      <form action="/natural_products/optimise/">
-        <input type="submit" value="Optimise results">
-      </form>
-
-    </div>
+   
 
   </div>
 

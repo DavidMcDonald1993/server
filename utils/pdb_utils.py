@@ -40,6 +40,6 @@ def get_pdb_ids_from_gene_symbol(gene_symbol):
         return set()
 
 if __name__ == "__main__":
-    gene_symbol = "CDK1"
-    pdb_id = get_pdb_ids_from_gene_symbol(gene_symbol)
-    print (pdb_id)
+    gene_symbol = "PIP5K1B"
+    pdb_ids = get_pdb_ids_from_gene_symbol(gene_symbol)
+    print (pdb_ids)

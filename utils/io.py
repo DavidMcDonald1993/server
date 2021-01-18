@@ -19,6 +19,13 @@ from rdkit.Chem.PandasTools import LoadSDF
 from rdkit import Chem
 from rdkit.Chem.PandasTools import WriteSDF, AddMoleculeColumnToFrame
 
+def valid_smiles(smi):
+    assert smi is not None
+    try:
+        return Chem.MolFromSmiles(smi) is not None
+    except TypeError:
+        assert False, smi
+        return False
 
 def load_json(json_filename):
     print ("loading json from", json_filename)
@@ -37,14 +44,20 @@ def write_smiles(smiles, smiles_filename):
         for compound_id, smile in smiles:
             f.write(f"{smile}\t{compound_id}\n")
 
-def read_smiles(smiles_filename):
+def read_smiles(smiles_filename, filter_valid, return_series=False, smiles_col="SMILES"):
     print ("reading smiles from", smiles_filename)
     assert os.path.exists(smiles_filename)
     smiles_df = pd.read_csv(smiles_filename, 
-        names=["SMILES", "compound"],
+        names=[smiles_col, "compound"],
         sep="\t", header=None)
-    smiles_df = smiles_df.loc[~pd.isnull(smiles_df["SMILES"])]
-    return smiles_df.set_index("compound", drop=True)
+    smiles_df = smiles_df.loc[~pd.isnull(smiles_df[smiles_col])]
+    if filter_valid:
+        print ("removing invalid smiles")
+        smiles_df = smiles_df.loc[smiles_df[smiles_col].map(valid_smiles)]
+    smiles_df = smiles_df.set_index("compound", drop=True)
+    if return_series:
+        smiles_df = smiles_df[smiles_col]
+    return smiles_df
 
 def load_labels(labels_filename):
     print ("loading labels from", labels_filename)

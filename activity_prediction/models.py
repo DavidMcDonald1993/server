@@ -365,55 +365,6 @@ class PPB2(BaseEstimator, ClassifierMixin):
 
         return self
 
-    # def _determine_k_closest_samples(self, X, chunksize=1000):
-    #     if not isinstance(X, np.ndarray): # dense needed for jaccard distance
-    #         X = X.A
-
-    #     # training_samples = load_training_fingerprints(self.X, self.fp)
-    #     training_samples = self.X
-    #     if not isinstance(training_samples, np.ndarray):
-    #         training_samples = training_samples.A
-    #     training_labels = self.y
-    #     if not isinstance(training_labels, np.ndarray):
-    #         training_labels = training_labels.A
-
-    #     print ("determining", self.k, 
-    #         "nearest compounds to each query")
-    #     n_queries = X.shape[0]
-    #     n_chunks = n_queries // chunksize + 1
-    #     print ("chunking queries with chunksize", chunksize,)
-    #     print ("number of chunks:", n_chunks)
-    #     # idx = np.empty((n_queries, self.k))
-
-    #     for chunk in range(n_chunks):
-
-    #         chunk_queries = X[chunk*chunksize:(chunk+1)*chunksize]
-        
-    #         dists = pairwise_distances(
-    #                 chunk_queries,
-    #                 training_samples, 
-    #             metric="jaccard", n_jobs=self.n_proc, )
-    #         # idx[chunk*chunksize:(chunk+1)*chunksize] = \
-    #         idx =  dists.argsort(axis=-1)[:,:self.k] # smallest k distances
-        
-    #         k_nearest_samples = training_samples[idx] # return dense
-    #         k_nearest_labels = training_labels[idx]
-
-    #         yield (chunk_queries, 
-    #             k_nearest_samples, k_nearest_labels)
-
-    #         print ("completed chunk", chunk+1)
-
-        # print ("closest", self.k, "neighbours determined")
-
-        # assert idx.shape[0] == X.shape[0]
-        # assert idx.shape[1] == self.k
-
-        # k_nearest_samples = training_samples[idx] # return dense
-        # k_nearest_labels = training_labels[idx]
-
-        # return k_nearest_samples, k_nearest_labels
-
     def _fit_local_nb(self,
         query,
         mode="predict",
@@ -473,7 +424,6 @@ class PPB2(BaseEstimator, ClassifierMixin):
 
     def _local_nb_prediction(self, 
         queries, 
-        # X, y,
         mode="predict"):
         print ("fitting unique NB models for each query",
             "in mode", mode)

@@ -7,37 +7,40 @@ from utils.mysql_utils import mysql_create_table, mysql_insert_many, mysql_query
 from utils.pass_utils import (remove_invalid_characters, parse_pass_spectra, get_all_targets, 
     get_categories, get_targets_for_category, get_all_compounds)
 
-from natural_products.backend import get_multiple_compound_info
+from natural_products.backend import get_coconut_compound_info_from_mongo
+from utils.queries import get_info_for_multiple_compounds
 
 from functools import partial
 
 def create_and_populate_compounds_table(): 
 
     compounds = get_all_compounds()
-    compound_info = get_multiple_compound_info()
+    compound_info = get_coconut_compound_info_from_mongo()
 
     conn = connect_to_mysqldb()
 
     # create compounds table
     create_compounds_table_sql = f'''
-        CREATE TABLE `compounds` (
-            compound_id MEDIUMINT, 
-            coconut_id VARCHAR(255), 
-            name VARCHAR(2000),
-            formula VARCHAR(255), 
-            smiles VARCHAR(1000), 
-            clean_smiles VARCHAR(1000), 
-            PRIMARY KEY (compound_id)
-        )
+    CREATE TABLE `compounds` (
+        `compound_id` mediumint NOT NULL,
+        `coconut_id` varchar(15) DEFAULT NULL,
+        `name` varchar(1200) DEFAULT NULL,
+        `formula` varchar(50) DEFAULT NULL,
+        `smiles` varchar(600) DEFAULT NULL,
+        `clean_smiles` varchar(600) DEFAULT NULL,
+        `image_path` varchar(50) GENERATED ALWAYS AS (concat(_utf8mb4'compound_images',_utf8mb4'/',cast((`compound_id` DIV 1024) as char charset utf8mb4),_utf8mb4'/',`compound_id`,_utf8mb4'.png')) VIRTUAL NOT NULL,
+        PRIMARY KEY (`compound_id`),
+        KEY `coconut_id` (`coconut_id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
     '''
     mysql_create_table(create_compounds_table_sql, existing_conn=conn)
 
     # insert into compounds table
     insert_compounds_sql = '''
     INSERT INTO `compounds` (compound_id, coconut_id, name, formula, smiles) 
-    VALUES (%s, %s, %s, %s, %s)
-    ON DUPLICATE KEY UPDATE compound_id=VALUES(compound_id), 
-        coconut_id=VALUES(coconut_id), name=VALUES(name), formula=VALUES(formula), smiles=VALUES(smiles)
+        VALUES (%s, %s, %s, %s, %s)
+        ON DUPLICATE KEY UPDATE compound_id=VALUES(compound_id), 
+            coconut_id=VALUES(coconut_id), name=VALUES(name), formula=VALUES(formula), smiles=VALUES(smiles)
     '''
     rows = [(i, c, *compound_info[c]) for c, i in compounds.items()]
     mysql_insert_many(insert_compounds_sql, rows, existing_conn=conn)
@@ -46,7 +49,7 @@ def create_and_populate_compounds_table():
 
 def add_clean_smiles_to_compounds():
 
-    smiles = get_multiple_compound_info(
+    smiles = get_info_for_multiple_compounds(
         columns=("compound_id", "smiles"))
 
     from utils.rdkit_utils import standardise_smi
@@ -56,10 +59,10 @@ def add_clean_smiles_to_compounds():
             (smi for c, smi in smiles)))
 
     insert_standard_smiles_sql = '''
-        INSERT INTO compounds (compound_id, clean_smiles)
-            VALUES (%s, %s)
-            ON DUPLICATE KEY UPDATE compound_id=VALUES(compound_id), clean_smiles=VALUES(clean_smiles)
-        '''
+    INSERT INTO compounds (compound_id, clean_smiles)
+        VALUES (%s, %s)
+        ON DUPLICATE KEY UPDATE compound_id=VALUES(compound_id), clean_smiles=VALUES(clean_smiles)
+    '''
     rows = (
         (c, standardised_smi)
             for (c, smi), standardised_smi in zip(smiles, standardised_smiles)
@@ -70,17 +73,18 @@ def create_and_populate_targets_table():
 
     conn = connect_to_mysqldb()
 
-    targets = get_all_targets()
-
     # create targets table
     create_targets_table_sql = '''
     CREATE TABLE `targets` (
-        target_id SMALLINT, 
-        target_name VARCHAR(255), 
-        PRIMARY KEY (target_id)
-    )
+        `target_id` smallint NOT NULL,
+        `target_name` varchar(115) DEFAULT NULL,
+        PRIMARY KEY (`target_id`),
+        KEY `target_name` (`target_name`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
     '''
     mysql_create_table(create_targets_table_sql, existing_conn=conn)
+
+    targets = get_all_targets()
 
     # insert into targets table
     insert_targets_sql = '''
@@ -93,17 +97,44 @@ def create_and_populate_targets_table():
     return 0
 
 def create_activities_table():
-    # create activities table
-
     create_activities_table_sql = '''
     CREATE TABLE `activities` (
-        compound_id MEDIUMINT, 
-        target_id SMALLINT, 
-        Pa SMALLINT, 
-        Pi SMALLINT,
-        PRIMARY KEY (compound_id, target_id), 
-        FOREIGN KEY (compound_id) REFERENCES compounds(compound_id), 
-        FOREIGN KEY (target_id) REFERENCES targets(target_id))
+    `compound_id` mediumint NOT NULL,
+    `target_id` smallint NOT NULL,
+    `Pa` smallint DEFAULT NULL,
+    `Pi` smallint DEFAULT NULL,
+    `above_950` bit(1) GENERATED ALWAYS AS (((`Pa` > `Pi`) and (`Pa` > 950))) VIRTUAL NOT NULL,
+    `above_900` bit(1) GENERATED ALWAYS AS (((`Pa` > `Pi`) and (`Pa` > 900))) VIRTUAL NOT NULL,
+    `above_850` bit(1) GENERATED ALWAYS AS (((`Pa` > `Pi`) and (`Pa` > 850))) VIRTUAL NOT NULL,
+    `above_800` bit(1) GENERATED ALWAYS AS (((`Pa` > `Pi`) and (`Pa` > 800))) VIRTUAL NOT NULL,
+    `above_750` bit(1) GENERATED ALWAYS AS (((`Pa` > `Pi`) and (`Pa` > 750))) VIRTUAL NOT NULL,
+    `above_700` bit(1) GENERATED ALWAYS AS (((`Pa` > `Pi`) and (`Pa` > 700))) VIRTUAL NOT NULL,
+    `above_650` bit(1) GENERATED ALWAYS AS (((`Pa` > `Pi`) and (`Pa` > 650))) VIRTUAL NOT NULL,
+    `above_600` bit(1) GENERATED ALWAYS AS (((`Pa` > `Pi`) and (`Pa` > 600))) VIRTUAL NOT NULL,
+    `above_550` bit(1) GENERATED ALWAYS AS (((`Pa` > `Pi`) and (`Pa` > 550))) VIRTUAL NOT NULL,
+    `above_500` bit(1) GENERATED ALWAYS AS (((`Pa` > `Pi`) and (`Pa` > 500))) VIRTUAL NOT NULL,
+    `above_450` bit(1) GENERATED ALWAYS AS (((`Pa` > `Pi`) and (`Pa` > 450))) VIRTUAL NOT NULL,
+    `above_400` bit(1) GENERATED ALWAYS AS (((`Pa` > `Pi`) and (`Pa` > 400))) VIRTUAL NOT NULL,
+    `above_350` bit(1) GENERATED ALWAYS AS (((`Pa` > `Pi`) and (`Pa` > 350))) VIRTUAL NOT NULL,
+    `above_300` bit(1) GENERATED ALWAYS AS (((`Pa` > `Pi`) and (`Pa` > 300))) VIRTUAL NOT NULL,
+    `above_250` bit(1) GENERATED ALWAYS AS (((`Pa` > `Pi`) and (`Pa` > 250))) VIRTUAL NOT NULL,
+    `above_200` bit(1) GENERATED ALWAYS AS (((`Pa` > `Pi`) and (`Pa` > 200))) VIRTUAL NOT NULL,
+    `above_150` bit(1) GENERATED ALWAYS AS (((`Pa` > `Pi`) and (`Pa` > 150))) VIRTUAL NOT NULL,
+    `above_100` bit(1) GENERATED ALWAYS AS (((`Pa` > `Pi`) and (`Pa` > 100))) VIRTUAL NOT NULL,
+    `above_50` bit(1) GENERATED ALWAYS AS (((`Pa` > `Pi`) and (`Pa` > 50))) VIRTUAL NOT NULL,
+    `confidence_score` smallint GENERATED ALWAYS AS ((`Pa` - `Pi`)) VIRTUAL NOT NULL,
+    PRIMARY KEY (`compound_id`,`target_id`),
+    KEY `target_id` (`target_id`),
+    KEY `above_950_target_id` (`above_950`,`target_id`),
+    KEY `above_900_target_id` (`above_900`,`target_id`),
+    KEY `above_850_target_id` (`above_850`,`target_id`),
+    KEY `above_800_target_id` (`above_800`,`target_id`),
+    KEY `above_750_target_id` (`above_750`,`target_id`),
+    KEY `above_700_target_id` (`above_700`,`target_id`),
+    KEY `above_650_target_id` (`above_650`,`target_id`),
+    CONSTRAINT `activities_ibfk_1` FOREIGN KEY (`compound_id`) REFERENCES `compounds` (`compound_id`),
+    CONSTRAINT `activities_ibfk_2` FOREIGN KEY (`target_id`) REFERENCES `targets` (`target_id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
     '''
     mysql_create_table(create_activities_table_sql, )
 
@@ -128,9 +159,9 @@ def populate_activities_from_PASS_sdf_file(sdf_file):
     chunks = LoadSDF(sdf_file, smilesName="SMILES", molColName=None, chunksize=5000)
 
     insert_activities_sql = '''
-        INSERT INTO activities (compound_id, target_id, Pa, Pi) 
-            VALUES (%s, %s, %s, %s) 
-        ON DUPLICATE KEY UPDATE compound_id=compound_id, target_id=target_id
+    INSERT INTO activities (compound_id, target_id, Pa, Pi) 
+        VALUES (%s, %s, %s, %s) 
+    ON DUPLICATE KEY UPDATE compound_id=compound_id, target_id=target_id
     '''
 
     for chunk_no, chunk in enumerate(chunks):
@@ -195,10 +226,10 @@ def create_and_populate_categories_table():
     # create categories table
     create_categories_table_sql = '''
     CREATE TABLE `categories` (
-        category_id TINYINT, 
-        category_name VARCHAR(255), 
-        PRIMARY KEY (category_id)
-    )
+    `category_id` tinyint NOT NULL,
+    `category_name` varchar(20) DEFAULT NULL,
+    PRIMARY KEY (`category_id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
     '''
     mysql_create_table(create_categories_table_sql, existing_conn=conn)
 
@@ -247,11 +278,12 @@ def create_and_populate_category_members():
 
 def create_uniprot_table():
     create_uniprot_table_sql = '''
-        CREATE TABLE uniprot (
-            uniprot_id MEDIUMINT NOT NULL AUTO_INCREMENT,
-            acc VARCHAR(10) NOT NULL UNIQUE,
-            PRIMARY KEY(id)
-        )
+    CREATE TABLE uniprot (
+        uniprot_id MEDIUMINT NOT NULL AUTO_INCREMENT,
+        acc VARCHAR(10) NOT NULL UNIQUE,
+        PRIMARY KEY(uniprot_id),
+        UNIQUE KEY `acc` (`acc`)
+    )
     '''
 
     return mysql_create_table(create_uniprot_table_sql)
@@ -259,8 +291,8 @@ def create_uniprot_table():
 def add_uniprot_accs(uniprot_accs, existing_conn=None):
     print ("inserting", len(uniprot_accs), "UNIPROT ACCs")
     insert_uniprots_sql = '''
-        INSERT INTO uniprot (acc) VALUES (%s)
-            ON DUPLICATE KEY UPDATE acc=acc
+    INSERT INTO uniprot (acc) VALUES (%s)
+        ON DUPLICATE KEY UPDATE acc=acc
     '''
     mysql_insert_many(insert_uniprots_sql, 
         ((uniprot_acc,) for uniprot_acc in uniprot_accs),
@@ -572,6 +604,67 @@ def populate_uniprot_to_reactions():
 
     return mysql_insert_many(insert_uniprot_to_reaction_sql, rows, existing_conn=conn)
 
+def create_compound_to_uniprot_table():
+
+    create_compound_to_uniprot_table_sql = '''
+        CREATE TABLE compound_to_uniprot (
+            compound_id MEDIUMINT NOT NULL, 
+            uniprot_id MEDIUMINT NOT NULL,
+            confidence_score SMALLINT,
+            PRIMARY KEY (uniprot_id, compound_id),
+            FOREIGN KEY(compound_id) REFERENCES compounds(compound_id),
+            FOREIGN KEY(uniprot_id) REFERENCES uniprot(uniprot_id),
+            `above_950` bit(1) GENERATED ALWAYS AS (confidence_score>950) VIRTUAL NOT NULL,
+            `above_900` bit(1) GENERATED ALWAYS AS (confidence_score>900) VIRTUAL NOT NULL,
+            `above_850` bit(1) GENERATED ALWAYS AS (confidence_score>850) VIRTUAL NOT NULL,
+            `above_800` bit(1) GENERATED ALWAYS AS (confidence_score>800) VIRTUAL NOT NULL,
+            `above_750` bit(1) GENERATED ALWAYS AS (confidence_score>750) VIRTUAL NOT NULL,
+            `above_700` bit(1) GENERATED ALWAYS AS (confidence_score>700) VIRTUAL NOT NULL,
+            KEY `above_950_uniprot_id` (`above_950`, `uniprot_id`),
+            KEY `above_900_uniprot_id` (`above_900`, `uniprot_id`),
+            KEY `above_850_uniprot_id` (`above_850`, `uniprot_id`),
+            KEY `above_800_uniprot_id` (`above_800`, `uniprot_id`),
+            KEY `above_750_uniprot_id` (`above_750`, `uniprot_id`),
+            KEY `above_700_uniprot_id` (`above_700`, `uniprot_id`)
+        )
+
+    '''
+
+    return mysql_create_table(create_compound_to_uniprot_table_sql)
+
+def populate_compound_to_uniprot_table(
+    predictions_filename,
+    min_confidence=650):
+    import pandas as pd
+
+    insert_compound_to_uniprot_sql = '''
+        INSERT INTO compound_to_uniprot
+            (compound_id, uniprot_id, confidence_score)
+            VALUES (%s, %s, %s)
+            ON DUPLICATE KEY UPDATE compound_id=compound_id
+    '''
+
+    print ("reading from", predictions_filename)
+    predictions_df = pd.read_csv(predictions_filename, index_col=0)
+
+    rows = ((compound_id, target_id, confidence_score)
+        for compound_id, row in predictions_df.iterrows()
+        for target_id, confidence_score in row.items()
+        if confidence_score>=min_confidence)
+
+    return mysql_insert_many(insert_compound_to_uniprot_sql, rows)
 
 if __name__ == "__main__":
-    populate_targets_to_uniprot()
+    # populate_targets_to_uniprot()
+
+    # import pandas as pd
+    # targets = pd.read_csv("models/target_ids.txt", 
+    #     index_col=0, header=None, names=["uniprot"])
+    # targets = tuple(targets["uniprot"])
+
+    # add_uniprot_accs(targets)
+
+    # create_compound_to_uniprot_table()
+    for chunk_no in (1, ):
+        predictions_filename = f"coconut_uniprot_predictions_chunk_{chunk_no}.csv.gz"
+        populate_compound_to_uniprot_table(predictions_filename)

@@ -387,6 +387,34 @@ def download_hits_view(request):
             os.path.basename(record_filename), 
             os.path.dirname(record_filename))
 
+def download_hit_smiles_view(request):
+
+    assert request.user.is_authenticated
+    
+    user_id = request.user.id
+    targets = request.session["targets"]
+    thresholds = request.session["thresholds"]
+    hits = request.session["hits"]
+    columns = request.session["columns"]
+
+    assert "SMILES" in columns
+    assert "ID" in columns 
+
+    hits = pd.DataFrame(hits, columns=columns)
+
+    smiles = [(row["ID"], row["SMILES"])
+        for _, row in hits.iterrows()]
+
+    # smiles = get_info_for_multiple_compounds(
+    #     compounds=[hit[0] for hit in hits],
+    #     columns=("coconut_id", "clean_smiles"))
+
+    smiles_filename = write_smiles_to_file(user_id, targets, thresholds, smiles)
+
+    return serve(request, 
+            os.path.basename(smiles_filename), 
+            os.path.dirname(smiles_filename))
+
 def optimise_target_hits_view(request):
 
     assert request.user.is_authenticated
@@ -394,10 +422,19 @@ def optimise_target_hits_view(request):
     targets = request.session["targets"]
     thresholds = request.session["thresholds"]
     hits = request.session["hits"]
+    columns = request.session["columns"]
 
-    smiles = get_info_for_multiple_compounds(
-        compounds=[hit[0] for hit in hits],
-        columns=("coconut_id", "clean_smiles"))
+    assert "SMILES" in columns
+    assert "ID" in columns 
+
+    hits = pd.DataFrame(hits, columns=columns)
+
+    smiles = [(row["ID"], row["SMILES"])
+        for _, row in hits.iterrows()]
+
+    # smiles = get_info_for_multiple_compounds(
+    #     compounds=[hit[0] for hit in hits],
+    #     columns=("coconut_id", "clean_smiles"))
 
     smiles_filename = write_smiles_to_file(user_id, targets, thresholds, smiles)
     request.session["smiles_filename"] = smiles_filename
