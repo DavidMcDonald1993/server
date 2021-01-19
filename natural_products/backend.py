@@ -79,10 +79,10 @@ def write_records_to_file(
     if "Image" in records.columns:
         del records["Image"]
 
-    output_dir = os.path.join(root_dir, f"user_id={user_id}", "hit_records")
+    output_dir = os.path.join(root_dir, f"user_id={user_id}", "hits")
     os.makedirs(output_dir, exist_ok=True)
 
-    targets = ",".join(map(lambda s: s.replace(" ", "_"), targets))
+    targets = ",".join(map(lambda s: re.sub(r"( |/)", "_", s), targets))
     thresholds= ",".join(map(str, thresholds))
 
     records_filename = os.path.join(output_dir,
@@ -103,7 +103,7 @@ def write_smiles_to_file(
     output_dir = os.path.join(root_dir,f"user_id={user_id}", "smiles")
     os.makedirs(output_dir, exist_ok=True)
 
-    targets = ",".join(map(lambda s: s.replace(" ", "_"), targets))
+    targets = ",".join(map(lambda s: re.sub(r"( |/)", "_", s), targets))
     thresholds= ",".join(map(str, thresholds))
 
     smiles_filename = os.path.join(output_dir,
@@ -117,54 +117,6 @@ def write_smiles_to_file(
 if __name__ == "__main__":
 
     from timeit import default_timer
-
-    # "Stridor": 6773,
-    # "Keratitis": 4205,
-    # "Acidosis": 504,
-
-    # start_time = default_timer()
-    # hits, cols = query_target_hits([
-    #     "Diarrhea", 
-    #     "Yawning", 
-    #     "Nausea",
-    #     "Paralysis"
-    # ], 900, 
-    # filter_pa_pi=True,
-    # # limit=100
-    # )
-    # print (len (hits))
-    # print (default_timer() - start_time)
-    # print (cols)
-    # for hit in hits[:10]:
-    #     print (hit)
-
-    # compound_info, activities = get_compound_info("CNP0000002", filter_pa_pi=True)
-    # all_activities = {c: a for c, a in get_all_activities_for_compound("CNP0000002")}
-
-    # for row in all_activities["TOXICITY"]:
-    #     print (row)
-
-    # records = get_multiple_compound_info(columns=["coconut_id", "smiles"])
-    # for record in records[:5]:
-    #     print (record)
-
-    # pathway_hits, cols = query_pathway_hits([
-    #     "Zinc transporters", 
-    #     "Xenobiotics",
-    #     # "Disease",
-    #     "Signaling by Erbb2",
-    #     # "PI3K phosphorylates PIP2 to PIP3", # reaction
-    #     # "Recruitment of PLCgamma to membrane"
-    #     ],
-    #     organism="Homo sapiens", 
-    #     filter_pa_pi=True, threshold=950, 
-    #     # limit=10
-    # )
-
-    # print (len(pathway_hits))
-    # # for hit in pathway_hits[:1]:
-    #     # print (hit)
-    # print (cols)
 
     query = '''
         SELECT compound_id, clean_smiles

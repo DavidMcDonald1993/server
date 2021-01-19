@@ -257,7 +257,7 @@ def get_all_reactions_for_compounds(
 
     records = [
         (uniprots, uniprot_count, total_uniprots,
-            coverage, reaction_name, urlparse.quote(reaction_name),
+            coverage, reaction_name, urlparse.quote(reaction_name,),
             organism, urlparse.quote(organism), url)
         for uniprots, uniprot_count, total_uniprots,
             coverage, reaction_name,

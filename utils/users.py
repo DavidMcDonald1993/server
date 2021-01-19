@@ -94,6 +94,7 @@ def determine_identifier(input_file):
         input_file = input_file.name 
     input_file = os.path.basename(input_file)
     input_file, _ = os.path.splitext(input_file) # remove extension
+    input_file = input_file.replace("/", "_")
     # return input_file
     return "{}-{}".format(input_file, 
         str(datetime.now()).replace(" ", "-"))
@@ -110,7 +111,7 @@ if __name__ == "__main__":
 
     # print (path)
 
-    # print (generate_password())
+    print (generate_password())
 
 
     # datetime object containing current date and time
@@ -123,4 +124,4 @@ if __name__ == "__main__":
     # dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
     # print("date and time =", dt_string)	
 
-    print (determine_identifier("test.txt"))
+    # print (determine_identifier("test.txt"))

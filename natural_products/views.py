@@ -36,7 +36,17 @@ MAX_VAL = 950
 MIN_VAL = 650
 STEP = -50
 
-MAX_HITS_FOR_IMAGE = 2000
+DEFAULT_THRESHOLD = 750
+
+MAX_RECORDS = 10000
+
+MAX_HITS_FOR_IMAGE = 500
+
+VALID_ORGANISMS = (
+    "Homo sapiens", 
+    "Rattus norvegicus", 
+    "Mus musculus",
+)
 
 # def index_view(request):
 #     context = {}
@@ -116,7 +126,7 @@ def show_target_hits_view(request, ):
     context = {
         "targets": targets,
         "thresholds": thresholds,
-        "target_hits": target_hits,
+        "target_hits": target_hits[:MAX_RECORDS],
         "num_hits": num_hits,
         "show_images": num_hits<MAX_HITS_FOR_IMAGE
     }
@@ -126,7 +136,7 @@ def show_target_hits_view(request, ):
         
 def pathway_select_view(request):
 
-    organisms = ("Homo sapiens", "Rattus norvegicus", "Mus musculus")
+    organisms = VALID_ORGANISMS
 
     pathways = get_all_pathways(organisms=organisms, )
     pathways = (
@@ -139,7 +149,7 @@ def pathway_select_view(request):
         "pathways": pathways,
         "thresholds": thresholds}
     return render(request,
-        "natural_products/pathway_select.html", context)
+        "natural_products/pathways/pathway_select.html", context)
 
 def show_pathway_hits_view(request, ):
 
@@ -205,7 +215,7 @@ def show_pathway_hits_view(request, ):
     context = {
         "pathways": pathways,
         "threshold": threshold,
-        "pathway_hits": pathway_hits,
+        "pathway_hits": pathway_hits[:MAX_RECORDS],
         "num_hits": num_hits,
         "show_images": num_hits<MAX_HITS_FOR_IMAGE
     }
@@ -216,7 +226,7 @@ def show_pathway_hits_view(request, ):
 
 def reaction_select_view(request):
 
-    organisms = ("Homo sapiens", "Rattus norvegicus", "Mus musculus")
+    organisms = VALID_ORGANISMS
 
     reactions = get_all_reactions(organisms=organisms)
     reactions = (
@@ -296,7 +306,7 @@ def show_reaction_hits_view(request, ):
     context = {
         "reactions": reactions,
         "threshold": threshold,
-        "reaction_hits": reaction_hits,
+        "reaction_hits": reaction_hits[:MAX_RECORDS],
         "num_hits": num_hits,
         "show_images": num_hits<MAX_HITS_FOR_IMAGE
     }
@@ -318,7 +328,7 @@ def all_compounds_view(request):
 def compound_info_view(request, compound_id):
 
     compound_id = "CNP" + compound_id
-    threshold = 750
+    threshold = DEFAULT_THRESHOLD
 
     context = {
         "threshold": threshold
@@ -344,13 +354,11 @@ def compound_info_view(request, compound_id):
     pathways = get_all_pathways_for_compounds(
         compound_id, 
         threshold=threshold,
-        # organism="Homo sapiens"
     )
 
     reactions = get_all_reactions_for_compounds(
         compound_id,  
         threshold=threshold,
-        # organism="Homo sapiens"
     )
 
     context.update({
@@ -366,9 +374,26 @@ def compound_info_view(request, compound_id):
         "natural_products/compounds/compound_info.html", 
         context)
 
+def all_targets_view(request):
+
+    targets = get_all_targets_for_categories()
+
+    targets = (
+            (c, t, urlparse.quote(t))
+        for c, t in targets
+    )
+
+    context = {
+        "targets": targets
+    }
+
+    return render(request, 
+        "natural_products/targets/all_targets.html",
+        context)
+
 def target_info_view(request, target):
 
-    threshold = 950
+    threshold = DEFAULT_THRESHOLD
     filter_pa_pi = True
     target = urlparse.unquote(target)
 
@@ -416,7 +441,7 @@ def target_info_view(request, target):
     context = {
         "target": target,
         "threshold": threshold,
-        "target_hits": target_hits,
+        "target_hits": target_hits[:MAX_RECORDS],
         "num_hits": num_hits,
         "show_images": num_hits<MAX_HITS_FOR_IMAGE
     }
@@ -425,10 +450,30 @@ def target_info_view(request, target):
         "natural_products/targets/target_info.html",
         context)
 
-def pathway_info_view(request, pathway, organism):
+def all_pathways_view(request):
+
+    organisms = VALID_ORGANISMS
+
+    pathways = get_all_pathways(organisms=organisms)
+
+    pathways = [
+        (pathway, urlparse.quote(pathway), organism, urlparse.quote(organism))
+            for pathway, organism in pathways
+    ]
+
+    context = {
+        "pathways": pathways
+    }
+
+    return render(request,
+        "natural_products/pathways/all_pathways.html",
+        context)
+
+def pathway_info_view(request, pathway_organism):
 
     threshold = 950
     filter_pa_pi = True
+    pathway, organism = pathway_organism.split(":_:")
     pathway = urlparse.unquote(pathway)
     organism = urlparse.unquote(organism)
 
@@ -483,7 +528,7 @@ def pathway_info_view(request, pathway, organism):
         "pathway": pathway,
         "organism": organism,
         "threshold": threshold,
-        "pathway_hits": pathway_hits,
+        "pathway_hits": pathway_hits[:MAX_RECORDS],
         "num_hits": num_hits,
         "show_images": num_hits<MAX_HITS_FOR_IMAGE
     }
@@ -492,10 +537,31 @@ def pathway_info_view(request, pathway, organism):
         "natural_products/pathways/pathway_info.html", 
         context)
 
-def reaction_info_view(request, reaction, organism):
+def all_reactions_view(request):
 
-    threshold = 950
+    organisms = VALID_ORGANISMS
+
+    reactions = get_all_reactions(organisms=organisms)
+
+    reactions = [
+        (reaction, urlparse.quote(reaction), organism, urlparse.quote(organism))
+            for reaction, organism in reactions
+    ]
+
+    context = {
+        "reactions": reactions
+    }
+
+    return render(request,
+        "natural_products/reactions/all_reactions.html",
+        context)
+
+
+def reaction_info_view(request, reaction_organism):
+
+    threshold = DEFAULT_THRESHOLD
     filter_pa_pi = True
+    reaction, organism = reaction_organism.split(":_:")
     reaction = urlparse.unquote(reaction)
     organism = urlparse.unquote(organism)
 
@@ -549,7 +615,7 @@ def reaction_info_view(request, reaction, organism):
     context = {
         "reaction": reaction,
         "threshold": threshold,
-        "reaction_hits": reaction_hits,
+        "reaction_hits": reaction_hits[:MAX_RECORDS],
         "num_hits": num_hits,
         "show_images": num_hits<MAX_HITS_FOR_IMAGE
     }
@@ -557,7 +623,7 @@ def reaction_info_view(request, reaction, organism):
     return render(request,
         "natural_products/reactions/reaction_info.html", context)
 
-def download_hits_view(request):
+def export_hits_view(request):
 
     assert request.user.is_authenticated
     
@@ -575,7 +641,7 @@ def download_hits_view(request):
             os.path.basename(record_filename), 
             os.path.dirname(record_filename))
 
-def download_hit_smiles_view(request):
+def export_hit_smiles_view(request):
 
     assert request.user.is_authenticated
     

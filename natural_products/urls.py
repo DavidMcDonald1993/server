@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, re_path
 
 from . import views
 
@@ -9,10 +9,10 @@ urlpatterns = [
         views.target_select_view, name='target_select'),
     path('target_hits/', 
         views.show_target_hits_view, name='target_hits'),
-    path('download/', 
-        views.download_hits_view, name='download_hits'),
+    path('export/', 
+        views.export_hits_view, name='export_hits'),
     path("smiles/",
-        views.download_hit_smiles_view, name="download_smiles"),
+        views.export_hit_smiles_view, name="export_smiles"),
     path('optimise/', 
         views.optimise_target_hits_view, name='optimise_target_hits'),
  
@@ -31,11 +31,21 @@ urlpatterns = [
     path("compounds/CNP<str:compound_id>",
         views.compound_info_view, name="compound_info"),
 
-    path("targets/<str:target_name>",
+    path("targets",
+        views.all_targets_view, name="all_targets"),
+    path("targets/<str:target>",
         views.target_info_view, name="target_info"),
-    path("pathways/<str:pathway>:_:<str:organism>",
+
+    path("pathways",
+        views.all_pathways_view, name="all_pathways"),
+    # path("pathways/<str:pathway>:_:<str:organism>",
+    re_path(r"pathways/(?P<pathway_organism>.*)$",
         views.pathway_info_view, name="pathway_info"),
-    path("reactions/<str:reaction>:_:<str:organism>",
+
+    path("reactions",
+        views.all_reactions_view, name="all_reactions"),
+    # re_path(r"reactions/(?P<reaction>\d+):_:<str:organism>$",
+    re_path(r"reactions/(?P<reaction_organism>.*)$",
         views.reaction_info_view, name="reaction_info"),
 
 ]
