@@ -1,4 +1,4 @@
-currentCategory = null;
+currentCategory = "#PROPERTIES";
 
 
 function showDiv(anchor){

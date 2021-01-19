@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+
+  <head>
+
+    {% include 'header.html' %}
+    
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="http://cdn.datatables.net/1.10.2/css/jquery.dataTables.min.css">
+
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script type="text/javascript"  src="http://cdn.datatables.net/1.10.2/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript"  src="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+       
+    {% load static %}
+
+    <link rel="stylesheet" type="text/css" href="{% static 'css/tables.css' %}">
+    <script type="text/javascript" src="{% static 'js/make_datatables.js' %}"></script>
+
+    <script type="text/javascript" src="{% static 'js/show_hidden.js' %}"></script>
+
+  </head>
+
+  {% if show_images %}
+  <body style="text-align: center;" onload="makeDataTable(['resultsTable'], [4, ])"> 
+  {% else %}
+  <body style="text-align: center;" onload="makeDataTable(['resultsTable'], [3, ])">
+  {% endif %}
+    
+    {% include 'navbar.html' %}
+
+    <div>
+      <h1>{{target}}</h1>
+
+      <form action="/natural_products/target_selection/">
+        <input type="submit" value="Back to target selection">
+      </form>
+ 
+    </div>
+
+  <div class="hiddenDiv" style="display: none;">
+
+    <div id="sidebar" class="sidenav sidenav-right">
+      <h2>Hits<h2>
+      <a href="/natural_products/download/">Download All</a>
+      <a href="/natural_products/smiles/">Download SMILES</a>
+      <a href="/natural_products/optimise/">Optimise</a>
+    </div>
+
+    <div class="results-table" >
+
+      <div style="text-align: left;">
+        <!-- <h2>Hits for target(s): {{targets}}<br>Using threshold(s): {{thresholds}}</h2>  -->
+        <h2>Number of hits: {{num_hits}}</h2> 
+        <h3>Threshold: {{threshold}}</h3>
+      </div>
+
+      <br>
+  
+      <div class="table-responsive">
+        <table id="resultsTable" class="display table data"
+          style="width:100%;text-align:center;display:inline;">
+          <thead>
+            <tr>
+              <th>ID</th>
+              {% if show_images %}
+              <th>Image</th>
+              {% endif %}
+              <th>Compound Name</th>
+              <th>Molecular Formula</th>
+              <!-- <th>SMILES</th> -->
+              <!-- <th>Pa</th> -->
+              <!-- <th>Pi</th> -->
+              <th>Confidence Score</th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for hit in target_hits %}
+          <tr>
+            <td> <a href="/natural_products/compounds/{{hit.id}}"> {{ hit.id }} </a> </td>
+            {% if show_images %}
+            <td> <img src="{% static hit.image %}" alt=""
+              style="width: 100pt; height: 100pt;"></img> </td>
+            {% endif %}
+            <td> {{ hit.name }} </td>
+            <td> {{ hit.formula }} </td>
+            <!-- <td> {{ hit.smiles }} </td> -->
+            {% for target in hit.targets %}
+            <!-- <td> {{ target.pa }} </td> -->
+            <!-- <td> {{ target.pi }} </td> -->
+            <td> {{ target.confidence_score }} </td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  </body>
+</html>

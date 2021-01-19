@@ -7,6 +7,8 @@ from collections import defaultdict
 
 from utils.mysql_utils import mysql_query, sanitise_names
 
+import urllib.parse as urlparse
+
 def get_all_targets_for_categories(categories=None, existing_conn=None):
 
     if categories is not None:
@@ -200,7 +202,18 @@ def get_all_pathways_for_compounds(
         GROUP BY p.pathway_name, p.organism
         {f"LIMIT {limit}" if limit is not None else ""}
     '''
-    return mysql_query(query, existing_conn=existing_conn)
+    records = mysql_query(query, existing_conn=existing_conn)
+
+    records = [
+        (uniprots, uniprot_count, total_uniprots,
+            coverage, pathway_name, urlparse.quote(pathway_name),
+            organism, urlparse.quote(organism), url)
+        for uniprots, uniprot_count, total_uniprots,
+            coverage, pathway_name,
+            organism, url in records
+    ]
+
+    return records
 
 def get_all_reactions_for_compounds(
     coconut_ids,
@@ -240,7 +253,18 @@ def get_all_reactions_for_compounds(
         GROUP BY r.reaction_name, r.organism
         {f"LIMIT {limit}" if limit is not None else ""}
     '''
-    return mysql_query(query, existing_conn=existing_conn)
+    records = mysql_query(query, existing_conn=existing_conn)
+
+    records = [
+        (uniprots, uniprot_count, total_uniprots,
+            coverage, reaction_name, urlparse.quote(reaction_name),
+            organism, urlparse.quote(organism), url)
+        for uniprots, uniprot_count, total_uniprots,
+            coverage, reaction_name,
+            organism, url in records
+    ]
+
+    return records
 
 
 def get_target_hits(
@@ -534,9 +558,9 @@ def get_info_for_multiple_compounds(
 
 def get_categories():
     query = '''
-        SELECT category_name
-        FROM categories
-        ORDER BY category_name ASC
+    SELECT category_name
+    FROM categories
+    ORDER BY category_name ASC
     '''
     return [record[0] for record in mysql_query(query)]
 
@@ -547,17 +571,24 @@ def get_all_activities_for_compound(
     print ("getting all activities for compound", coconut_id)
 
     all_targets_query = f'''
-        SELECT cat.category_name, t.target_name, a.Pa, a.Pi, a.confidence_score
-        FROM categories AS cat
-        INNER JOIN category_members AS cm ON (cat.category_id=cm.category_id)
-        INNER JOIN targets AS t ON (cm.target_id=t.target_id) 
-        INNER JOIN activities AS a ON (t.target_id=a.target_id)
-        INNER JOIN compounds AS c ON (a.compound_id=c.compound_id)
-        WHERE c.coconut_id='{coconut_id}'
-        {f"AND a.above_{threshold}=(1)" if threshold > 0 and filter_pa_pi else ""}
+    SELECT cat.category_name, t.target_name, a.Pa, a.Pi, a.confidence_score
+    FROM categories AS cat
+    INNER JOIN category_members AS cm ON (cat.category_id=cm.category_id)
+    INNER JOIN targets AS t ON (cm.target_id=t.target_id) 
+    INNER JOIN activities AS a ON (t.target_id=a.target_id)
+    INNER JOIN compounds AS c ON (a.compound_id=c.compound_id)
+    WHERE c.coconut_id='{coconut_id}'
+    {f"AND a.above_{threshold}=(1)" if threshold > 0 and filter_pa_pi else ""}
     '''
 
     compound_hits = mysql_query(all_targets_query)
+
+    compound_hits = [ # encode target name
+        (category_name, target_name, urlparse.quote(target_name),
+            pa, pi, confidence_score)
+            for category_name, target_name, pa, pi, confidence_score
+            in compound_hits
+    ]
     
     category_activities = defaultdict(set)
     for category, *hit in compound_hits:

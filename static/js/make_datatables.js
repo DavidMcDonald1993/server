@@ -1,5 +1,3 @@
-// $(document).ready(makeDataTable(4));
-
 function makeDataTable(table_ids, sort_cols) {
 
   table_ids.forEach((table_id, idx) => {

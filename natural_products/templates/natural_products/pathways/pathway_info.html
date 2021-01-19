@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+
+  <head>
+
+    {% include 'header.html' %}
+    
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="http://cdn.datatables.net/1.10.2/css/jquery.dataTables.min.css">
+
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script type="text/javascript"  src="http://cdn.datatables.net/1.10.2/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript"  src="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+
+    {% load static %}
+       
+    <script type="text/javascript" src="{% static 'js/make_datatables.js' %}"></script>
+
+    <script type="text/javascript"  src="{% static 'js/show_hidden.js' %}"></script>
+
+    <link rel="stylesheet" type="text/css" href="{% static 'css/tables.css' %}">
+
+  </head>
+
+  {% if show_images %}
+  <body style="text-align: center;" onload="makeDataTable(['resultsTable'], [7, ])">
+  {% else %}
+  <body style="text-align: center;" onload="makeDataTable(['resultsTable'], [6, ])">
+  {% endif %}
+
+    {% include 'navbar.html' %}
+
+    <div>
+      <h1>{{pathway}}</h1>
+
+      <form action="/natural_products/pathway_selection/">
+        <input type="submit" value="Back to pathway selection">
+      </form>
+ 
+    </div>
+
+    <div class="hiddenDiv" style="display: none;">
+
+      <div id="sidebar" class="sidenav sidenav-right">
+        <h2>Hits<h2>
+        <a href="/natural_products/download/">Download</a>
+        <a href="/natural_products/smiles/">Download SMILES</a>
+        <!-- <a href="/natural_products/optimise/">Optimise</a> -->
+      </div>
+
+    <div class="results-table">
+
+    <div style="text-align: left;">
+        <!-- <h2>Hits for target(s): {{targets}}<br>Using threshold(s): {{thresholds}}</h2>  -->
+        <h2>Number of hits: {{num_hits}}</h2> 
+        <h3>Threshold: {{threshold}}</h3>
+    </div>
+
+    <br>
+ 
+    <div class="table-responsive">
+      <table id=resultsTable class="display table data"
+        style="width:100%;text-align:center;display:inline;">
+        <thead>
+          <tr>
+            <th>ID</th>
+            {% if show_images %}
+            <th>Image</th>
+            {% endif %}
+            <th>Compound Name</th>
+            <th>Molecular Formula</th>
+            <!-- <th>SMILES</th> -->
+            <!-- <th>Target(s)</th> -->
+            <!-- <th>Number Targets</th> -->
+            <th>Uniprot ACC(s)</th>
+            <th>Number Uniprot ACCs</th>
+            <th>Total Uniprot ACCs</th>
+            <th>Uniprot Coverage</th>
+            <th>Pathway Name</th>
+            <th>Organism</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for hit in pathway_hits %}
+          <tr>
+            <td> <a href="/natural_products/compounds/{{hit.id}}"> {{ hit.id }} </a> </td>
+            {% if show_images %}
+            <td> 
+              <img src="{% static hit.image %}" alt=""
+              style="width: 100pt; height: 100pt;"></img> 
+            </td>
+            {% endif %}
+            <td> {{ hit.name }} </td>
+            <td> {{ hit.formula }} </td>
+            <!-- <td> {{ hit.smiles }} </td> -->
+            {% for pathway in hit.pathways %}
+            <!-- <td> {{ pathway.targets }} </td> -->
+            <!-- <td> {{ pathway.num_targets }} </td> -->
+            <td> {{ pathway.accs }} </td>
+            <td> {{ pathway.num_accs }} </td>
+            <td> {{ pathway.total_accs }} </td>
+            <td> {{ pathway.coverage }} </td>
+            <td> <a href="{{pathway.url}}"> {{ pathway.pathway_name }} </a> </td>
+            <td> {{ pathway.organism }} </td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    </div>
+
+
+
+  </div>
+
+  </body>
+</html>

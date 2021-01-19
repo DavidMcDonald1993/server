@@ -58,7 +58,7 @@ def target_select_view(request):
         "targets": targets,
         "thresholds": thresholds}
     return render(request,
-        "natural_products/target_select.html", context)
+        "natural_products/targets/target_select.html", context)
 
 def show_target_hits_view(request, ):
 
@@ -122,7 +122,7 @@ def show_target_hits_view(request, ):
     }
 
     return render(request,
-        "natural_products/target_hits.html", context)
+        "natural_products/targets/target_hits.html", context)
         
 def pathway_select_view(request):
 
@@ -147,7 +147,6 @@ def show_pathway_hits_view(request, ):
         (pathway.split(":_:") for pathway in request.GET.getlist("pathways"))))
     threshold = request.GET["threshold"]
     filter_pa_pi = request.GET.get("checkbox") == "on" 
-    # organism = "Homo sapiens"
 
     try:
         threshold = int(threshold)
@@ -212,7 +211,7 @@ def show_pathway_hits_view(request, ):
     }
 
     return render(request,
-        "natural_products/pathway_hits.html", 
+        "natural_products/pathways/pathway_hits.html", 
         context)
 
 def reaction_select_view(request):
@@ -231,7 +230,7 @@ def reaction_select_view(request):
         "thresholds": thresholds,
     }
     return render(request,
-        "natural_products/reaction_select.html", 
+        "natural_products/reactions/reaction_select.html", 
         context)
 
 def show_reaction_hits_view(request, ):
@@ -303,7 +302,7 @@ def show_reaction_hits_view(request, ):
     }
 
     return render(request,
-        "natural_products/reaction_hits.html", context)
+        "natural_products/reactions/reaction_hits.html", context)
 
 
 def all_compounds_view(request):
@@ -314,20 +313,19 @@ def all_compounds_view(request):
     }
 
     return render(request, 
-        "natural_products/all_compounds.html", context)
+        "natural_products/compounds/all_compounds.html", context)
 
 def compound_info_view(request, compound_id):
 
     compound_id = "CNP" + compound_id
-
     threshold = 750
-
-    # query database
-    compound_info = get_coconut_compound_info_from_mongo(compound_id)
 
     context = {
         "threshold": threshold
     }
+
+    # query database
+    compound_info = get_coconut_compound_info_from_mongo(compound_id)
 
     assert "clean_smiles" in compound_info
     assert "name" in compound_info 
@@ -341,20 +339,19 @@ def compound_info_view(request, compound_id):
     activities = get_all_activities_for_compound(
         compound_id, 
         threshold=threshold, 
-        )
-
+    )
 
     pathways = get_all_pathways_for_compounds(
         compound_id, 
         threshold=threshold,
         # organism="Homo sapiens"
-        )
+    )
 
     reactions = get_all_reactions_for_compounds(
         compound_id,  
         threshold=threshold,
         # organism="Homo sapiens"
-        )
+    )
 
     context.update({
         "compound_id": compound_id,
@@ -366,8 +363,199 @@ def compound_info_view(request, compound_id):
     })
 
     return render(request,
-        "natural_products/compound_info.html", 
+        "natural_products/compounds/compound_info.html", 
         context)
+
+def target_info_view(request, target):
+
+    threshold = 950
+    filter_pa_pi = True
+    target = urlparse.unquote(target)
+
+    # query database
+    targets = [target]
+
+    thresholds = [threshold]
+    target_hits, columns = get_target_hits(
+        targets, thresholds, filter_pa_pi=filter_pa_pi)
+    num_hits = len(target_hits)
+
+    request.session["targets"] = targets
+    request.session["thresholds"] = thresholds
+    request.session["hits"] = target_hits
+    request.session["columns"] = columns
+
+    # information requested for each pathway 
+    target_columns = (
+        "pa", "pi",  
+        "confidence_score",
+    )
+    num_cols = len(target_columns)
+    num_targets = len(targets)
+
+    target_hits = [
+
+        {
+            "id": compound_id, 
+            "image": image,
+            "name": compound_name, 
+            "formula": compound_formula, 
+            "smiles": compound_smiles,
+            "targets": [
+                {   
+                    col: activities[target_number*num_cols+col_num]
+                        for col_num, col in enumerate(target_columns)} 
+                for target_number in range(num_targets)   
+            ]
+        }
+
+        for compound_id, image, compound_name, compound_formula, compound_smiles,
+            *activities in target_hits
+    ]
+
+    context = {
+        "target": target,
+        "threshold": threshold,
+        "target_hits": target_hits,
+        "num_hits": num_hits,
+        "show_images": num_hits<MAX_HITS_FOR_IMAGE
+    }
+
+    return render(request, 
+        "natural_products/targets/target_info.html",
+        context)
+
+def pathway_info_view(request, pathway, organism):
+
+    threshold = 950
+    filter_pa_pi = True
+    pathway = urlparse.unquote(pathway)
+    organism = urlparse.unquote(organism)
+
+    # query database
+    pathways = [pathway]
+    organisms = [organism]
+
+    pathway_hits, columns = get_pathway_hits(
+        pathways, 
+        threshold=threshold, filter_pa_pi=filter_pa_pi,
+        organisms=organisms, 
+        # limit=100,
+        )
+    num_hits = len(pathway_hits)
+
+    request.session["targets"] = pathways # for downloading
+    request.session["thresholds"] = [threshold]
+    request.session["hits"] = pathway_hits
+    request.session["columns"] = columns
+
+    # information requested for each pathway 
+    pathway_columns = (
+        "targets", "num_targets", 
+        "accs", "num_accs", 
+        "total_accs", "coverage", 
+        "pathway_name", "organism", "url"
+    )
+    num_cols = len(pathway_columns)
+    num_pathways = len(pathways)
+
+    pathway_hits = [
+        
+        {
+            "id": compound_id, 
+            "image": image,
+            "name": compound_name, 
+            "formula": compound_formula, 
+            "smiles": compound_smiles,
+            "pathways": [
+                {   
+                    col: pathway_values[pathway_number*num_cols+col_num]
+                        for col_num, col in enumerate(pathway_columns)} 
+                for pathway_number in range(num_pathways)   
+            ]
+        }
+        for (compound_id, image, 
+            compound_name, compound_formula, compound_smiles,
+            *pathway_values) in pathway_hits
+    ]
+
+    context = {
+        "pathway": pathway,
+        "organism": organism,
+        "threshold": threshold,
+        "pathway_hits": pathway_hits,
+        "num_hits": num_hits,
+        "show_images": num_hits<MAX_HITS_FOR_IMAGE
+    }
+
+    return render(request,
+        "natural_products/pathways/pathway_info.html", 
+        context)
+
+def reaction_info_view(request, reaction, organism):
+
+    threshold = 950
+    filter_pa_pi = True
+    reaction = urlparse.unquote(reaction)
+    organism = urlparse.unquote(organism)
+
+
+    # query database
+    reactions = [reaction]
+    organisms = [organism]
+
+    # thresholds = [threshold]
+    reaction_hits, columns = get_reaction_hits(
+        reactions, 
+        threshold=threshold, filter_pa_pi=filter_pa_pi,
+        organisms=organisms,
+        # limit=100
+        )
+    num_hits = len(reaction_hits)
+
+    request.session["targets"] = reactions # for downloading
+    request.session["thresholds"] = [threshold]
+    request.session["hits"] = reaction_hits
+    request.session["columns"] = columns
+
+        # information requested for each pathway 
+    reaction_columns = (
+        "targets", "num_targets", 
+        "accs", "num_accs", 
+        "total_accs", "coverage",
+        "reaction_name", "organism", "url"
+    )
+    num_cols = len(reaction_columns)
+    num_reactions = len(reactions)
+
+    reaction_hits = [
+        {
+            "id": compound_id, 
+            "image": image,
+            "name": compound_name, 
+            "formula": compound_formula, 
+            "smiles": compound_smiles,
+            "reactions": [
+                {   
+                    col: reaction_values[reaction_number*num_cols+col_num]
+                        for col_num, col in enumerate(reaction_columns)} 
+                for reaction_number in range(num_reactions)   
+            ]
+        }
+        for compound_id, image, compound_name, compound_formula, compound_smiles,
+            *reaction_values in reaction_hits
+    ]
+
+    context = {
+        "reaction": reaction,
+        "threshold": threshold,
+        "reaction_hits": reaction_hits,
+        "num_hits": num_hits,
+        "show_images": num_hits<MAX_HITS_FOR_IMAGE
+    }
+
+    return render(request,
+        "natural_products/reactions/reaction_info.html", context)
 
 def download_hits_view(request):
 

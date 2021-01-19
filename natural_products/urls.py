@@ -31,7 +31,11 @@ urlpatterns = [
     path("compounds/CNP<str:compound_id>",
         views.compound_info_view, name="compound_info"),
 
-    # path("pathway_enrichment", 
-    #     views.pathway_enrichment, name="enrichment")
+    path("targets/<str:target_name>",
+        views.target_info_view, name="target_info"),
+    path("pathways/<str:pathway>:_:<str:organism>",
+        views.pathway_info_view, name="pathway_info"),
+    path("reactions/<str:reaction>:_:<str:organism>",
+        views.reaction_info_view, name="reaction_info"),
 
 ]

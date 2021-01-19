@@ -72,9 +72,9 @@
           {% endif %}
         </div>
 
-        <div> <!--class not used yet-->
+        <div> 
     
-        <div id="nav-#PROPERTIES" style="display: none;">
+        <div id="nav-#PROPERTIES" style="display: inline;">
           
           <h2>Molecule Properties</h2>
           <table id="PROPERTIESTable" class="display-table" >
@@ -115,9 +115,9 @@
             </thead>
                     
             <tbody>
-              {% for target, pa, pi, diff in category_activities %}
+              {% for target, target_encoded, pa, pi, diff in category_activities %}
               <tr>
-                <td>{{target}}</td>
+                <td><a href="/natural_products/targets/{{target_encoded}}">{{target}}</a></td>
                 <!-- <td>{{pa}}</td> -->
                 <!-- <td>{{pi}}</td> -->
                 <td>{{diff}}</td>
@@ -144,18 +144,20 @@
                 <th>Uniprot Coverage</th>
                 <th>Pathway Name</th>
                 <th>Pathway Organism</th>
+                <th>Reactome URL</th>
               </tr>
             </thead>
               
             <tbody>
-              {% for accs, num_accs, total_accs, coverage, pathway_name, organism, url in pathways %}
+              {% for accs, num_accs, total_accs, coverage, pathway_name, pathway_name_encoded, organism, organism_encoded, url in pathways %}
               <tr>
                 <td>{{accs}}</td>
                 <td>{{num_accs}}</td>
                 <td>{{total_accs}}</td>
                 <td>{{coverage}}</td>
-                <td><a href={{url}}>{{pathway_name}}</a></td>
+                <td><a href="/natural_products/pathways/{{pathway_name_encoded}}:_:{{organism_encoded}}">{{pathway_name}}</a></td>
                 <td>{{organism}}</td>
+                <td><a href="{{url}}">{{pathway_name}}</td>
               </tr>
               {% endfor %}
             </tbody>
@@ -178,18 +180,20 @@
               <th>Uniprot Coverage</th>
               <th>Reaction Name</th>
               <th>Reaction Organism</th>
+              <th>Reactome URL</th>
             </tr>
           </thead>
           
           <tbody>
-            {% for accs, num_accs, total_accs, coverage, reaction_name, organism, url in reactions %}
+            {% for accs, num_accs, total_accs, coverage, reaction_name, reaction_name_encoded, organism, organism_encoded, url in reactions %}
             <tr>
               <td>{{accs}}</td>
               <td>{{num_accs}}</td>
               <td>{{total_accs}}</td>
               <td>{{coverage}}</td>
-              <td><a href={{url}}>{{reaction_name}}</a></td>
+              <td><a href="/natural_products/reactions/{{reaction_name_encoded}}:_:{{organism_encoded}}">{{reaction_name}}</a></td>
               <td>{{organism}}</td>
+              <td><a href="{{url}}">{{reaction_name}}</td>
             </tr>
             {% endfor %}
           </tbody>
