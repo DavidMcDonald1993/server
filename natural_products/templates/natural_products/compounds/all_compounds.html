@@ -21,21 +21,22 @@
 
   </head>
 
-  <body style="text-align: center;" >
+  <body style="text-align: center;" 
+    onload="makeDataTable(['allCompoundsTable'], [1])" >
 
     {% include 'navbar.html' %}
 
     <div>
     <h1>All natural products</h1>
     <form action="/" >
-      <input type="submit" value="Return to nhome">
+      <input type="submit" value="Return to home">
     </form>
     </div>
 
     <div class="hiddenDiv" style="display:none;">
         
     <div class="table-responsive results-table" >
-    <table class="display table data" style="width:100%;text-align:center;">
+    <table id="allCompoundsTable" class="display table data" style="width:100%;text-align:center;">
 
       <thead>
         <tr>

@@ -36,7 +36,7 @@ MAX_VAL = 950
 MIN_VAL = 650
 STEP = -50
 
-DEFAULT_THRESHOLD = 750
+DEFAULT_THRESHOLD = 900
 
 MAX_RECORDS = 10000
 
@@ -317,7 +317,10 @@ def show_reaction_hits_view(request, ):
 
 def all_compounds_view(request):
 
-    compounds = get_info_for_multiple_compounds()
+    compounds = get_info_for_multiple_compounds(
+        columns=("coconut_id", "name", "formula", "clean_smiles"),
+        limit=MAX_RECORDS
+        )
     context = {
         "compounds": compounds
     }
@@ -471,7 +474,7 @@ def all_pathways_view(request):
 
 def pathway_info_view(request, pathway_organism):
 
-    threshold = 950
+    threshold = DEFAULT_THRESHOLD
     filter_pa_pi = True
     pathway, organism = pathway_organism.split(":_:")
     pathway = urlparse.unquote(pathway)
