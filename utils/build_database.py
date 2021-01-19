@@ -665,6 +665,6 @@ if __name__ == "__main__":
     # add_uniprot_accs(targets)
 
     # create_compound_to_uniprot_table()
-    for chunk_no in (1, ):
+    for chunk_no in range(11):
         predictions_filename = f"coconut_uniprot_predictions_chunk_{chunk_no}.csv.gz"
         populate_compound_to_uniprot_table(predictions_filename)

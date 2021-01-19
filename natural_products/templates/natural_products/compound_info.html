@@ -21,7 +21,13 @@
 
   </head>
 
-  <body style="text-align: center;">
+  <body style="text-align: center;"
+    onload="makeDataTable(
+      ['PROPERTIESTable', 'ALL_TARGETSTable', 
+        'ANTITARGETSTable', 'EFFECTSTable', 'GENE_EXPRESSIONTable', 
+        'MECHANISMSTable', 'METABOLISMTable', 'TOXICITYTable', 'TRANSPORTERSTable',
+        'PATHWAYSTable', 'REACTIONSTable'], 
+      [0, 1, 1, 1, 1, 1, 1, 1, 1, 3, 3])">
 
     {% include 'navbar.html' %}
 
@@ -71,7 +77,7 @@
         <div id="nav-#PROPERTIES" style="display: none;">
           
           <h2>Molecule Properties</h2>
-          <table class="display table" style="width: 75%; margin:0 auto; text-align: left;">
+          <table id="PROPERTIESTable" class="display-table" >
             <thead>
             <tr>
               <th>Property Name</th>

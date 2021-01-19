@@ -38,10 +38,10 @@ STEP = -50
 
 MAX_HITS_FOR_IMAGE = 2000
 
-def index_view(request):
-    context = {}
-    return render(request, 
-        "natural_products/index.html", context)
+# def index_view(request):
+#     context = {}
+#     return render(request, 
+#         "natural_products/index.html", context)
         
 def target_select_view(request):
 

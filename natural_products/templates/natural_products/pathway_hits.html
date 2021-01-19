@@ -22,7 +22,11 @@
 
   </head>
 
-  <body style="text-align: center;">
+  {% if show_images %}
+  <body style="text-align: center;" onload="makeDataTable(['resultsTable'], [7, ])">
+  {% else %}
+  <body style="text-align: center;" onload="makeDataTable(['resultsTable'], [6, ])">
+  {% endif %}
 
     {% include 'navbar.html' %}
 
@@ -51,14 +55,6 @@
       <h2>Using threshold: {{threshold}}</h2> 
       <h3>Number of hits: {{num_hits}}</h3> 
     </div>
-
-    <!-- <br>
-    
-    <div>
-      <form action="/natural_products/download/" >
-        <input type="submit" id="downloadButton" value="Download results">
-      </form>
-    </div> -->
 
     <br>
  

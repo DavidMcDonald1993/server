@@ -97,7 +97,7 @@ def perform_predicton_with_novel_classifier(
     predictions = model.predict_proba(smiles)
 
     # rescale by max confidence
-    predictions = (predictions * max_confidence / predictions.max(axis=0, keepdims=True)).astype(int)
+    predictions = (predictions * max_confidence / predictions.max(axis=1, keepdims=True)).astype(int)
 
     id_to_db_id = load_json("id_to_db_id.json")
 

@@ -117,6 +117,7 @@ def mysql_insert_many(sql, rows, existing_conn=None, chunksize=1000000):
     return 0
 
 def sanitise_names(names):
-    return  [re.sub(r"( |\+|-|\*|/|=|<|>|\(|\)|,|\.|'|\[|\]|:|;)", "_", name)
+    return  [
+        re.sub(r"( |\+|-|\*|/|=|<|>|\(|\)|,|\.|'|\[|\]|:|;|{|})", "_", name)
         for name in names]
 

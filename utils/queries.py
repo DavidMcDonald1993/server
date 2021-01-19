@@ -59,17 +59,30 @@ def get_uniprots_for_compound(
         coconut_id = tuple(coconut_id)
 
     get_uniprots_sql = f'''
-        SELECT c.coconut_id, t.target_name, u.acc
-        FROM compounds AS c
-        INNER JOIN activities AS a ON (c.compound_id=a.compound_id)
-        INNER JOIN targets AS t ON (a.target_id=t.target_id)
-        INNER JOIN targets_to_uniprot AS tu ON (a.target_id=tu.target_id)
-        INNER JOIN uniprot AS u ON (tu.uniprot_id=u.uniprot_id)
-        WHERE {f"c.coconut_id='{coconut_id}'" if isinstance(coconut_id, str)
-            else f"c.coconut_id IN {coconut_id}"}
-        {f"AND a.Pa>{threshold}" if threshold>0 else ""}
-        {f"AND a.Pa>a.Pi" if filter_pa_pi else ""}
+    SELECT c.coconut_id AS `ID`, cu.confidence_score AS `Confidence Score`, 
+        u.acc AS `Uniprot ACC`
+    FROM compounds AS c
+    INNER JOIN compound_to_uniprot AS cu 
+        ON (c.compound_id=cu.compound_id)
+    INNER JOIN uniprot AS u 
+        ON (cu.uniprot_id=u.uniprot_id)
+    WHERE cu.above_{threshold}=(1)
+    AND {f"c.coconut_id='{coconut_id}'" if isinstance(coconut_id, str)
+        else f"c.coconut_id IN {coconut_id}"}
     '''
+
+    # get_uniprots_sql = f'''
+    #     SELECT c.coconut_id, t.target_name, u.acc
+    #     FROM compounds AS c
+    #     INNER JOIN activities AS a ON (c.compound_id=a.compound_id)
+    #     INNER JOIN targets AS t ON (a.target_id=t.target_id)
+    #     INNER JOIN targets_to_uniprot AS tu ON (a.target_id=tu.target_id)
+    #     INNER JOIN uniprot AS u ON (tu.uniprot_id=u.uniprot_id)
+    #     WHERE {f"c.coconut_id='{coconut_id}'" if isinstance(coconut_id, str)
+    #         else f"c.coconut_id IN {coconut_id}"}
+    #     {f"AND a.Pa>{threshold}" if threshold>0 else ""}
+    #     {f"AND a.Pa>a.Pi" if filter_pa_pi else ""}
+    # '''
 
     return mysql_query(get_uniprots_sql, existing_conn=existing_conn)
 
@@ -284,6 +297,7 @@ def get_target_hits(
         WHERE `{target_names[0]}_activity`.above_{thresholds[0]}=(1)
         AND `{target_names[0]}_target`.target_name="{targets[0]}"
         {conditions}
+        ORDER BY `{target_names[0]}-Confidence Score` DESC 
         {f"LIMIT {limit}" if limit is not None else ""}
     '''
 
@@ -384,6 +398,7 @@ def get_pathway_hits(
         AND `{pathway_names[0]}_pathway`.organism="{organisms[0]}"
         {conditions}
         GROUP BY c.compound_id, c.coconut_id, c.name, c.formula, c.clean_smiles, {group_by}
+        ORDER BY `{pathway_names[0]} Uniprot Coverage` DESC
         {f"LIMIT {limit}" if limit is not None else ""}
     '''
 
@@ -482,6 +497,7 @@ def get_reaction_hits(
         AND `{reaction_names[0]}_reaction`.organism="{organisms[0]}"
         {conditions}
         GROUP BY c.compound_id, c.coconut_id, c.name, c.formula, c.clean_smiles, {group_by}
+        ORDER BY `{reaction_names[0]} Uniprot Coverage` DESC
         {f"LIMIT {limit}" if limit is not None else ""}
     '''
 
@@ -563,26 +579,30 @@ if __name__ == "__main__":
     # from utils.io import write_smiles
     # write_smiles(smiles, "coconut_smiles.smi")
 
-    import pandas as pd
-    targets = pd.read_csv("models/target_ids.txt", 
-        index_col=0, header=None, names=["uniprot"])
-    targets = targets["uniprot"]
+    # import pandas as pd
+    # targets = pd.read_csv("models/target_ids.txt", 
+    #     index_col=0, header=None, names=["uniprot"])
+    # targets = targets["uniprot"]
 
-    query = f'''
-        SELECT acc, uniprot_id
-        FROM uniprot
-        WHERE acc IN {tuple(targets)} 
-    '''
+    # query = f'''
+    #     SELECT acc, uniprot_id
+    #     FROM uniprot
+    #     WHERE acc IN {tuple(targets)} 
+    # '''
 
-    records = mysql_query(query)
+    # records = mysql_query(query)
 
-    acc_to_db_id = {acc: _id for acc, _id in records}
+    # acc_to_db_id = {acc: _id for acc, _id in records}
 
-    id_to_db_id = {_id: acc_to_db_id[acc]
-        for _id, acc in targets.items()}
+    # id_to_db_id = {_id: acc_to_db_id[acc]
+    #     for _id, acc in targets.items()}
 
-    import json 
-    with open("id_to_db_id.json", "w") as f:
-        json.dump(id_to_db_id, f, sort_keys=True, indent=4)
+    # import json 
+    # with open("id_to_db_id.json", "w") as f:
+    #     json.dump(id_to_db_id, f, sort_keys=True, indent=4)
    
- 
+    compound_id=["CNP0000002", "CNP0000005"]
+
+    records = get_uniprots_for_compound(compound_id, threshold=700)
+    for record in records:
+        print (record)

@@ -21,8 +21,11 @@
       
   </head>
 
-  <body style="text-align: center;">
-
+  {% if show_images %}
+  <body style="text-align: center;" onload="makeDataTable(['resultsTable'], [7, ])">
+  {% else %}
+  <body style="text-align: center;" onload="makeDataTable(['resultsTable'], [6, ])">
+  {% endif %}
     {% include 'navbar.html' %}
 
     <div>
