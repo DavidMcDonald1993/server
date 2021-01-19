@@ -26,9 +26,9 @@ def get_human_targets():
 def get_pdb_ids_from_gene_symbol(gene_symbol):
     print ("searching for PDB IDs for gene symbol", gene_symbol)
     search_service = SearchService.TEXT
-    search_operator = text_operators.ContainsPhraseOperator(
+    search_operator = text_operators.DefaultOperator(
         value=gene_symbol,
-        attribute="struct.title"
+        # attribute="struct.title"
         )
     return_type = ReturnType.ENTRY
 
@@ -43,6 +43,7 @@ def get_pdb_ids_from_gene_symbol(gene_symbol):
         return set()
 
 if __name__ == "__main__":
-    gene_symbol = "CYBA"
+    # gene_symbol = "CYBA"
+    gene_symbol = "PARP1"
     pdb_ids = get_pdb_ids_from_gene_symbol(gene_symbol)
     print (pdb_ids)
