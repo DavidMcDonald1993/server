@@ -580,7 +580,6 @@ def get_all_activities_for_compound(
     WHERE c.coconut_id='{coconut_id}'
     {f"AND a.above_{threshold}=(1)" if threshold > 0 and filter_pa_pi else ""}
     '''
-
     compound_hits = mysql_query(all_targets_query)
 
     compound_hits = [ # encode target name

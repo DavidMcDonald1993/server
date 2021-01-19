@@ -51,12 +51,15 @@ def mysql_query(query, return_cols=False, existing_conn=None):
     cursor.execute(query)
 
     records = cursor.fetchall()
+    print ("NUMBER OF HITS:", len(records))
 
     if return_cols:
         records = records, cursor.column_names
 
     if existing_conn is None:
         db.close()
+
+    print ()
 
     return records
 

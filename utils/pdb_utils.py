@@ -26,8 +26,10 @@ def get_human_targets():
 def get_pdb_ids_from_gene_symbol(gene_symbol):
     print ("searching for PDB IDs for gene symbol", gene_symbol)
     search_service = SearchService.TEXT
-    search_operator = text_operators.ContainsWordsOperator(value=gene_symbol,
-        attribute="struct.title")
+    search_operator = text_operators.ContainsPhraseOperator(
+        value=gene_symbol,
+        attribute="struct.title"
+        )
     return_type = ReturnType.ENTRY
 
     try:
@@ -36,10 +38,11 @@ def get_pdb_ids_from_gene_symbol(gene_symbol):
         return set(results)
 
     except JSONDecodeError as e:
+        print ("EXCEPTION")
         print (e)
         return set()
 
 if __name__ == "__main__":
-    gene_symbol = "PIP5K1B"
+    gene_symbol = "CYBA"
     pdb_ids = get_pdb_ids_from_gene_symbol(gene_symbol)
     print (pdb_ids)

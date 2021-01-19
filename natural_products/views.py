@@ -36,7 +36,7 @@ MAX_VAL = 950
 MIN_VAL = 650
 STEP = -50
 
-DEFAULT_THRESHOLD = 900
+DEFAULT_THRESHOLD = 750
 
 MAX_RECORDS = 10000
 
@@ -334,7 +334,7 @@ def compound_info_view(request, compound_id):
     threshold = DEFAULT_THRESHOLD
 
     context = {
-        "threshold": threshold
+        "threshold": threshold,
     }
 
     # query database
@@ -353,6 +353,9 @@ def compound_info_view(request, compound_id):
         compound_id, 
         threshold=threshold, 
     )
+
+    for key in activities:
+        print (key, len(activities[key]))
 
     pathways = get_all_pathways_for_compounds(
         compound_id, 
@@ -676,6 +679,8 @@ def optimise_target_hits_view(request):
 
     assert request.user.is_authenticated
     user_id = request.user.id
+    if "targets" not in request.session.keys():
+        return HttpResponseRedirect("/")
     targets = request.session["targets"]
     thresholds = request.session["thresholds"]
     hits = request.session["hits"]
