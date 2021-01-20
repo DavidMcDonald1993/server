@@ -19,6 +19,8 @@
     <link rel="stylesheet" type="text/css"  href="{% static 'css/select_forms.css' %}">
     <script type="text/javascript"  src="{% static 'js/select_forms.js' %}"></script>
 
+    <link rel="stylesheet" type="text/css"  href="{% static 'css/select.css' %}">
+
     <script type="text/javascript" src="{% static 'js/show_hidden.js' %}"></script>
 
   </head>
@@ -27,92 +29,92 @@
 
     {% include 'navbar.html' %}
 
-    <div>
-      <h1>Hit Optimisation</h1>
-    </div>
 
     <div id="hiddenDiv" class="hiddenDiv" style="display: none;">
   
-        <form class="select-form" enctype="multipart/form-data" action="/hit_optimisation/" method="post">
-          {% csrf_token %}
+      <div>
+        <h1>Hit Optimisation</h1>
+      </div>
 
-          <div>
-            <h2>User Details</h2>
-              <label for="username">User name:</label>
-              {% if username %}
-              <input type="text" id="username" 
-                name="username" value={{username}} readonly> 
-              {% else %}
-              <input type="text" id="username" 
-                name="username"> 
-              {% endif %}
-              <br>
-              <label for="user_email">Email address:</label>
-              {% if user_email %}
-              <input type="text" id="user_email" 
-                name="user_email" value={{user_email}} readonly> 
-              {% else %}
-              <input type="text" id="user_email" 
-                name="user_email"> 
-              {% endif %}
-              <br>
-          </div>
+      <form class="select-form" enctype="multipart/form-data" action="/hit_optimisation/" method="post">
+        {% csrf_token %}
 
-          <div>
-            <h2>Target Selection</h2>
-            <label for="target">Select target (PDB ID):</label>
-            {% if pdb_ids %}
-            <select name=target id=target>
-              {% for target, symbol, score, pdb_id in pdb_ids %}
-              <option value={{pdb_id}}>{{target}}--{{symbol}}({{score}})--{{pdb_id}}</option>
-              {% endfor %}
-              </select> 
+        <div>
+          <h2>User Details</h2>
+            <label for="username">User name:</label>
+            {% if username %}
+            <input type="text" id="username" 
+              name="username" value={{username}} readonly> 
             {% else %}
-            <input type="text" id="target" 
-              name="target" value="4DQY"> 
+            <input type="text" id="username" 
+              name="username"> 
             {% endif %}
             <br>
-
-            <label for="chain">Chain</label>
-            <input type="text" id="chain" 
-              name="chain" value="A"> 
+            <label for="user_email">Email address:</label>
+            {% if user_email %}
+            <input type="text" id="user_email" 
+              name="user_email" value={{user_email}} readonly> 
+            {% else %}
+            <input type="text" id="user_email" 
+              name="user_email"> 
+            {% endif %}
             <br>
         </div>
-    
+
         <div>
-          <h2>Seed Compounds</h2>
-          {% if smiles_filename %}
-            <label for="input_smiles">Seed compounds:</label>
-            <input type="text" id="input_smiles" 
-              name="input_smiles" value="{{smiles_filename}}" readonly> 
+          <h2>Target Selection</h2>
+          <label for="target">Select target (PDB ID):</label>
+          {% if pdb_ids %}
+          <select name=target id=target>
+            {% for target, symbol, score, pdb_id in pdb_ids %}
+            <option value={{pdb_id}}>{{target}}--{{symbol}}({{score}})--{{pdb_id}}</option>
+            {% endfor %}
+          </select> 
           {% else %}
-          {{form}}
+          <input type="text" id="target" 
+            name="target" value="1UK0"> 
           {% endif %}
-        </div>
-
-        <div>
-          <h2>Optimisation Settings</h2>
-          {% for setting, value in settings %}
-          <label for={{setting}}>{{setting}}:</label>
-          <input type="text" id={{setting}} 
-            name={{setting}} value={{value}}> 
           <br>
-          {% endfor %}
-        </div>
-          <br>
-          <input type="submit" value="Submit">
-        </form>
 
+          <label for="chain">Chain</label>
+          <input type="text" id="chain" 
+            name="chain" value="A"> 
+          <br>
       </div>
-
-      <br>
-      <br>
+  
+      <div>
+        <h2>Seed Compounds</h2>
+        {% if smiles_filename %}
+          <label for="input_smiles">Seed compounds:</label>
+          <input type="text" id="input_smiles" 
+            name="input_smiles" value="{{smiles_filename}}" readonly> 
+        {% else %}
+        {{form}}
+        {% endif %}
+      </div>
 
       <div>
-        <form action="/activity_prediction">
-          <input id="backButton" type="submit" value="Return to home">
-        </form>
-
+        <h2>Optimisation Settings</h2>
+        {% for setting, value in settings %}
+        <label for={{setting}}>{{setting}}:</label>
+        <input type="text" id={{setting}} 
+          name={{setting}} value={{value}}> 
+        <br>
+        {% endfor %}
       </div>
+        <br>
+        <input type="submit" value="Submit">
+      </form>
+
+    </div>
+
+    <br>
+    <br>
+
+    <div>
+      <form action="/activity_prediction">
+        <input id="backButton" type="submit" value="Return to home">
+      </form>
+    </div>
   </body>
 </html>

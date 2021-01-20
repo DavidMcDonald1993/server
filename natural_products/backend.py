@@ -116,13 +116,14 @@ def write_smiles_to_file(
     
 if __name__ == "__main__":
 
-    from timeit import default_timer
+    # from timeit import default_timer
 
     query = '''
-        SELECT compound_id, clean_smiles
-        FROM compounds
+    SELECT coconut_id, clean_smiles
+    FROM compounds
     '''
     records = mysql_query(query)
 
-    for _id, smiles in records:
-        draw_molecule(_id, smiles)
+    # for _id, smiles in records:
+    #     draw_molecule(_id, smiles)
+    write_smiles(records, "coconut_smiles_clean.smi")

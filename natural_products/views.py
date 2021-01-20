@@ -631,7 +631,8 @@ def reaction_info_view(request, reaction_organism):
 
 def export_hits_view(request):
 
-    assert request.user.is_authenticated
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect("/login")
     
     user_id = request.user.id
     targets = request.session["targets"]
@@ -649,8 +650,9 @@ def export_hits_view(request):
 
 def export_hit_smiles_view(request):
 
-    assert request.user.is_authenticated
-    
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect("/login")
+
     user_id = request.user.id
     targets = request.session["targets"]
     thresholds = request.session["thresholds"]
@@ -677,7 +679,8 @@ def export_hit_smiles_view(request):
 
 def optimise_target_hits_view(request):
 
-    assert request.user.is_authenticated
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect("/login")
     user_id = request.user.id
     if "targets" not in request.session.keys():
         return HttpResponseRedirect("/")

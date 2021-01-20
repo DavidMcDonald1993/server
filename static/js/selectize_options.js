@@ -1,5 +1,5 @@
 $(document).ready(function () {
     $('select').selectize({
-        sortField: 'text'
+        sortField: 'text',
     });
 });

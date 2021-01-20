@@ -26,8 +26,10 @@
 
 .sidenav-left {
     left:0;
+    text-align: left;
 }
 
 .sidenav-right {
     right:0;
+    text-align: right;
 }

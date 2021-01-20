@@ -44,7 +44,7 @@ def write_smiles(smiles, smiles_filename):
         for compound_id, smile in smiles:
             f.write(f"{smile}\t{compound_id}\n")
 
-def read_smiles(smiles_filename, filter_valid, return_series=False, smiles_col="SMILES"):
+def read_smiles(smiles_filename, filter_valid=True, return_series=False, smiles_col="SMILES"):
     print ("reading smiles from", smiles_filename)
     assert os.path.exists(smiles_filename)
     smiles_df = pd.read_csv(smiles_filename, 
@@ -82,14 +82,26 @@ def standardise_smi(smi, return_smiles=False):
     else:
         return mol
 
+def embed_2D_mol_in_3D(smi):
+    assert smi is not None
+    mol = Chem.MolFromSmiles(smi)
+    my_mol_with_H = Chem.AddHs(mol)
+
+    AllChem.EmbedMolecule(my_mol_with_H)
+    AllChem.MMFFOptimizeMolecule(my_mol_with_H)
+
+    embedded_mol = Chem.RemoveHs(my_mol_with_H)
+    return embedded_mol
+
 def smiles_to_sdf(
     smiles_filename, 
     sdf_filename):
     print ("converting smiles from", smiles_filename, 
         "to SDF file", sdf_filename)
-    smiles_df = read_smiles(smiles_filename)
-    smiles_df["Molecule"] = smiles_df["SMILES"].map(standardise_smi)
-    smiles_df["clean_SMILES"] = smiles_df["Molecule"].map(Chem.MolToSmiles, na_action="ignore")
+    smiles_df = read_smiles(smiles_filename, )
+    smiles_df["Molecule"] = smiles_df["SMILES"].map(embed_2D_mol_in_3D)
+    smiles_df["MoleculeStandard"] = smiles_df["SMILES"].map(standardise_smi)
+    smiles_df["clean_SMILES"] = smiles_df["MoleculeStandard"].map(Chem.MolToSmiles, na_action="ignore")
     smiles_df = smiles_df.loc[~pd.isnull(smiles_df["Molecule"])] # drop missing values
     # AddMoleculeColumnToFrame(smiles_df, 'SMILES', 'Molecule')
     WriteSDF(smiles_df, sdf_filename, molColName="Molecule",

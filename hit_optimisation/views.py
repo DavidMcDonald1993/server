@@ -17,26 +17,35 @@ from utils.genenames_utils import search_for_targets
 
 import urllib.parse as urlparse
 
+from hit_optimisation.backend import load_base_settings
 
 # human_targets = get_human_targets()
 
 # Create your views here.
 from django.http import HttpResponse, HttpResponseRedirect
 
+display_keys = [
+    "number_of_mutants_first_generation",
+    "number_of_crossovers_first_generation",
+    "number_of_mutants",
+    "number_of_crossovers",
+    "number_elitism_advance_from_previous_gen",
+    "top_mols_to_seed_next_generation",
+    "diversity_mols_to_seed_first_generation",
+    "diversity_seed_depreciation_per_gen",
+    "num_generations",
+]
+
 def upload_view(request):
 
-    assert request.user.is_authenticated
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect("/login")
 
-    settings = {
-        "number_of_mutants_first_generation": 10,
-        "number_of_crossovers_first_generation": 10,
-        "number_of_mutants": 3,
-        "number_of_crossovers": 3,
-        "number_elitism_advance_from_previous_gen": 3,
-        "top_mols_to_seed_next_generation": 5,
-        "diversity_mols_to_seed_first_generation": 3,
-        "diversity_seed_depreciation_per_gen": 0,
-        "num_generations": 100,
+    base_settings = load_base_settings()
+
+    display_settings = {
+        key: base_settings[key]
+        for key in display_keys
     }
 
     if request.method == 'POST':
@@ -52,7 +61,7 @@ def upload_view(request):
            
             chain = request.POST["chain"]
            
-            user_settings = {key: int(request.POST[key]) for key in settings}
+            user_settings = {key: int(request.POST[key]) for key in display_settings}
            
             if isinstance(uploaded_file, str) and uploaded_file.endswith(".smi")\
                     or uploaded_file.name.endswith(".smi"):
@@ -70,7 +79,7 @@ def upload_view(request):
 
     context = {
         # "targets": human_targets,
-        "settings": settings.items(),
+        "settings": display_settings.items(),
         "form": form,
         "username": request.user.username,
         "user_email": request.user.email,

@@ -34,7 +34,7 @@ def get_all_targets_for_categories(categories=None, existing_conn=None):
 
 def get_uniprots_for_targets(targets, existing_conn=None):
     if not isinstance(targets, str):
-        if isinstance(targets, list) or isinstance(targets, set):
+        if not isinstance(targets, tuple):
             targets = tuple(targets)
         assert isinstance(targets, tuple)
         print ("querying mySQL database for UNIPROTS associated with",
