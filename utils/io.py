@@ -17,6 +17,7 @@ from standardiser import standardise
 
 from rdkit.Chem.PandasTools import LoadSDF
 from rdkit import Chem
+from rdkit.Chem import AllChem
 from rdkit.Chem.PandasTools import WriteSDF, AddMoleculeColumnToFrame
 
 def valid_smiles(smi):
@@ -179,10 +180,14 @@ def process_input_file(
 
 if __name__ == "__main__":
     
-    input_file = "temp.smi"
-    desired_format = ".sdf"
-    output_dir = "/home/david/Desktop"
+    # input_file = "temp.smi"
+    # desired_format = ".sdf"
+    # output_dir = "/home/david/Desktop"
     
-    processed_file = process_input_file(input_file, desired_format, output_dir)
+    # processed_file = process_input_file(input_file, desired_format, output_dir)
 
-    print (processed_file)
+    # print (processed_file)
+
+    smi = "Cn1cc(Cn2cnc(-c3cnn(C)c3)c2-c2ccc(C#N)cc2)cn1"
+
+    print (embed_2D_mol_in_3D(smi))
