@@ -239,7 +239,7 @@ def activity_predict(
     # write jsons for threshold(s)?
     for threshold in range(500, 1000, 100):
         active_targets = {compound:
-            [target for target, confidence in confidences[compound]
+            [target for target, confidence in confidences[compound].items()
                 if confidence > threshold]
                 for compound in confidences}
         active_targets_filename = os.path.join(pass_output_dir,
@@ -288,7 +288,7 @@ def activity_predict(
     # write jsons for threshold(s)?
     for threshold in range(500, 1000, 100):
         active_targets = {compound:
-            [target for target, confidence in novel_classifier_predictions[compound]
+            [target for target, confidence in novel_classifier_predictions[compound].items()
                 if confidence > threshold]
                 for compound in novel_classifier_predictions}
         active_targets_filename = os.path.join(ppb2_output_dir,
@@ -329,32 +329,35 @@ if __name__ == "__main__":
     # name = "david"
     # email = "davemcdonald93@gmail.com"
     # input_file = "/home/david/Desktop/test-PASS-out.sdf"
+    input_file = "/home/david/Desktop/test.txt"
+
+    ret = activity_predict(input_file)
 
     # # determine_targets(input_file)
     # perform_enrichment_on_PASS_file(input_file, output_dir="/home/david/Desktop", threshold=0)
 
     # smiles_file = "/home/david/Desktop/pdb_ligands.smi"
-    smiles_file = "coconut_smiles.smi"
+    # smiles_file = "coconut_smiles.smi"
 
-    # read (and filter smiles)
-    smiles = read_smiles(
-        smiles_file,
-        filter_valid=True, 
-        return_series=True)
+    # # read (and filter smiles)
+    # smiles = read_smiles(
+    #     smiles_file,
+    #     filter_valid=True, 
+    #     return_series=True)
 
-    n_compounds = smiles.shape[0]
+    # n_compounds = smiles.shape[0]
 
-    chunksize = 40000
-    n_chunks = n_compounds // chunksize + 1
-    for chunk_no in range(n_chunks):
-        predictions_filename = f"coconut_uniprot_predictions_chunk_{chunk_no}.csv.gz"
-        if os.path.exists(predictions_filename):
-            continue
-        print ("processing chunk", chunk_no+1)
+    # chunksize = 40000
+    # n_chunks = n_compounds // chunksize + 1
+    # for chunk_no in range(n_chunks):
+    #     predictions_filename = f"coconut_uniprot_predictions_chunk_{chunk_no}.csv.gz"
+    #     if os.path.exists(predictions_filename):
+    #         continue
+    #     print ("processing chunk", chunk_no+1)
 
-        chunk = smiles[chunk_no*chunksize:(chunk_no+1)*chunksize]
+    #     chunk = smiles[chunk_no*chunksize:(chunk_no+1)*chunksize]
 
-        predictions = perform_predicton_with_novel_classifier(chunk)
+    #     predictions = perform_predicton_with_novel_classifier(chunk)
 
-        print ("writing predictions to", predictions_filename)
-        predictions.to_csv(predictions_filename)
+    #     print ("writing predictions to", predictions_filename)
+    #     predictions.to_csv(predictions_filename)
