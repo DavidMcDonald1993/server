@@ -140,7 +140,9 @@ def process_input_file(
 
     # convert if necessary
     if input_file_type != desired_format:
+        print ("CONVERSION NECESSARY")
         if desired_format == ".smi":
+            print ("COVERTING TO smi")
             if input_file_type == ".sdf":
                 # convert SDF to smiles
                 print ("converting SDF to SMILES")
@@ -154,7 +156,9 @@ def process_input_file(
                 write_smiles(smiles, temp_file)
             elif input_file_type in {".txt", ".sml"}:
                 # rename .txt smiles format to .smi
+                print ("INPUT FILE TYPE:", input_file_type)
                 os.rename(temp_file, temp_file_name + desired_format)
+                temp_file = temp_file_name + desired_format
             else:
                 raise NotImplementedError
 
@@ -172,7 +176,6 @@ def process_input_file(
             raise NotImplementedError #conversion not yet implemented
     else:
         print ("no conversion necesary")
-
     
     assert temp_file.endswith(desired_format)
     

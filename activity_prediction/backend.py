@@ -88,7 +88,7 @@ def perform_predicton_with_novel_classifier(
     
         # read (and filter smiles)
         smiles = read_smiles(
-            smiles_file,
+            smiles,
             filter_valid=True, 
             return_series=True)
 
@@ -104,7 +104,7 @@ def perform_predicton_with_novel_classifier(
     # return as n_targets x n_compounds
 
     # id_to_db_id = load_json("id_to_db_id.json")
-    id_to_target_acc = load_json("models/id_to_target.json")
+    id_to_target_acc = load_json("models/target_ids.json")
     
     return pd.DataFrame(predictions, 
         # index=[id_to_db_id[str(i)] for i in range(predictions.shape[1])],
@@ -329,9 +329,12 @@ if __name__ == "__main__":
     # name = "david"
     # email = "davemcdonald93@gmail.com"
     # input_file = "/home/david/Desktop/test-PASS-out.sdf"
+    user = User(1)
     input_file = "/home/david/Desktop/test.txt"
 
-    ret = activity_predict(input_file)
+    ret = activity_predict(user,
+        input_file,
+        enrichment=False)
 
     # # determine_targets(input_file)
     # perform_enrichment_on_PASS_file(input_file, output_dir="/home/david/Desktop", threshold=0)
