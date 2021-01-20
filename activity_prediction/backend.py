@@ -179,9 +179,20 @@ def perform_enrichment_on_uniprot_accs(
 
     return 0
 
+def write_actives(confidence_df, threshold, output_dir):
+    actives = {compound:
+        [target for target, confidence in confidence_df[compound].items()
+            if confidence > threshold]
+            for compound in confidence_df}
+    active_targets_filename = os.path.join(output_dir,
+        f"actives_(threshold={threshold}).json")
+    write_json(actives, active_targets_filename)
+
 def activity_predict(
     user,
     input_file, 
+    pass_predict=True,
+    ppb2_predict=True,
     compression="zip",
     root_dir="user_files",
     # archive_dir="archives",
@@ -201,106 +212,119 @@ def activity_predict(
     output_dir = os.path.join(root_dir, identifier)
     os.makedirs(output_dir, exist_ok=True)
 
-    '''
-    BEGIN PASS
-    '''
+    if pass_predict:
 
-    pass_output_dir = os.path.join(output_dir, "PASS")
-    os.makedirs(pass_output_dir, exist_ok=True)
+        '''
+        BEGIN PASS
+        '''
 
-    input_sdf_file = process_input_file(input_file, 
-        desired_format=".sdf", output_dir=pass_output_dir)
+        pass_output_dir = os.path.join(output_dir, "PASS")
+        os.makedirs(pass_output_dir, exist_ok=True)
 
-    base_name, extension = os.path.splitext(input_sdf_file)
-    assert extension == ".sdf"
+        input_sdf_file = process_input_file(input_file, 
+            desired_format=".sdf", output_dir=pass_output_dir)
 
-    pass_out_file = base_name + "-PASS-out.sdf"
+        base_name, extension = os.path.splitext(input_sdf_file)
+        assert extension == ".sdf"
 
-    cmd = "PASS2019toSDF.exe {} {}".format(input_sdf_file, pass_out_file)
-    print ("executing command:", cmd)
+        pass_out_file = base_name + "-PASS-out.sdf"
 
-    ret = os.system(cmd)
-    assert ret == 0
-    assert os.path.exists(pass_out_file)
+        cmd = "PASS2019toSDF.exe {} {}".format(input_sdf_file, pass_out_file)
+        print ("executing command:", cmd)
 
-    # DF n_targets * n_compounds
-    confidences = determine_confidences(pass_out_file)
+        ret = os.system(cmd)
+        assert ret == 0
+        assert os.path.exists(pass_out_file)
 
-    # delete large SDF file
-    print ("deleting pass output file:", pass_out_file)
-    os.remove(pass_out_file)
+        # DF n_targets * n_compounds
+        confidences = determine_confidences(pass_out_file)
 
-    # write confidences to file
-    confidence_filename = os.path.join(pass_output_dir, 
-        "unthresholded_confidences.csv")
-    print ("writing confidences to", confidence_filename)
-    confidences.to_csv(confidence_filename)
+        # delete large SDF file
+        print ("deleting pass output file:", pass_out_file)
+        os.remove(pass_out_file)
 
-    # write jsons for threshold(s)?
-    for threshold in range(500, 1000, 100):
-        active_targets = {compound:
-            [target for target, confidence in confidences[compound].items()
-                if confidence > threshold]
-                for compound in confidences}
-        active_targets_filename = os.path.join(pass_output_dir,
-            f"active_targets_threshold={threshold}.json")
-        write_json(active_targets, active_targets_filename)
+        # write confidences to file
+        confidence_filename = os.path.join(pass_output_dir, 
+            "unthresholded_confidences.csv")
+        print ("writing confidences to", confidence_filename)
+        confidences.to_csv(confidence_filename)
 
-    max_confidences = confidences.max(axis=1)
-    # threshold?
+        # write jsons for threshold(s)?
+        for threshold in range(500, 1000, 100):
+            # active_targets = {compound:
+            #     [target for target, confidence in confidences[compound].items()
+            #         if confidence > threshold]
+            #         for compound in confidences}
+            # active_targets_filename = os.path.join(pass_output_dir,
+            #     f"active_targets_threshold={threshold}.json")
+            # write_json(active_targets, active_targets_filename)
+            write_actives(confidences, threshold, output_dir=pass_output_dir)
 
-    # get uniprots for targets
-    targets_to_uniprot = get_uniprots_for_targets(max_confidences.index)
+        max_confidences = confidences.max(axis=1)
+        # threshold?
 
-    targets_to_uniprot_df = pd.DataFrame(
-        sorted([ (target, max_confidences[target], uniprot, association_score)
-        for target, uniprot, association_score in targets_to_uniprot], 
-            key=lambda x: x[1], reverse=True), # sort by confidence
-        columns=["target", "max_confidence", "ACC", "association_score"])
-    targets_to_uniprot_filename = os.path.join(pass_output_dir,
-        "unthresholded_targets_to_uniprot.csv")
-    targets_to_uniprot_df.to_csv(targets_to_uniprot_filename)
+        # get uniprots for targets
+        targets_to_uniprot = get_uniprots_for_targets(max_confidences.index)
 
-    '''
-    BEGIN PPB2
-    '''
+        targets_to_uniprot_df = pd.DataFrame(
+            sorted([ (target, max_confidences[target], uniprot, association_score)
+            for target, uniprot, association_score in targets_to_uniprot], 
+                key=lambda x: x[1], reverse=True), # sort by confidence
+            columns=["target", "max_confidence", "ACC", "association_score"])
+        targets_to_uniprot_filename = os.path.join(pass_output_dir,
+            "unthresholded_targets_to_uniprot.csv")
+        targets_to_uniprot_df.to_csv(targets_to_uniprot_filename)
+    
+    if ppb2_predict:
 
-    ppb2_output_dir = os.path.join(output_dir, "PPB2")
-    os.makedirs(ppb2_output_dir, exist_ok=True)
+        '''
+        BEGIN PPB2
+        '''
 
-    input_smiles_file = process_input_file(input_file, 
-        desired_format=".smi", output_dir=ppb2_output_dir)
+        ppb2_output_dir = os.path.join(output_dir, "PPB2")
+        os.makedirs(ppb2_output_dir, exist_ok=True)
 
-    # use classifier to generate uniprot confidences
-    novel_classifier_predictions = perform_predicton_with_novel_classifier(
-        input_smiles_file)
+        input_smiles_file = process_input_file(input_file, 
+            desired_format=".smi", output_dir=ppb2_output_dir)
 
-    # rescale by compound to range [0, 1000]
-    novel_classifier_predictions = \
-        rescale_predicted_uniprot_confidences(novel_classifier_predictions)
+        # use classifier to generate uniprot confidences
+        novel_classifier_predictions = perform_predicton_with_novel_classifier(
+            input_smiles_file)
 
-    novel_classifier_prediction_filename = os.path.join(ppb2_output_dir,
-        "PPB2_uniprot_predictions.csv")
-    print ("writing novel classifier predictions to", 
-        novel_classifier_prediction_filename)
-    novel_classifier_predictions.to_csv(novel_classifier_prediction_filename)
+        novel_classifier_prediction_filename = os.path.join(ppb2_output_dir,
+            "PPB2_uniprot_predictions.csv")
+        print ("writing novel classifier predictions to", 
+            novel_classifier_prediction_filename)
+        novel_classifier_predictions.to_csv(novel_classifier_prediction_filename)
 
-    # write jsons for threshold(s)?
-    for threshold in range(500, 1000, 100):
-        active_targets = {compound:
-            [target for target, confidence in novel_classifier_predictions[compound].items()
-                if confidence > threshold]
-                for compound in novel_classifier_predictions}
-        active_targets_filename = os.path.join(ppb2_output_dir,
-            f"active_uniprots_threshold={threshold}.json")
-        write_json(active_targets, active_targets_filename)
+        # rescale by compound to range [0, 1000]
+        novel_classifier_predictions = \
+            rescale_predicted_uniprot_confidences(novel_classifier_predictions)
 
-    '''
-    BEGIN ENRICHMENT ANALYSIS TODO incorporate PPB2?
-    '''
+        novel_classifier_prediction_filename = os.path.join(ppb2_output_dir,
+            "PPB2_uniprot_predictions_rescaled.csv")
+        print ("writing novel classifier predictions to", 
+            novel_classifier_prediction_filename)
+        novel_classifier_predictions.to_csv(novel_classifier_prediction_filename)
 
-    # add enrichment to output directory
+        # write jsons for threshold(s)?
+        for threshold in range(500, 1000, 100):
+            # active_targets = {compound:
+            #     [target for target, confidence in novel_classifier_predictions[compound].items()
+            #         if confidence > threshold]
+            #         for compound in novel_classifier_predictions}
+            # active_targets_filename = os.path.join(ppb2_output_dir,
+            #     f"active_uniprots_threshold={threshold}.json")
+            # write_json(active_targets, active_targets_filename)
+            write_actives(novel_classifier_predictions, threshold, 
+                output_dir=ppb2_output_dir)
+
     if enrichment:
+
+        '''
+        BEGIN ENRICHMENT ANALYSIS TODO incorporate PPB2?
+        '''
+
         ret = perform_enrichment_on_uniprot_accs(
             targets_to_uniprot_df,
             output_dir=output_dir, threshold=threshold)
@@ -322,8 +346,8 @@ def activity_predict(
 
 class User:
 
-    def __init__(self, id):
-        self.id = id
+    def __init__(self, id_):
+        self.id = id_
 
 if __name__ == "__main__":
     # name = "david"
@@ -334,6 +358,7 @@ if __name__ == "__main__":
 
     ret = activity_predict(user,
         input_file,
+        pass_predict=False,
         enrichment=False)
 
     # # determine_targets(input_file)

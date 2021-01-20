@@ -5,6 +5,7 @@ jupyter_notebooks
 hit_optimisation/autogrow4
 
 */__pycache__/*
+__pycache__/*
 
 /static/compound_images
 
@@ -20,3 +21,4 @@ models/*.pkl.gz
 oe_license.txt
 
 main.py
+models.py

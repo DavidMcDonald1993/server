@@ -66,7 +66,10 @@ def upload_file_view(request):
 
             p = mp.Process(target=activity_predict,
                 args=(request.user, uploaded_file),
-                kwargs={"threshold": threshold})
+                kwargs={"threshold": threshold, 
+                # "pass_predict": False, 
+                # "enrichment": False
+                })
             p.start()
             print ("process spawned")
 

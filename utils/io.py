@@ -192,5 +192,6 @@ if __name__ == "__main__":
     # print (processed_file)
 
     smi = "Cn1cc(Cn2cnc(-c3cnn(C)c3)c2-c2ccc(C#N)cc2)cn1"
+    embedded_mol = embed_2D_mol_in_3D(smi)
 
-    print (embed_2D_mol_in_3D(smi))
+    print (Chem.MolToSmiles(embedded_mol))
