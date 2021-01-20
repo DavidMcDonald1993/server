@@ -270,7 +270,7 @@ def activity_predict(
             sorted([ (target, max_confidences[target], uniprot, association_score)
             for target, uniprot, association_score in targets_to_uniprot], 
                 key=lambda x: x[1], reverse=True), # sort by confidence
-            columns=["target", "max_confidence", "ACC", "association_score"])
+            columns=["target", "max_confidence", "uniprot_ACC", "association_score"])
         targets_to_uniprot_filename = os.path.join(pass_output_dir,
             "unthresholded_targets_to_uniprot.csv")
         targets_to_uniprot_df.to_csv(targets_to_uniprot_filename)
