@@ -66,6 +66,49 @@ def perform_enrichment_analysis(
     
     return enrichment, found, not_found
 
+def perform_enrichment_on_uniprot_accs(
+    uniprot_confidences, 
+    output_dir,
+    threshold=500,
+    ):
+
+    output_dir = os.path.join(output_dir, "enrichment")
+    os.makedirs(output_dir, exist_ok=True)
+
+    print ("perfoming enrichment analysis on uniprot confidences file",
+        "to directory", output_dir)
+
+    above_threshold = uniprot_confidences.loc[
+        uniprot_confidences["max_confidence"] > threshold]
+
+    unique_uniprots = set(above_threshold["uniprot_ACC"])
+    unique_uniprots_filename = os.path.join(output_dir, 
+        "unique_uniprot_ACCs.txt")
+    print ("writing unique uniprots to", unique_uniprots_filename)
+    with open(unique_uniprots_filename, "w") as f:
+        f.write("\n".join(unique_uniprots))
+
+    if len(unique_uniprots) > 0:
+
+        # filenames to output enrichment
+        output_csv_filename = os.path.join(output_dir, 
+            "enrichment.csv")
+        found_filename = os.path.join(output_dir,
+            "found.txt")
+        not_found_filename = os.path.join(output_dir,
+            "not_found.txt")
+        pdf_filename = os.path.join(output_dir,
+            "enrichment_summary.pdf")
+
+        perform_enrichment_analysis(
+            unique_uniprots_filename,
+            output_csv_filename,
+            found_filename,
+            not_found_filename,
+            pdf_filename)
+
+    return 0
+
 if __name__ == "__main__":
     
     uniprot_id_filename = "jupyter_notebooks/1q21o3.txt"

@@ -178,29 +178,24 @@ def get_all_pathways_for_compounds(
     # {f"AND a.Pa>{threshold}" if threshold>0 else ""}
 
     query = f'''
-        SELECT GROUP_CONCAT(DISTINCT(u.acc) SEPARATOR '-') AS `Uniprot ACCS`, 
-            COUNT(DISTINCT(u.acc)) AS `Number Uniprot ACCs`,
-            counts.counts AS `Total Uniprot ACCs`,
-            COUNT(DISTINCT(u.acc)) / counts.counts AS `Uniprot Coverage`,      
-            p.pathway_name AS `Pathway Name`, p.organism AS `Organism`, 
-            p.pathway_url AS `Pathway URL`
-        FROM compounds AS c
-        INNER JOIN activities AS a ON (c.compound_id=a.compound_id) 
-        INNER JOIN targets_to_uniprot AS tu ON (a.target_id=tu.target_id)
-        INNER JOIN uniprot AS u ON (tu.uniprot_id=u.uniprot_id)
-        INNER JOIN uniprot_to_pathway AS up ON (tu.uniprot_id=up.uniprot_id)
-        INNER JOIN (
-            SELECT pathway_id, count(uniprot_id) AS `counts`
-            FROM uniprot_to_pathway
-            GROUP BY pathway_id
-        ) AS `counts` ON (counts.pathway_id=up.pathway_id)
-        INNER JOIN pathway AS p ON (up.pathway_id=p.pathway_id)
-        WHERE {f"c.coconut_id IN {coconut_ids}" if isinstance(coconut_ids, tuple)
-            else f'c.coconut_id="{coconut_ids}"'}
-        {f"AND a.above_{threshold}=(1)" if threshold>0 and filter_pa_pi else ""}
-        {f"AND p.organism='{organism}'" if organism is not None else ""}
-        GROUP BY p.pathway_name, p.organism
-        {f"LIMIT {limit}" if limit is not None else ""}
+    SELECT GROUP_CONCAT(DISTINCT(u.acc) SEPARATOR '-') AS `Uniprot ACCS`, 
+        COUNT(DISTINCT(u.acc)) AS `Number Uniprot ACCs`,
+        p.num_uniprot AS `Total Uniprot ACCs`,
+        COUNT(DISTINCT(u.acc)) / p.num_uniprot AS `Uniprot Coverage`,      
+        p.pathway_name AS `Pathway Name`, p.organism AS `Organism`, 
+        p.pathway_url AS `Pathway URL`
+    FROM compounds AS c
+    INNER JOIN activities AS a ON (c.compound_id=a.compound_id) 
+    INNER JOIN targets_to_uniprot AS tu ON (a.target_id=tu.target_id)
+    INNER JOIN uniprot AS u ON (tu.uniprot_id=u.uniprot_id)
+    INNER JOIN uniprot_to_pathway AS up ON (tu.uniprot_id=up.uniprot_id)
+    INNER JOIN pathway AS p ON (up.pathway_id=p.pathway_id)
+    WHERE {f"c.coconut_id IN {coconut_ids}" if isinstance(coconut_ids, tuple)
+        else f'c.coconut_id="{coconut_ids}"'}
+    {f"AND a.above_{threshold}=(1)" if threshold>0 and filter_pa_pi else ""}
+    {f"AND p.organism='{organism}'" if organism is not None else ""}
+    GROUP BY p.pathway_name, p.organism
+    {f"LIMIT {limit}" if limit is not None else ""}
     '''
     records = mysql_query(query, existing_conn=existing_conn)
 
@@ -229,29 +224,24 @@ def get_all_reactions_for_compounds(
     else:
         assert isinstance(coconut_ids, str)
     query = f'''
-        SELECT GROUP_CONCAT(DISTINCT(u.acc) SEPARATOR '-') AS `Uniprot ACCS`, 
-            COUNT(DISTINCT(u.acc)) AS `Number Uniprot ACCs`,
-            counts.counts AS `Total Uniprot ACCs`,
-            COUNT(DISTINCT(u.acc)) / counts.counts AS `Uniprot Coverage`,   
-            r.reaction_name AS `Reaction Name`, r.organism AS `Organism`, 
-            r.reaction_url AS `Reaction URL`
-        FROM compounds AS c
-        INNER JOIN activities AS a ON (c.compound_id=a.compound_id) 
-        INNER JOIN targets_to_uniprot AS tu ON (a.target_id=tu.target_id)
-        INNER JOIN uniprot AS u ON (tu.uniprot_id=u.uniprot_id)
-        INNER JOIN uniprot_to_reaction AS ur ON (tu.uniprot_id=ur.uniprot_id)
-        INNER JOIN (
-            SELECT reaction_id, count(uniprot_id) AS `counts`
-            FROM uniprot_to_reaction
-            GROUP BY reaction_id
-        ) AS `counts` ON (counts.reaction_id=ur.reaction_id)
-        INNER JOIN reaction AS r ON (ur.reaction_id=r.reaction_id)
-        WHERE {f"c.coconut_id IN {coconut_ids}" if isinstance(coconut_ids, tuple)
-            else f'c.coconut_id="{coconut_ids}"'}
-        {f"AND a.above_{threshold}=(1)" if threshold>0 and filter_pa_pi else ""}
-        {f"AND r.organism='{organism}'" if organism is not None else ""}
-        GROUP BY r.reaction_name, r.organism
-        {f"LIMIT {limit}" if limit is not None else ""}
+    SELECT GROUP_CONCAT(DISTINCT(u.acc) SEPARATOR '-') AS `Uniprot ACCS`, 
+        COUNT(DISTINCT(u.acc)) AS `Number Uniprot ACCs`,
+        r.num_uniprot AS `Total Uniprot ACCs`,
+        COUNT(DISTINCT(u.acc)) / r.num_uniprot AS `Uniprot Coverage`,   
+        r.reaction_name AS `Reaction Name`, r.organism AS `Organism`, 
+        r.reaction_url AS `Reaction URL`
+    FROM compounds AS c
+    INNER JOIN activities AS a ON (c.compound_id=a.compound_id) 
+    INNER JOIN targets_to_uniprot AS tu ON (a.target_id=tu.target_id)
+    INNER JOIN uniprot AS u ON (tu.uniprot_id=u.uniprot_id)
+    INNER JOIN uniprot_to_reaction AS ur ON (tu.uniprot_id=ur.uniprot_id)
+    INNER JOIN reaction AS r ON (ur.reaction_id=r.reaction_id)
+    WHERE {f"c.coconut_id IN {coconut_ids}" if isinstance(coconut_ids, tuple)
+        else f'c.coconut_id="{coconut_ids}"'}
+    {f"AND a.above_{threshold}=(1)" if threshold>0 and filter_pa_pi else ""}
+    {f"AND r.organism='{organism}'" if organism is not None else ""}
+    GROUP BY r.reaction_name, r.organism
+    {f"LIMIT {limit}" if limit is not None else ""}
     '''
     records = mysql_query(query, existing_conn=existing_conn)
 
@@ -360,8 +350,8 @@ def get_pathway_hits(
         COUNT(DISTINCT(`{pathway}_target`.target_name)) AS `{pathway} Number Targets`, 
         GROUP_CONCAT(DISTINCT(`{pathway}_uniprot`.acc) SEPARATOR '-') AS `{pathway} Uniprot ACCs`, 
         COUNT(DISTINCT(`{pathway}_uniprot`.acc)) AS `{pathway} Number Uniprot ACCs`, 
-        `{pathway}_counts`.counts AS `{pathway} Total Uniprot ACCs`,
-        CAST(COUNT(DISTINCT(`{pathway}_uniprot`.acc)) / `{pathway}_counts`.counts AS CHAR)
+        `{pathway}_pathway`.num_uniprot AS `{pathway} Total Uniprot ACCs`,
+        CAST(COUNT(DISTINCT(`{pathway}_uniprot`.acc)) / `{pathway}_pathway`.num_uniprot AS CHAR)
             AS `{pathway} Uniprot Coverage`,   
         `{pathway}_pathway`.pathway_name AS `{pathway} Name`,
         `{pathway}_pathway`.organism AS `{pathway} Organism`,
@@ -372,23 +362,18 @@ def get_pathway_hits(
 
     tables = "\n".join((
         f'''
-            INNER JOIN activities AS `{pathway}_activity` 
-                ON (c.compound_id=`{pathway}_activity`.compound_id)
-            INNER JOIN targets AS `{pathway}_target` 
-                ON (`{pathway}_activity`.target_id=`{pathway}_target`.target_id)
-            INNER JOIN targets_to_uniprot AS `{pathway}_targets_to_uniprot` 
-                ON (`{pathway}_activity`.target_id=`{pathway}_targets_to_uniprot`.target_id)
-            INNER JOIN uniprot AS `{pathway}_uniprot` 
-                ON (`{pathway}_targets_to_uniprot`.uniprot_id=`{pathway}_uniprot`.uniprot_id)
-            INNER JOIN uniprot_to_pathway AS `{pathway}_uniprot_to_pathway` 
-                ON (`{pathway}_targets_to_uniprot`.uniprot_id=`{pathway}_uniprot_to_pathway`.uniprot_id)
-            INNER JOIN (
-                SELECT pathway_id, COUNT(uniprot_id) AS `counts`
-                FROM uniprot_to_pathway
-                GROUP BY pathway_id
-            ) AS `{pathway}_counts` ON `{pathway}_counts`.pathway_id=`{pathway}_uniprot_to_pathway`.pathway_id
-            INNER JOIN pathway AS `{pathway}_pathway`
-                ON (`{pathway}_uniprot_to_pathway`.pathway_id={pathway}_pathway.pathway_id)
+        INNER JOIN activities AS `{pathway}_activity` 
+            ON (c.compound_id=`{pathway}_activity`.compound_id)
+        INNER JOIN targets AS `{pathway}_target` 
+            ON (`{pathway}_activity`.target_id=`{pathway}_target`.target_id)
+        INNER JOIN targets_to_uniprot AS `{pathway}_targets_to_uniprot` 
+            ON (`{pathway}_activity`.target_id=`{pathway}_targets_to_uniprot`.target_id)
+        INNER JOIN uniprot AS `{pathway}_uniprot` 
+            ON (`{pathway}_targets_to_uniprot`.uniprot_id=`{pathway}_uniprot`.uniprot_id)
+        INNER JOIN uniprot_to_pathway AS `{pathway}_uniprot_to_pathway` 
+            ON (`{pathway}_targets_to_uniprot`.uniprot_id=`{pathway}_uniprot_to_pathway`.uniprot_id)
+        INNER JOIN pathway AS `{pathway}_pathway`
+            ON (`{pathway}_uniprot_to_pathway`.pathway_id={pathway}_pathway.pathway_id)
         '''
         for pathway in pathway_names
     ))
@@ -459,8 +444,8 @@ def get_reaction_hits(
         COUNT(DISTINCT(`{reaction}_target`.target_name)) AS `{reaction} Number Targets`, 
         GROUP_CONCAT(DISTINCT(`{reaction}_uniprot`.acc) SEPARATOR '-') AS `{reaction} Uniprot ACCs`, 
         COUNT(DISTINCT(`{reaction}_uniprot`.acc)) AS `{reaction} Number Uniprot ACCs`,
-        `{reaction}_counts`.counts AS `{reaction} Total Uniprot ACCs`,
-        CAST(COUNT(DISTINCT(`{reaction}_uniprot`.acc)) / `{reaction}_counts`.counts AS CHAR)
+        `{reaction}_reaction`.num_uniprot AS `{reaction} Total Uniprot ACCs`,
+        CAST(COUNT(DISTINCT(`{reaction}_uniprot`.acc)) / `{reaction}_reaction`.num_uniprot AS CHAR)
             AS `{reaction} Uniprot Coverage`,    
         `{reaction}_reaction`.reaction_name AS `{reaction} Name`,
         `{reaction}_reaction`.organism AS `{reaction} Organism`,
@@ -471,23 +456,18 @@ def get_reaction_hits(
 
     tables = "\n".join((
         f'''
-            INNER JOIN activities AS `{reaction}_activity` 
-                ON (c.compound_id=`{reaction}_activity`.compound_id)
-            INNER JOIN targets AS `{reaction}_target` 
-                ON (`{reaction}_activity`.target_id=`{reaction}_target`.target_id)
-            INNER JOIN targets_to_uniprot AS `{reaction}_targets_to_uniprot` 
-                ON (`{reaction}_activity`.target_id=`{reaction}_targets_to_uniprot`.target_id)
-            INNER JOIN uniprot AS `{reaction}_uniprot` 
-                ON (`{reaction}_targets_to_uniprot`.uniprot_id=`{reaction}_uniprot`.uniprot_id)
-            INNER JOIN uniprot_to_reaction AS `{reaction}_uniprot_to_reaction` 
-                ON (`{reaction}_targets_to_uniprot`.uniprot_id=`{reaction}_uniprot_to_reaction`.uniprot_id)
-            INNER JOIN (
-                SELECT reaction_id, COUNT(uniprot_id) AS `counts`
-                FROM uniprot_to_reaction
-                GROUP BY reaction_id
-            ) AS `{reaction}_counts` ON `{reaction}_counts`.reaction_id=`{reaction}_uniprot_to_reaction`.reaction_id
-            INNER JOIN reaction AS `{reaction}_reaction`
-                ON (`{reaction}_uniprot_to_reaction`.reaction_id={reaction}_reaction.reaction_id)
+        INNER JOIN activities AS `{reaction}_activity` 
+            ON (c.compound_id=`{reaction}_activity`.compound_id)
+        INNER JOIN targets AS `{reaction}_target` 
+            ON (`{reaction}_activity`.target_id=`{reaction}_target`.target_id)
+        INNER JOIN targets_to_uniprot AS `{reaction}_targets_to_uniprot` 
+            ON (`{reaction}_activity`.target_id=`{reaction}_targets_to_uniprot`.target_id)
+        INNER JOIN uniprot AS `{reaction}_uniprot` 
+            ON (`{reaction}_targets_to_uniprot`.uniprot_id=`{reaction}_uniprot`.uniprot_id)
+        INNER JOIN uniprot_to_reaction AS `{reaction}_uniprot_to_reaction` 
+            ON (`{reaction}_targets_to_uniprot`.uniprot_id=`{reaction}_uniprot_to_reaction`.uniprot_id)
+        INNER JOIN reaction AS `{reaction}_reaction`
+            ON (`{reaction}_uniprot_to_reaction`.reaction_id={reaction}_reaction.reaction_id)
         '''
         for reaction in reaction_names
     ))

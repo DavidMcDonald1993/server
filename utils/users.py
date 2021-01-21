@@ -67,7 +67,7 @@ def get_file_from_token(token, user_id, existing_conn=None):
     else:
         return None
 
-def send_file_to_user(user, filename, max_MB=1):
+def send_file_to_user(user, filename, subject, max_MB=1):
     if os.path.getsize(filename) / (1024*1024) < max_MB: # file smaller than max MB
         # send as attachment
         send_mail(user.username,
@@ -81,7 +81,8 @@ def send_file_to_user(user, filename, max_MB=1):
         print ("generated token", token)
         send_mail(user.username,
             user.email,
-            token=token)
+            token=token,
+            subject=subject)
 
     # TODO delele file?
     # os.remove(filename)

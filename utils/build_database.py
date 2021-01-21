@@ -399,14 +399,18 @@ def populate_targets_to_uniprot(chunksize=50):
 def create_pathway_table():
 
     create_pathway_table_sql = '''
-        CREATE TABLE pathway (
-            pathway_id SMALLINT NOT NULL AUTO_INCREMENT,
-            reactome_identifier VARCHAR(255) NOT NULL UNIQUE,
-            pathway_name VARCHAR(255) NOT NULL,
-            organism VARCHAR(255) NOT NULL,
-            pathway_url VARCHAR(255),
-            PRIMARY KEY(pathway_id)
-        )
+    CREATE TABLE `pathway` (
+    `pathway_id` smallint NOT NULL AUTO_INCREMENT,
+    `reactome_identifier` varchar(25) DEFAULT NULL,
+    `pathway_name` varchar(150) DEFAULT NULL,
+    `organism` varchar(50) DEFAULT NULL,
+    `pathway_url` varchar(65) DEFAULT NULL,
+    `num_uniprot` smallint DEFAULT NULL,
+    PRIMARY KEY (`pathway_id`),
+    UNIQUE KEY `reactome_identifier` (`reactome_identifier`),
+    KEY `pathway_organism` (`pathway_name`,`organism`),
+    KEY `organism` (`organism`)
+    ) ENGINE=InnoDB AUTO_INCREMENT=32767 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci 
     '''
 
     return mysql_create_table(create_pathway_table_sql)
@@ -435,28 +439,6 @@ def populate_pathways():
 
     return mysql_insert_many(insert_pathways_sql, rows)
 
-def populate_reactions():
-    import pandas as pd
-
-    # read reactions
-    reactions = pd.read_csv("/home/david/Desktop/reactions.csv",
-        index_col=0)
-
-    insert_reactions_sql = '''
-        INSERT INTO reaction (reactome_identifier,
-            reaction_name, organism, reaction_url)
-            VALUES (%s, %s, %s, %s)
-            ON DUPLICATE KEY UPDATE 
-            reactome_identifier=reactome_identifier
-    '''
-
-    rows = (
-        (row["identifier"], row["reaction"],
-            row["organism"], row["reaction_url"])
-            for _, row in reactions.iterrows() 
-    )
-
-    return mysql_insert_many(insert_reactions_sql, rows)
 
 def create_uniprot_to_pathway_table():
 
@@ -524,20 +506,60 @@ def populate_uniprot_to_pathways():
 
     return mysql_insert_many(insert_uniprot_to_pathways_sql, rows, existing_conn=conn)
 
+def add_pathway_uniprot_counts():
+    update = '''
+    UPDATE pathway AS p, 
+        (SELECT pathway_id, COUNT(uniprot_id) AS uniprot_count
+        FROM uniprot_to_pathway
+        GROUP BY pathway_id) AS count
+    SET p.num_uniprot=count.uniprot_count
+    WHERE p.pathway_id=count.pathway_id
+    '''
+    mysql_query(update)
+    return 0
+
 def create_reaction_table():
 
     create_reaction_table_sql = '''
-        CREATE TABLE reaction (
-            reaction_id MEDIUMINT NOT NULL AUTO_INCREMENT,
-            reactome_identifier VARCHAR(255) NOT NULL UNIQUE,
-            reaction_name VARCHAR(255) NOT NULL,
-            organism VARCHAR(255) NOT NULL,
-            reaction_url VARCHAR(255),
-            PRIMARY KEY(reaction_id)
-        )
+    CREATE TABLE `reaction` (
+    `reaction_id` mediumint NOT NULL AUTO_INCREMENT,
+    `reactome_identifier` varchar(25) DEFAULT NULL,
+    `reaction_name` varchar(255) NOT NULL,
+    `organism` varchar(50) DEFAULT NULL,
+    `reaction_url` varchar(65) DEFAULT NULL,
+    `num_uniprot` smallint DEFAULT NULL,
+    PRIMARY KEY (`reaction_id`),
+    UNIQUE KEY `reactome_identifier` (`reactome_identifier`),
+    KEY `reaction_organism` (`reaction_name`,`organism`),
+    KEY `organism` (`organism`)
+    ) ENGINE=InnoDB AUTO_INCREMENT=80045 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
     '''
 
     return mysql_create_table(create_reaction_table_sql)
+
+
+def populate_reactions():
+    import pandas as pd
+
+    # read reactions
+    reactions = pd.read_csv("/home/david/Desktop/reactions.csv",
+        index_col=0)
+
+    insert_reactions_sql = '''
+        INSERT INTO reaction (reactome_identifier,
+            reaction_name, organism, reaction_url)
+            VALUES (%s, %s, %s, %s)
+            ON DUPLICATE KEY UPDATE 
+            reactome_identifier=reactome_identifier
+    '''
+
+    rows = (
+        (row["identifier"], row["reaction"],
+            row["organism"], row["reaction_url"])
+            for _, row in reactions.iterrows() 
+    )
+
+    return mysql_insert_many(insert_reactions_sql, rows)
 
 def create_uniprot_to_reaction_table():
    
@@ -603,6 +625,18 @@ def populate_uniprot_to_reactions():
     '''
 
     return mysql_insert_many(insert_uniprot_to_reaction_sql, rows, existing_conn=conn)
+
+def add_reaction_uniprot_counts():
+    update = '''
+    UPDATE reaction AS r, 
+        (SELECT reaction_id, COUNT(uniprot_id) AS uniprot_count
+        FROM uniprot_to_reaction
+        GROUP BY reaction_id) AS count
+    SET r.num_uniprot=count.uniprot_count
+    WHERE r.reaction_id=count.reaction_id
+    '''
+    mysql_query(update)
+    return 0
 
 def create_compound_to_uniprot_table():
 

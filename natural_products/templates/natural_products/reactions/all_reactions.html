@@ -45,7 +45,7 @@
       <tbody>
         {% for reaction_name, reaction_name_encoded, organism, organism_encoded in reactions %}
           <tr>
-            <td> <a href="/natural_products/reactions/{{reaction_name_encoded}}:_:{{organism_encoded}}"> 
+            <td> <a href="/natural_products/reactions/all/{{reaction_name_encoded}}:_:{{organism_encoded}}"> 
             {{ reaction_name }} </a> </td>
             <td>{{organism}}</td>
           </tr>

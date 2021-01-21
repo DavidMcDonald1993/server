@@ -54,8 +54,9 @@
     <div class="results-table" >
 
       <div style="text-align: left;">
-        <h2>Looking at hits for target(s): {{targets}}<br>Using threshold(s): {{thresholds}}</h2> 
-        <h2>Number of hit(s): {{num_hits}}</h2> 
+        <h2>Looking at hits for target(s): {{targets}}</h2>
+        <h3>Using threshold(s): {{thresholds}}</h3> 
+        <h3>Number of hit(s): {{num_hits}}</h3> 
       </div>
 
       <br>
@@ -66,44 +67,46 @@
           <thead>
             <tr>
               {% if show_images %}
-              <th colspan="4">Molecule</th>
+              <th colspan="4" class="bd-left bd-right">Molecule</th>
               {% else %}
-              <th colspan="3">Molecule</th>
+              <th colspan="3" class="bd-right">Molecule</th>
               {% endif %}
               {% for target in targets %}
-              <th colspan="1">{{target}}</th>
+              <th colspan="1" class="bd-right">{{target}}</th>
               {% endfor %}
             </tr>
             <tr>
-              <th>ID</th>
               {% if show_images %}
-              <th>Image</th>
+              <th class="bd-left">Image</th>
               {% endif %}
+              <th class="bd-left">ID</th>
               <th>Compound Name</th>
-              <th>Molecular Formula</th>
+              <th class="bd-right">Molecular Formula</th>
               <!-- <th>SMILES</th> -->
               {% for target in targets %}
               <!-- <th>Pa</th> -->
               <!-- <th>Pi</th> -->
-              <th>Confidence Score</th>
+              <th class="bd-right">Confidence Score</th>
               {% endfor %}
             </tr>
           </thead>
           <tbody>
           {% for hit in target_hits %}
           <tr>
-            <td> <a href="/natural_products/compounds/{{hit.id}}"> {{ hit.id }} </a> </td>
             {% if show_images %}
-            <td> <img src="{% static hit.image %}" alt=""
-              style="width: 100pt; height: 100pt;"></img> </td>
+            <td  class="bd-left"> 
+              <img src="{% static hit.image %}" alt=""
+                style="width: 100pt; height: 100pt;"></img> 
+            </td>
             {% endif %}
+            <td class="bd-left"> <a href="/natural_products/compounds/all/{{hit.id}}"> {{ hit.id }} </a> </td>
             <td> {{ hit.name }} </td>
-            <td> {{ hit.formula }} </td>
+            <td class="bd-right"> {{ hit.formula }} </td>
             <!-- <td> {{ hit.smiles }} </td> -->
             {% for target in hit.targets %}
             <!-- <td> {{ target.pa }} </td> -->
             <!-- <td> {{ target.pi }} </td> -->
-            <td> {{ target.confidence_score }} </td>
+            <td class="bd-right"> {{ target.confidence_score }} </td>
             {% endfor %}
           </tr>
           {% endfor %}

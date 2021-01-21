@@ -5,113 +5,102 @@ import os.path
 sys.path.insert(1, 
     os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 
-from django.utils.encoding import smart_str
-
-from datetime import datetime
-
-from pymongo import MongoClient
-
-import numpy as np
 import pandas as pd
 
 import shutil
 
-from rdkit.Chem.PandasTools import LoadSDF
-
-from utils.pass_utils import (remove_invalid_characters, parse_pass_spectra, 
-    get_all_targets, determine_targets, determine_confidences)
-from utils.enrichment_utils import perform_enrichment_analysis
-from utils.io import process_input_file, write_json, read_smiles, load_json
-from utils.genenames_utils import targets_to_uniprot_ids
+from utils.pass_utils import determine_confidences
+from utils.enrichment_utils import perform_enrichment_on_uniprot_accs
+from utils.io import process_input_file, write_json
 from utils.queries import get_uniprots_for_targets
 from utils.users import send_file_to_user, determine_identifier
-from utils.ppb2_utils import load_model
+from utils.ppb2_utils import perform_predicton_with_novel_classifier, rescale_predicted_uniprot_confidences
 
-def perform_predicton_with_novel_classifier(
-    smiles,
-    model_filename="models/morg3-xgc.pkl.gz",
-    n_proc=6,
-    ):
-    '''
-    Predict from SMILES using novel classifier
-    '''
-    if isinstance(smiles, str): # read from file
-        assert smiles.endswith(".smi")
+# def perform_predicton_with_novel_classifier(
+#     smiles,
+#     model_filename="models/morg3-xgc.pkl.gz",
+#     n_proc=6,
+#     ):
+#     '''
+#     Predict from SMILES using novel classifier
+#     '''
+#     if isinstance(smiles, str): # read from file
+#         assert smiles.endswith(".smi")
     
-        # read (and filter smiles)
-        smiles = read_smiles(
-            smiles,
-            filter_valid=True, 
-            return_series=True)
+#         # read (and filter smiles)
+#         smiles = read_smiles(
+#             smiles,
+#             filter_valid=True, 
+#             return_series=True)
 
-    assert isinstance(smiles, pd.Series)
+#     assert isinstance(smiles, pd.Series)
 
-    model = load_model(model_filename)
-    if hasattr(model, "n_proc"):
-        model.set_n_proc(n_proc)
+#     model = load_model(model_filename)
+#     if hasattr(model, "n_proc"):
+#         model.set_n_proc(n_proc)
     
-    # make prediction using pretrained model
-    # return as n_targets x n_compounds
-    predictions = model.predict_proba(smiles).T 
+#     # make prediction using pretrained model
+#     # return as n_targets x n_compounds
+#     predictions = model.predict_proba(smiles).T 
 
-    # id_to_db_id = load_json("id_to_db_id.json")
-    id_to_target_acc = load_json("models/target_ids.json")
+#     # id_to_db_id = load_json("id_to_db_id.json")
+#     id_to_target_acc = load_json("models/target_ids.json")
     
-    return pd.DataFrame(predictions, 
-        # index=[id_to_db_id[str(i)] for i in range(predictions.shape[1])],
-        index=[id_to_target_acc[str(i)] 
-            for i in range(predictions.shape[0])],
-        columns=smiles.index, 
-    )
+#     return pd.DataFrame(predictions, 
+#         # index=[id_to_db_id[str(i)] for i in range(predictions.shape[1])],
+#         index=[id_to_target_acc[str(i)] 
+#             for i in range(predictions.shape[0])],
+#         columns=smiles.index, 
+#     )
 
-def rescale_predicted_uniprot_confidences(predictions, max_confidence=1000):
-    assert isinstance(predictions, pd.DataFrame)
-    assert predictions.shape[0] == 1683
-    # rescale by max confidence (per compound -- (over all targets)  -- axis 0)
-    return (predictions.divide(predictions.max(axis=0,)) * max_confidence).astype(int)
+# def rescale_predicted_uniprot_confidences(predictions, max_confidence=1000):
+#     assert isinstance(predictions, pd.DataFrame)
+#     assert predictions.shape[0] == 1683
+#     # rescale by max confidence (per compound -- (over all targets)  -- axis 0)
+#     return (predictions.divide(predictions.max(axis=0,)) * max_confidence).astype(int)
 
-def perform_enrichment_on_uniprot_accs(
-    uniprot_confidences, 
-    output_dir,
-    threshold=500,
-    ):
+# def perform_enrichment_on_uniprot_accs(
+#     uniprot_confidences, 
+#     output_dir,
+#     threshold=500,
+#     ):
 
-    output_dir = os.path.join(output_dir, "enrichment")
-    os.makedirs(output_dir, exist_ok=True)
+#     output_dir = os.path.join(output_dir, "enrichment")
+#     os.makedirs(output_dir, exist_ok=True)
 
-    print ("perfoming enrichment analysis on uniprot confidences file",
-        "to directory", output_dir)
+#     print ("perfoming enrichment analysis on uniprot confidences file",
+#         "to directory", output_dir)
 
-    above_threshold = uniprot_confidences.loc[
-        uniprot_confidences["max_confidence"] > threshold]
+#     above_threshold = uniprot_confidences.loc[
+#         uniprot_confidences["max_confidence"] > threshold]
 
-    unique_uniprots = set(above_threshold["uniprot_ACC"])
-    unique_uniprots_filename = os.path.join(output_dir, 
-        "unique_uniprot_ACCs.txt")
-    print ("writing unique uniprots to", unique_uniprots_filename)
-    with open(unique_uniprots_filename, "w") as f:
-        f.write("\n".join(unique_uniprots))
+#     unique_uniprots = set(above_threshold["uniprot_ACC"])
+#     unique_uniprots_filename = os.path.join(output_dir, 
+#         "unique_uniprot_ACCs.txt")
+#     print ("writing unique uniprots to", unique_uniprots_filename)
+#     with open(unique_uniprots_filename, "w") as f:
+#         f.write("\n".join(unique_uniprots))
 
-    if len(unique_uniprots) > 0:
+#     if len(unique_uniprots) > 0:
 
-        # filenames to output enrichment
-        output_csv_filename = os.path.join(output_dir, 
-            "enrichment.csv")
-        found_filename = os.path.join(output_dir,
-            "found.txt")
-        not_found_filename = os.path.join(output_dir,
-            "not_found.txt")
-        pdf_filename = os.path.join(output_dir,
-            "enrichment_summary.pdf")
+#         # filenames to output enrichment
+#         output_csv_filename = os.path.join(output_dir, 
+#             "enrichment.csv")
+#         found_filename = os.path.join(output_dir,
+#             "found.txt")
+#         not_found_filename = os.path.join(output_dir,
+#             "not_found.txt")
+#         pdf_filename = os.path.join(output_dir,
+#             "enrichment_summary.pdf")
 
-        perform_enrichment_analysis(
-            unique_uniprots_filename,
-            output_csv_filename,
-            found_filename,
-            not_found_filename,
-            pdf_filename)
+#         perform_enrichment_analysis(
+#             unique_uniprots_filename,
+#             output_csv_filename,
+#             found_filename,
+#             not_found_filename,
+#             pdf_filename)
 
-    return 0
+#     return 0
 
 def write_actives(confidence_df, threshold, output_dir):
     actives = {compound:

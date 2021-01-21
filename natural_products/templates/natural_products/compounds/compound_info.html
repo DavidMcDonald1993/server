@@ -57,7 +57,9 @@
       <div class="hiddenDiv" style="display: none;">
 
         <div id="categorySidebar" class="sidenav sidenav-right">
-          <h2>Activities</h2>
+          <div style="text-align: center;">
+            <h2>Activities</h2>
+          </div>
           <a href="#PROPERTIES" onclick="showDiv(this)">PROPERTIES</a>
           {% if activities %}
           {% for category, category_activities in activities.items %}
@@ -117,7 +119,7 @@
             <tbody>
               {% for target, target_encoded, pa, pi, diff in category_activities %}
               <tr>
-                <td><a href="/natural_products/targets/{{target_encoded}}">{{target}}</a></td>
+                <td><a href="/natural_products/targets/all/{{target_encoded}}">{{target}}</a></td>
                 <!-- <td>{{pa}}</td> -->
                 <!-- <td>{{pi}}</td> -->
                 <td>{{diff}}</td>
@@ -155,7 +157,7 @@
                 <td>{{num_accs}}</td>
                 <td>{{total_accs}}</td>
                 <td>{{coverage}}</td>
-                <td><a href="/natural_products/pathways/{{pathway_name_encoded}}:_:{{organism_encoded}}">{{pathway_name}}</a></td>
+                <td><a href="/natural_products/pathways/all/{{pathway_name_encoded}}:_:{{organism_encoded}}">{{pathway_name}}</a></td>
                 <td>{{organism}}</td>
                 <td><a href="{{url}}">{{pathway_name}}</td>
               </tr>
@@ -191,7 +193,7 @@
               <td>{{num_accs}}</td>
               <td>{{total_accs}}</td>
               <td>{{coverage}}</td>
-              <td><a href="/natural_products/reactions/{{reaction_name_encoded}}:_:{{organism_encoded}}">{{reaction_name}}</a></td>
+              <td><a href="/natural_products/reactions/all/{{reaction_name_encoded}}:_:{{organism_encoded}}">{{reaction_name}}</a></td>
               <td>{{organism}}</td>
               <td><a href="{{url}}">{{reaction_name}}</td>
             </tr>

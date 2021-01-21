@@ -1,4 +1,13 @@
 .results-table {
     width:75%; 
     margin:0 auto;
+    overflow-x: scroll;
+}
+
+.bd-left {
+    border-left: solid 1px;
+}
+
+.bd-right {
+    border-right: solid 1px;
 }

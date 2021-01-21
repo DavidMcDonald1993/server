@@ -33,8 +33,7 @@ from sklearn.exceptions import NotFittedError
 
 from xgboost import XGBClassifier
 
-from activity_prediction.get_fingerprints import compute_fp, load_training_fingerprints
-
+from utils.fingerprints import compute_fp, load_training_fingerprints
 
 dense_input = {"nn", "lda"}
 support_multi_label = {"nn", "etc", }
