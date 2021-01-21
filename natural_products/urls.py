@@ -16,7 +16,7 @@ urlpatterns = [
     path("targets/all/<str:target>",
         views.target_info_view, name="target_info"),
         
-   path('targets/screening/select/', 
+    path('targets/screening/select/', 
         views.target_select_view, name='target_select'),
     path('targets/screening/hits/', 
         views.show_target_hits_view, name='target_hits'),
