@@ -21,7 +21,7 @@
     "number_of_processors": -1,
     "selector_choice": "Rank_Selector",
     "max_variants_per_compound": 30,
-    "filter_source_compounds": true,
+    "filter_source_compounds": false,
     "use_docked_source_compounds": true,
     "LipinskiLenientFilter": true,
     "docking_exhaustiveness": 1,

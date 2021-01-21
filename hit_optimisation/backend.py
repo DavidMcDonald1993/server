@@ -260,7 +260,8 @@ def hit_optimisation(
         compression, output_dir)
 
     attachment_filename = f"{archive_filename}.{compression}"
-    send_file_to_user(user, attachment_filename)
+    send_file_to_user(user, attachment_filename, 
+        subject="NPAIEngine Hit Optimisation Results")
 
     return 0
 
