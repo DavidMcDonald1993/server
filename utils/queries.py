@@ -314,7 +314,7 @@ def get_target_hits(
     ))
     query = f'''
         SELECT c.compound_id, c.coconut_id AS `ID`, c.image_path AS `Image`, c.name AS `Molecule Name`, 
-            c.formula AS `Molecular Formula`, c.clean_smiles AS `SMILES`,
+            c.formula AS `Molecular Formula`, c.smiles AS `SMILES`,
         {columns}
         FROM compounds AS c
         {tables}
@@ -413,7 +413,7 @@ def get_pathway_hits(
 
     query = f'''
         SELECT c.compound_id, c.coconut_id AS `ID`, c.image_path AS `Image`, c.name AS `Molecule Name`, 
-            c.formula AS `Molecular Formula`, c.clean_smiles AS `SMILES`,
+            c.formula AS `Molecular Formula`, c.smiles AS `SMILES`,
         {columns}
         FROM compounds AS c
         {tables}
@@ -421,7 +421,7 @@ def get_pathway_hits(
         AND `{pathway_names[0]}_pathway`.pathway_name="{pathways[0]}"
         AND `{pathway_names[0]}_pathway`.organism="{organisms[0]}"
         {conditions}
-        GROUP BY c.compound_id, c.coconut_id, c.name, c.formula, c.clean_smiles, {group_by}
+        GROUP BY c.compound_id, c.coconut_id, c.name, c.formula, c.smiles, {group_by}
         ORDER BY `{pathway_names[0]} Uniprot Coverage` DESC
         {f"LIMIT {limit}" if limit is not None else ""}
     '''
@@ -512,7 +512,7 @@ def get_reaction_hits(
 
     query = f'''
         SELECT c.compound_id, c.coconut_id AS `ID`, c.image_path AS `Image`, c.name AS `Molecule Name`, 
-            c.formula AS `Molecular Formula`, c.clean_smiles AS `SMILES`,
+            c.formula AS `Molecular Formula`, c.smiles AS `SMILES`,
         {columns}
         FROM compounds AS c
         {tables}
@@ -520,7 +520,7 @@ def get_reaction_hits(
         AND `{reaction_names[0]}_reaction`.reaction_name="{reactions[0]}"
         AND `{reaction_names[0]}_reaction`.organism="{organisms[0]}"
         {conditions}
-        GROUP BY c.compound_id, c.coconut_id, c.name, c.formula, c.clean_smiles, {group_by}
+        GROUP BY c.compound_id, c.coconut_id, c.name, c.formula, c.smiles, {group_by}
         ORDER BY `{reaction_names[0]} Uniprot Coverage` DESC
         {f"LIMIT {limit}" if limit is not None else ""}
     '''
@@ -535,7 +535,7 @@ def get_reaction_hits(
 
 def get_info_for_multiple_compounds(
     compounds=None, 
-    columns=("coconut_id", "name", "formula", "clean_smiles"),
+    columns=("coconut_id", "name", "formula", "smiles"),
     limit=None):
 
     if compounds is not None:
@@ -604,7 +604,7 @@ if __name__ == "__main__":
     # print (hits["All_targets"])
 
     # smiles = get_info_for_multiple_compounds(compounds=None,
-    #     columns=("compound_id", "clean_smiles"))
+    #     columns=("compound_id", "smiles"))
 
     # from utils.io import write_smiles
     # write_smiles(smiles, "coconut_smiles.smi")

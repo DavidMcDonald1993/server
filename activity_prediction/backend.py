@@ -18,67 +18,19 @@ import shutil
 
 from rdkit.Chem.PandasTools import LoadSDF
 
-# from utils.email_utils import send_mail
-# from utils.mongodb_utils import connect_to_mongodb
 from utils.pass_utils import (remove_invalid_characters, parse_pass_spectra, 
     get_all_targets, determine_targets, determine_confidences)
 from utils.enrichment_utils import perform_enrichment_analysis
 from utils.io import process_input_file, write_json, read_smiles, load_json
 from utils.genenames_utils import targets_to_uniprot_ids
 from utils.queries import get_uniprots_for_targets
-# from utils.rdkit_utils import LoadSDF
 from utils.users import send_file_to_user, determine_identifier
 from utils.ppb2_utils import load_model
 
-# def write_PASS_hits_to_db(
-#     pass_file,
-#     collection="PASS_hits"):
-#     assert isinstance(pass_file, str)
-#     assert pass_file.endswith(".sdf")
-#     print ("reading PASS hits from", pass_file,
-#         "and extracting activity data")
-
-#     pass_activities = LoadSDF(pass_file, 
-#         smilesName="SMILES", molColName=None)
-
-#     db = connect_to_mongodb()
-
-#     print ("writing PASS hits to collection:", collection)
-
-#     hit_collection = db[collection]
-
-#     records = []
-
-#     print ("determining hits")
-
-#     for _, row in pass_activities.iterrows():
-        
-#         entry = {}
-#         for col in row.index:
-#             if pd.isnull(row[col]):
-#                 continue
-#             if col == "PASS_ACTIVITY_SPECTRUM":
-#                 value = list(
-#                     map(parse_pass_spectra, 
-#                         map(remove_invalid_characters,
-#                             row[col].split("\n"))))
-#             else:
-#                 value = row[col]
-#             entry.update({col: value})
-#         entry.update({"time": str(datetime.now())})
-#         records.append(entry)
-
-#     print ("inserting", len(records), "records")
-#     hit_collection.insert_many(records)
-
-#     db.client.close()
-
 def perform_predicton_with_novel_classifier(
-    # smiles_file,
     smiles,
     model_filename="models/morg3-xgc.pkl.gz",
     n_proc=6,
-    # max_confidence=1000
     ):
     '''
     Predict from SMILES using novel classifier
@@ -99,9 +51,8 @@ def perform_predicton_with_novel_classifier(
         model.set_n_proc(n_proc)
     
     # make prediction using pretrained model
-    predictions = model.predict_proba(smiles).T 
-
     # return as n_targets x n_compounds
+    predictions = model.predict_proba(smiles).T 
 
     # id_to_db_id = load_json("id_to_db_id.json")
     id_to_target_acc = load_json("models/target_ids.json")
@@ -115,11 +66,12 @@ def perform_predicton_with_novel_classifier(
 
 def rescale_predicted_uniprot_confidences(predictions, max_confidence=1000):
     assert isinstance(predictions, pd.DataFrame)
-    # rescale by max confidence (per compound -- axis 1)
-    return (predictions.divide(predictions.max(axis=1,), axis=0) * max_confidence).astype(int)
+    assert predictions.shape[0] == 1683
+    # rescale by max confidence (per compound -- (over all targets)  -- axis 0)
+    return (predictions.divide(predictions.max(axis=0,)) * max_confidence).astype(int)
 
 def perform_enrichment_on_uniprot_accs(
-    targets_to_uniprot, 
+    uniprot_confidences, 
     output_dir,
     threshold=500,
     ):
@@ -127,29 +79,11 @@ def perform_enrichment_on_uniprot_accs(
     output_dir = os.path.join(output_dir, "enrichment")
     os.makedirs(output_dir, exist_ok=True)
 
-    print ("perfoming enrichment analysis on targets_to_uniprot file",
+    print ("perfoming enrichment analysis on uniprot confidences file",
         "to directory", output_dir)
 
-    # # determine active targets from PASS-predicted SDF file
-    # active_targets = determine_targets(pass_out_file, threshold=threshold)
-    # active_targets_filename = os.path.join(output_dir,
-    #     f"active_targets_threshold={threshold}.json")
-    # write_json(active_targets, active_targets_filename)
-
-    # unique_target_names = {target 
-    #     for compound, targets in active_targets.items()
-    #     for target, confidence in targets}
-    
-    # # unique_uniprots = targets_to_uniprot_ids(unique_target_names)
-    # targets_to_uniprot = get_uniprots_for_targets(unique_target_names) # SQL query
-    # targets_to_uniprot_filename = os.path.join(output_dir, "targets_to_uniprot.csv")
-    # print ("writing targets to uniprot to", targets_to_uniprot_filename)
-    # targets_to_uniprot = pd.DataFrame(targets_to_uniprot, 
-    #     columns=["target", "uniprot_ACC", "association_score"])
-    # targets_to_uniprot.to_csv(targets_to_uniprot_filename)
-
-    above_threshold = targets_to_uniprot.loc[
-        targets_to_uniprot["max_confidence"] > threshold]
+    above_threshold = uniprot_confidences.loc[
+        uniprot_confidences["max_confidence"] > threshold]
 
     unique_uniprots = set(above_threshold["uniprot_ACC"])
     unique_uniprots_filename = os.path.join(output_dir, 
@@ -181,8 +115,8 @@ def perform_enrichment_on_uniprot_accs(
 
 def write_actives(confidence_df, threshold, output_dir):
     actives = {compound:
-        [target for target, confidence in confidence_df[compound].items()
-            if confidence > threshold]
+        sorted([(target, confidence) for target, confidence in confidence_df[compound].items()
+            if confidence > threshold], key=lambda x: x[1], reverse=True)
             for compound in confidence_df}
     active_targets_filename = os.path.join(output_dir,
         f"actives_(threshold={threshold}).json")
@@ -191,13 +125,13 @@ def write_actives(confidence_df, threshold, output_dir):
 def activity_predict(
     user,
     input_file, 
-    pass_predict=True,
-    ppb2_predict=True,
     compression="zip",
     root_dir="user_files",
-    # archive_dir="archives",
     threshold=500,
-    enrichment=True):
+    pass_predict=True,
+    ppb2_predict=True,
+    perform_enrichment=True,
+    ):
 
     '''
     Perform activity prediction with PASS and PPB2
@@ -251,13 +185,6 @@ def activity_predict(
 
         # write jsons for threshold(s)?
         for threshold in range(500, 1000, 100):
-            # active_targets = {compound:
-            #     [target for target, confidence in confidences[compound].items()
-            #         if confidence > threshold]
-            #         for compound in confidences}
-            # active_targets_filename = os.path.join(pass_output_dir,
-            #     f"active_targets_threshold={threshold}.json")
-            # write_json(active_targets, active_targets_filename)
             write_actives(confidences, threshold, output_dir=pass_output_dir)
 
         max_confidences = confidences.max(axis=1)
@@ -266,14 +193,14 @@ def activity_predict(
         # get uniprots for targets
         targets_to_uniprot = get_uniprots_for_targets(max_confidences.index)
 
-        targets_to_uniprot_df = pd.DataFrame(
+        uniprot_confidences = pd.DataFrame(
             sorted([ (target, max_confidences[target], uniprot, association_score)
             for target, uniprot, association_score in targets_to_uniprot], 
                 key=lambda x: x[1], reverse=True), # sort by confidence
             columns=["target", "max_confidence", "uniprot_ACC", "association_score"])
-        targets_to_uniprot_filename = os.path.join(pass_output_dir,
-            "unthresholded_targets_to_uniprot.csv")
-        targets_to_uniprot_df.to_csv(targets_to_uniprot_filename)
+        uniprot_confidences_filename = os.path.join(pass_output_dir,
+            "unthresholded_uniprot_confidences.csv")
+        uniprot_confidences.to_csv(uniprot_confidences_filename)
     
     if ppb2_predict:
 
@@ -309,24 +236,25 @@ def activity_predict(
 
         # write jsons for threshold(s)?
         for threshold in range(500, 1000, 100):
-            # active_targets = {compound:
-            #     [target for target, confidence in novel_classifier_predictions[compound].items()
-            #         if confidence > threshold]
-            #         for compound in novel_classifier_predictions}
-            # active_targets_filename = os.path.join(ppb2_output_dir,
-            #     f"active_uniprots_threshold={threshold}.json")
-            # write_json(active_targets, active_targets_filename)
             write_actives(novel_classifier_predictions, threshold, 
                 output_dir=ppb2_output_dir)
 
-    if enrichment:
+        if not pass_predict:
+            uniprot_confidences = pd.DataFrame()
+            uniprot_targets = novel_classifier_predictions.index
+            uniprot_confidences["uniprot_ACC"] =\
+                pd.Series(uniprot_targets, index=uniprot_targets)
+            uniprot_confidences["max_confidence"] = novel_classifier_predictions.max(1)
+            
+
+    if perform_enrichment:
 
         '''
         BEGIN ENRICHMENT ANALYSIS TODO incorporate PPB2?
         '''
 
         ret = perform_enrichment_on_uniprot_accs(
-            targets_to_uniprot_df,
+            uniprot_confidences,
             output_dir=output_dir, threshold=threshold)
     
 

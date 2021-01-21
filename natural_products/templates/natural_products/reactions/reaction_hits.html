@@ -37,14 +37,9 @@
 
     <div class="hiddenDiv" style="display: none;">
 
-      <div id="sidebar" class="sidenav sidenav-right">
-        <h2>Hits<h2>
-          <a href="/natural_products/export/">Export(.csv)</a>
-          <a href="/natural_products/smiles/">Export(.smi)</a>
-          <!-- <a href="/natural_products/optimise/">Optimise</a> -->
-      </div>
+      {% include 'hit_navbar.html' %}
 
-    <div class="results-table">
+      <div class="results-table">
 
       <div style="text-align: left;">
         <h2>Looking at hits for reactions(s): {{reactions}}</h2>

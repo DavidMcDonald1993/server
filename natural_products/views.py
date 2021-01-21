@@ -128,7 +128,8 @@ def show_target_hits_view(request, ):
         "thresholds": thresholds,
         "target_hits": target_hits[:MAX_RECORDS],
         "num_hits": num_hits,
-        "show_images": num_hits<MAX_HITS_FOR_IMAGE
+        "show_images": num_hits<MAX_HITS_FOR_IMAGE,
+        "allow_optimise": True
     }
 
     return render(request,
@@ -217,7 +218,8 @@ def show_pathway_hits_view(request, ):
         "threshold": threshold,
         "pathway_hits": pathway_hits[:MAX_RECORDS],
         "num_hits": num_hits,
-        "show_images": num_hits<MAX_HITS_FOR_IMAGE
+        "show_images": num_hits<MAX_HITS_FOR_IMAGE,
+        "allow_optimise": False
     }
 
     return render(request,
@@ -308,7 +310,8 @@ def show_reaction_hits_view(request, ):
         "threshold": threshold,
         "reaction_hits": reaction_hits[:MAX_RECORDS],
         "num_hits": num_hits,
-        "show_images": num_hits<MAX_HITS_FOR_IMAGE
+        "show_images": num_hits<MAX_HITS_FOR_IMAGE,
+        "allow_optimise": False
     }
 
     return render(request,
@@ -318,7 +321,7 @@ def show_reaction_hits_view(request, ):
 def all_compounds_view(request):
 
     compounds = get_info_for_multiple_compounds(
-        columns=("coconut_id", "name", "formula", "clean_smiles"),
+        columns=("coconut_id", "name", "formula", "smiles"),
         limit=MAX_RECORDS
         )
     context = {
@@ -340,7 +343,6 @@ def compound_info_view(request, compound_id):
     # query database
     compound_info = get_coconut_compound_info_from_mongo(compound_id)
 
-    assert "clean_smiles" in compound_info
     assert "name" in compound_info 
     compound_name = compound_info["name"]
 
@@ -449,7 +451,8 @@ def target_info_view(request, target):
         "threshold": threshold,
         "target_hits": target_hits[:MAX_RECORDS],
         "num_hits": num_hits,
-        "show_images": num_hits<MAX_HITS_FOR_IMAGE
+        "show_images": num_hits<MAX_HITS_FOR_IMAGE,
+        "allow_optimise": True
     }
 
     return render(request, 
@@ -536,7 +539,8 @@ def pathway_info_view(request, pathway_organism):
         "threshold": threshold,
         "pathway_hits": pathway_hits[:MAX_RECORDS],
         "num_hits": num_hits,
-        "show_images": num_hits<MAX_HITS_FOR_IMAGE
+        "show_images": num_hits<MAX_HITS_FOR_IMAGE,
+        "allow_optimise": False
     }
 
     return render(request,
@@ -623,7 +627,8 @@ def reaction_info_view(request, reaction_organism):
         "threshold": threshold,
         "reaction_hits": reaction_hits[:MAX_RECORDS],
         "num_hits": num_hits,
-        "show_images": num_hits<MAX_HITS_FOR_IMAGE
+        "show_images": num_hits<MAX_HITS_FOR_IMAGE,
+        "allow_optimise": False
     }
 
     return render(request,
@@ -667,10 +672,6 @@ def export_hit_smiles_view(request):
     smiles = [(row["ID"], row["SMILES"])
         for _, row in hits.iterrows()]
 
-    # smiles = get_info_for_multiple_compounds(
-    #     compounds=[hit[0] for hit in hits],
-    #     columns=("coconut_id", "clean_smiles"))
-
     smiles_filename = write_smiles_to_file(user_id, targets, thresholds, smiles)
 
     return serve(request, 
@@ -696,10 +697,6 @@ def optimise_target_hits_view(request):
 
     smiles = [(row["ID"], row["SMILES"])
         for _, row in hits.iterrows()]
-
-    # smiles = get_info_for_multiple_compounds(
-    #     compounds=[hit[0] for hit in hits],
-    #     columns=("coconut_id", "clean_smiles"))
 
     smiles_filename = write_smiles_to_file(user_id, targets, thresholds, smiles)
     request.session["smiles_filename"] = smiles_filename

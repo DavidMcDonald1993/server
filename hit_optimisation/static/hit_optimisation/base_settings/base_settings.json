@@ -29,11 +29,11 @@
     "generate_plot": true,
     "rescore_lig_efficiency": true,
     "scoring_choice": "VINA",
-    "dock_choice": "VinaDocking",
+    "dock_choice": "QuickVina2Docking",
     "debug_mode": false,
     "rxn_library": "all_rxns",
     "redock_elite_from_previous_gen": true,
     "reduce_files_sizes": false,
     "gypsum_thoroughness": 1,
-    "gypsum_timeout_limit": 10
+    "gypsum_timeout_limit": 60
 }
