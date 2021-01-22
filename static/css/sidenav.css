@@ -1,10 +1,10 @@
 .sidenav {
     height:100%;
-    width:200px;
-    position: fixed;
+    /* width:15%; */
+    /* position: fixed; */
     z-index:1;
     top:0;
-    background-color:#111;
+    background-color:rgb(119, 116, 116);
     overflow-x: hidden;
 }
 
@@ -12,7 +12,7 @@
     padding:6px 8px 6px 16px;
     text-decoration: none;
     font-size:18px;
-    color: #818181;
+    color: #000000;
     display:block;
 }
 
@@ -21,15 +21,13 @@
 }	
 
 .sidenav h2 {
-    color: #818181;
+    color: #000000;
 }
 
 .sidenav-left {
-    left:0;
     text-align: left;
 }
 
 .sidenav-right {
-    right:0;
     text-align: right;
 }

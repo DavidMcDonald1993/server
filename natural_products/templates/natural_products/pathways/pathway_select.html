@@ -2,75 +2,61 @@
 
 <html lang="en">
 
-  <head>
+  {% include 'header.html' %}
 
-    {% include 'header.html' %}
-
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.12.6/css/selectize.bootstrap3.min.css" 
-      integrity="sha256-ze/OEYGcFbPRmvCnrSeKbRTtjG4vGLHXgOqsyLFTRjg=" crossorigin="anonymous" />
-
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.12.6/js/standalone/selectize.min.js" 
-        integrity="sha256-+C0A5Ilqmu4QcSPxrlGpaZxJ04VjsRjKu+G82kl5UJk=" crossorigin="anonymous"></script>
-
-    {% load static %}
-       
-    <script type="text/javascript" src="{% static 'js/selectize_options.js' %}"></script>
-
-    <link rel="stylesheet" type="text/css" href="{% static 'css/select_forms.css' %}">
-    <script type="text/javascript" src="{% static 'js/select_forms.js' %}"></script>
-
-    <script type="text/javascript" src="{% static 'js/show_hidden.js' %}"></script>
-
-  </head>
-
-  <body style="text-align: center;">
+  <body class="normal">
 
     {% include 'navbar.html' %}
 
-    <div>
-      <h1>Pathway selection</h1>
+    <header>
+      <h1>Multi-pathway Screening</h1>
+      <h2>Pathway selection</h2>
+    </header>
+
+    <main>
+    
+      <div class="hiddenDiv">
+        <form class="select-form" action="/natural_products/pathways/screening/hits/" method="get">
+        
+          <div>
+            <label for="pathways">Select pathway(s):</label>
+            <select name="pathways" id="pathways" multiple>
+              {% for pathway, pathway_encoded, organism, organism_encoded in pathways %}
+              <option value="{{organism_encoded}}:_:{{pathway_encoded}}">{{organism}}: {{pathway}}</option>
+              {% endfor %}
+            </select> 
+          </div>
+
+          <br>
+          <br>
+
+          <label for="threshold">Threshold (Pa):</label>
+          <select name="threshold" id="threshold">
+            {% for threshold in thresholds %}
+            <option value={{threshold}}>{{threshold}}</option>
+            {% endfor %}
+          </select>
+
+          <br>
+          <br>
+
+          <label for="checkbox">Pa>Pi?</label>
+          <input id="checkbox" name="checkbox" type="checkbox" checked readonly>
+
+          <br>
+          <br>
+
+          <input type="submit" id="submit" value="Submit" disabled="disabled">
+        </form> 
+      </div>
+
+    </main>
+
+    <footer>
       <form action="/" >
         <input type="submit" value="Go home">
       </form>
-    </div>
-
-    <br>
-
-    <div class="hiddenDiv" style="display: none;">
-    <form class="select-form" action="/natural_products/pathway/screening/hits/" method="get">
-    
-      <div>
-        <label for="pathways">Select pathway(s):</label>
-        <select name="pathways" id="pathways" multiple>
-          {% for pathway, pathway_encoded, organism, organism_encoded in pathways %}
-          <option value="{{organism_encoded}}:_:{{pathway_encoded}}">{{organism}}: {{pathway}}</option>
-          {% endfor %}
-        </select> 
-      </div>
-
-      <br>
-      <br>
-
-      <label for="threshold">Threshold (Pa):</label>
-      <select name="threshold" id="threshold">
-        {% for threshold in thresholds %}
-        <option value={{threshold}}>{{threshold}}</option>
-        {% endfor %}
-      </select>
-
-      <br>
-      <br>
-
-      <label for="checkbox">Pa>Pi?</label>
-      <input id="checkbox" name="checkbox" type="checkbox" checked>
-
-      <br>
-      <br>
-
-      <input type="submit" id="submit" value="Submit" disabled="disabled">
-    </form> 
-    </div>
+    </footer>
 
   </body>
 </html>

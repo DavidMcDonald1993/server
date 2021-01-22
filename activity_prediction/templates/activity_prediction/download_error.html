@@ -1,20 +1,27 @@
 <!doctype html>
 <html>
-  <head>
-    {% include 'header.html' %}
-  </head>
-  <body style="text-align: center;">
+  {% include 'header.html' %}
+ 
+  <body class="normal">
 
     {% include 'navbar.html' %}
  
-    <h1>Download unsuccessful</h1>
-    <p>No file found for user or user did not match token.<p>
-    <br>
-    <div>  
-      <form action="/activity_prediction" method="get">
-        <input type="submit" value="Go back">
-      </form> 
-    </div>
+    <header>
+      <h1>Download unsuccessful</h1>
+    </header>
+    <main>
+      <p>No file found for user or user did not match token.<p>
+      <br>
+      <div>  
+        <form action="/activity_prediction" method="get">
+          <input type="submit" value="Go back">
+        </form> 
+      </div>
+    </main>
+
+  <footer>
+
+  </footer>
 
   </body>
 </html>

@@ -1,28 +1,25 @@
 <!doctype html>
 <html>
-  <head>
-    {% include 'header.html'%}
-  </head>
+  {% include 'header.html'%}
 
-  <body style="text-align: center;">
-    <div>
+  <body class="normal">
 
       {% include 'navbar.html' %}
 
-      <h1>Welcome to NPAIEngine's SDF file upload page!</h1>
-      {% if form %}
+      <header>
+        <h1>Ligand Activity Prediction and Pathway Enrichment Analysis</h1>
+      </header>
+
+      <main>
+        {% if form %}
         <form enctype="multipart/form-data" action="/activity_prediction/upload/" method="post">
           {% csrf_token %}
 
           <div>
             <h2>User Details</h2>
-              <label for="username">Username:</label>
-              <input type="text" id="username" 
-                name="username" value={{username}} readonly> 
+              <label for="username">Username: {{username}}</label>
               <br>
-              <label for="user_email">Desired email address:</label>
-              <input type="text" id="user_email" 
-                name="user_email" value={{user_email}} readonly> 
+              <label for="user_email">Email address: {{user_email}}</label>
               <br>
           </div>
     
@@ -61,17 +58,13 @@
       {% else %}
       <p>No form.</p>
       {% endif %}
-    </div>
+    </main>
 
-    <br>
-    <br>
-
-    <div>
-    
+    <footer>
       <form action="/activity_prediction">
         <input type="submit" value="Go to NPAIEngine home">
       </form> 
-
-    </div>
+    </footer>
+    
   </body>
 </html>

@@ -1,62 +1,46 @@
 <!doctype html>
 <html lang="en">
 
-  <head>
-    {% include 'header.html' %}
-    
-    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
-    <link rel="stylesheet" href="http://cdn.datatables.net/1.10.2/css/jquery.dataTables.min.css">
+  {% include 'header.html' %}
 
-    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
-    <script type="text/javascript" src="http://cdn.datatables.net/1.10.2/js/jquery.dataTables.min.js"></script>
-    <script type="text/javascript" src="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
-
-    {% load static %}
-
-    <script type="text/javascript" src="{% static 'js/make_datatables.js' %}"></script>
-
-    <script type="text/javascript" src="{% static 'js/show_hidden.js' %}"></script>
-
-    <link rel="stylesheet" type="text/css" href="{% static 'css/tables.css' %}">
-
-  </head>
-
-  <body style="text-align: center;" onload="makeDataTable(['allTargetsTable'], [0])" >
+  <body class="normal" onload="makeDataTable(['allTargetsTable'], [0])" >
 
     {% include 'navbar.html' %}
 
-    <div>
-    <h1>All Targets</h1>
-    <form action="/" >
-      <input type="submit" value="Return to home">
-    </form>
-    </div>
+    <header>
+      <h1>All Targets</h1>
+    </header>
 
-    <div class="hiddenDiv" style="display:none;">
+    <main>
         
-    <div class="table-responsive results-table" >
-    <table id="allTargetsTable" class="display table data" style="width:100%;text-align:center;">
+      <div class="table-responsive results-table hiddenDiv" >
+        <table id="allTargetsTable" class="display table data">
 
-      <thead>
-        <tr>
-            <th>Category</th>
-            <th>Target Name</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for category, target_name, target_name_encoded in targets %}
-          <tr>
-            <td>{{ category }}</td> 
-            <td> <a href="/natural_products/targets/all/{{target_name_encoded}}"> 
-            {{ target_name }} </a> </td>
-          </tr>
-        {% endfor %}
-        </tbody>
-    </table>
-    </div>
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th>Target Name</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for category, target_name, target_name_encoded in targets %}
+              <tr>
+                <td>{{ category }}</td> 
+                <td> <a href="/natural_products/targets/all/{{target_name_encoded}}"> 
+                {{ target_name }} </a> </td>
+              </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+      </div>
 
-  </div>
-   
+    </main>
 
-</body>
+    <footer>
+      <form action="/" >
+        <input type="submit" value="Return to home">
+      </form>
+    </footer>
+  
+  </body>
 </html>

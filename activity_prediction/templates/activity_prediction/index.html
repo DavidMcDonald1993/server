@@ -1,94 +1,88 @@
 <!doctype html>
 <html>
-  <head>
-    {% include 'header.html' %}
-  </head>
-  <body style="text-align: center;">
+  {% include 'header.html' %}
+
+  <body class="normal" style="text-align: center;">
 
     {% include 'navbar.html' %}
- 
-    <h1>Welcome to NPAIEngine!</h1>
-    <br>
-    <div>   
-       <h2>Compound Activity Prediction and Pathway Enrichment Analysis</h2>
 
-      <form action="activity_prediction/upload/">
-        <input type="submit" value="Go to compound file upload">
-      </form> 
+    <header>
+      <h1>Welcome to NPAIEngine!</h1>
+    </header>
+    
+    <main>
+      <div>   
+        <h2>Compound Activity Prediction and Pathway Enrichment Analysis</h2>
+
+        <form action="activity_prediction/upload/">
+          <input type="submit" value="Go to compound file upload">
+        </form> 
+      </div>
+
+      <br>
+      <br>
+
+      <div>
+        <h2>Natural Product Library</h2>
+        <form action="/natural_products/compounds/">
+          <input type="submit" value="Browse all natural products">
+        </form> 
+      </div>
+
+      <br>
+      <br>
+    
+      <div>
+        <h2>Multi-Target Reverse Screening</h2>
+      <div>
+        <h3>Target-based screening</h3>
+        <form action="/natural_products/targets/screening/select/">
+          <input type="submit" value="Go to target selection">
+        </form> 
+      </div>
+
+      <br>
+      <br>
+
+      <div>
+        <h3>Pathway-based screening</h3>
+        <form action="/natural_products/pathways/screening/select/">
+          <input type="submit" value="Go to pathway selection">
+        </form> 
+      </div>
+
+      <br>
+      <br>
+
+      <div>
+        <h3>Reaction-based screening</h3>
+        <form action="/natural_products/reactions/screening/select/">
+          <input type="submit" value="Go to reaction selection">
+        </form> 
+      </div>
+
+      </div>
+
+
+      <br>
+      <br>
+
+      <div>
+        <h2>Hit Optimisation</h2>
+        <form action="hit_optimisation/">
+          <input type="submit" value="Go to hit optimisation">
+      </form>
     </div>
 
-    <br>
-    <br>
-
-    <!-- <div>
-      <h2>Natural Product Library</h2>
-      <form action="natural_products/">
-        <input type="submit" value="Go to natural product library">
-    </form>
-
-    </div>  -->
-
-    <div>
-      <h2>Natural Product Library</h2>
-    <form action="/natural_products/compounds/">
-      <input type="submit" value="Browse all natural products">
-    </form> 
-    </div>
-
-    <br>
-    <br>
-   
-    <div>
-      <h2>Multi-Target Reverse Screening</h2>
-    <div>
-      <h3>Target-based screening</h3>
-    <form action="/natural_products/target_selection/">
-      <input type="submit" value="Go to target selection">
-    </form> 
-    </div>
-
-    <br>
-    <br>
-
-    <div>
-      <h3>Pathway-based screening</h3>
-    <form action="/natural_products/pathway_selection/">
-      <input type="submit" value="Go to pathway selection">
-    </form> 
-    </div>
-
-    <br>
-    <br>
-
-    <div>
-      <h3>Reaction-based screening</h3>
-    <form action="/natural_products/reaction_selection/">
-      <input type="submit" value="Go to reaction selection">
-    </form> 
-    </div>
-
-    </div>
-
-
-    <br>
-    <br>
-
-    <div>
-      <h2>Hit Optimisation</h2>
-      <form action="hit_optimisation/">
-        <input type="submit" value="Go to hit optimisation">
-    </form>
-  </div>
-
-  <br>
-  <br>
-
-  <div>
-    <h2>Log out</h2>
-    <form action="logout">
+  </main>
+  
+  <footer>
+    <!-- <h2>Log out</h2> -->
+    <form action="/logout">
       <input type="submit" value="Logout">
-  </form>
-  </div>
+    </form>
+  </footer>
+
 
   </body>
 </html>

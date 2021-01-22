@@ -1,67 +1,46 @@
 <!doctype html>
 <html lang="en">
 
-  <head>
-    {% include 'header.html' %}
-    
-    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
-    <link rel="stylesheet" href="http://cdn.datatables.net/1.10.2/css/jquery.dataTables.min.css">
+  {% include 'header.html' %}
 
-    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
-    <script type="text/javascript" src="http://cdn.datatables.net/1.10.2/js/jquery.dataTables.min.js"></script>
-    <script type="text/javascript" src="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
-
-    {% load static %}
-
-    <script type="text/javascript" src="{% static 'js/make_datatables.js' %}"></script>
-
-    <script type="text/javascript" src="{% static 'js/show_hidden.js' %}"></script>
-
-    <link rel="stylesheet" type="text/css" href="{% static 'css/tables.css' %}">
-
-  </head>
-
-  <body style="text-align: center;" 
-    onload="makeDataTable(['allCompoundsTable'], [1])" >
+  <body class="normal" onload="makeDataTable(['allCompoundsTable'], [1])" >
 
     {% include 'navbar.html' %}
 
-    <div>
-    <h1>All natural products</h1>
+    <header>
+      <h1>All natural products</h1>
+    </header>
+    <main>
+      <div class="table-responsive results-table hiddenDiv" >
+        <table id="allCompoundsTable" class="display table data" style="width:100%;text-align:center;">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Molecular Formula</th>
+              <th>SMILES</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for id, name, formula, smiles in compounds %}
+            <tr>
+              <td> <a href="/natural_products/compounds/all/{{id}}"> 
+              {{ id }} </a> </td>
+              <td>{{name}}</td> 
+              <td>{{formula}}</td> 
+              <td>{{smiles}}</td> 
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </main>
+
+  <footer>
     <form action="/" >
       <input type="submit" value="Return to home">
     </form>
-    </div>
-
-    <div class="hiddenDiv" style="display:none;">
-        
-    <div class="table-responsive results-table" >
-    <table id="allCompoundsTable" class="display table data" style="width:100%;text-align:center;">
-
-      <thead>
-        <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Molecular Formula</th>
-            <th>SMILES</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for id, name, formula, smiles in compounds %}
-          <tr>
-            <td> <a href="/natural_products/compounds/all/{{id}}"> 
-            {{ id }} </a> </td>
-            <td>{{name}}</td> 
-            <td>{{formula}}</td> 
-            <td>{{smiles}}</td> 
-          </tr>
-        {% endfor %}
-        </tbody>
-    </table>
-    </div>
-
-  </div>
-   
+  </footer>
 
 </body>
 </html>

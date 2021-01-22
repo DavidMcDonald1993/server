@@ -1,120 +1,94 @@
 <!doctype html>
 <html lang="en">
 
-  <head>
+  {% include 'header.html' %}
 
-    {% include 'header.html' %}
-
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.12.6/css/selectize.bootstrap3.min.css" 
-    integrity="sha256-ze/OEYGcFbPRmvCnrSeKbRTtjG4vGLHXgOqsyLFTRjg=" crossorigin="anonymous" />
-
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.12.6/js/standalone/selectize.min.js" 
-      integrity="sha256-+C0A5Ilqmu4QcSPxrlGpaZxJ04VjsRjKu+G82kl5UJk=" crossorigin="anonymous"></script>
-
-    {% load static %}
-
-    <script type="text/javascript" src="{% static 'js/selectize_options.js' %}"></script>
-
-    <link rel="stylesheet" type="text/css"  href="{% static 'css/select_forms.css' %}">
-    <script type="text/javascript"  src="{% static 'js/select_forms.js' %}"></script>
-
-    <link rel="stylesheet" type="text/css"  href="{% static 'css/select.css' %}">
-
-    <script type="text/javascript" src="{% static 'js/show_hidden.js' %}"></script>
-
-  </head>
-
-  <body style="text-align: center;">
+  <body class="normal">
 
     {% include 'navbar.html' %}
 
+    <header>
+      <h1>Hit Optimisation</h1>
+    </header>
 
-    <div id="hiddenDiv" class="hiddenDiv" style="display: none;">
-  
-      <div>
-        <h1>Hit Optimisation</h1>
-      </div>
+    <body>
 
-      <form class="select-form" enctype="multipart/form-data" action="/hit_optimisation/" method="post">
-        {% csrf_token %}
+      <div id="hiddenDiv" class="hiddenDiv">
 
-        <div>
-          <h2>User Details</h2>
-            <label for="username">User name:</label>
-            {% if username %}
-            <input type="text" id="username" 
-              name="username" value={{username}} readonly> 
-            {% else %}
-            <input type="text" id="username" 
-              name="username"> 
-            {% endif %}
+        <form class="select-form center" enctype="multipart/form-data" action="/hit_optimisation/" method="post">
+          {% csrf_token %}
+
+          <div>
+            <h2>User Details</h2>
+            <label for="username">User name: {{username}}</label>
             <br>
-            <label for="user_email">Email address:</label>
-            {% if user_email %}
-            <input type="text" id="user_email" 
-              name="user_email" value={{user_email}} readonly> 
-            {% else %}
-            <input type="text" id="user_email" 
-              name="user_email"> 
-            {% endif %}
-            <br>
-        </div>
+            <label for="user_email">Email address: {{user_email}}</label>
+          </div>
 
-        <div>
-          <h2>Target Selection</h2>
-          <label for="target">Select target (PDB ID):</label>
-          {% if pdb_ids %}
-          <select name=target id=target>
-            {% for target, symbol, score, pdb_id in pdb_ids %}
-            <option value={{pdb_id}}>{{target}}--{{symbol}}({{score}})--{{pdb_id}}</option>
-            {% endfor %}
-          </select> 
-          {% else %}
-          <input type="text" id="target" 
-            name="target" value="1UK0"> 
-          {% endif %}
           <br>
 
-          <label for="chain">Chain</label>
-          <input type="text" id="chain" 
-            name="chain" value="A"> 
+          <div>
+            <h2>Target Selection</h2>
+            <label for="target">Select target (PDB ID):</label>
+            {% if pdb_ids %}
+            <select name=target id=target>
+              {% for target, symbol, score, pdb_id in pdb_ids %}
+              <option value={{pdb_id}}>{{target}}--{{symbol}}({{score}})--{{pdb_id}}</option>
+              {% endfor %}
+            </select> 
+            {% else %}
+            <input type="text" id="target" name="target" value="1UK0"> 
+            {% endif %}
+            <br>
+
+            <label for="chain">Chain</label>
+            <input type="text" id="chain"  name="chain" value="A"> 
+          </div>
+
           <br>
+      
+          <div>
+            <h2>Seed Compounds</h2>
+            {% if smiles_filename %}
+            <label for="input_smiles">Seed compounds:</label>
+            <input type="text" id="input_smiles" 
+              name="input_smiles" value="{{smiles_filename}}" readonly> 
+            {% else %}
+            {{form}}
+            {% endif %}
+          </div>
+
+          <div>
+            <h2>Optimisation Settings</h2>
+            <table class="display">
+              {% for setting, description, value in settings %}
+              <tr>
+                <td> {{setting}} </td>
+                <td> {{description}} </td>
+                <td>
+                  <input type="text" id={{setting}} 
+                    name={{setting}} value={{value}}> 
+                </td>
+              </tr>
+              {% endfor %}
+            </table>
+          </div>
+          <br>
+
+          <div class="center">
+            <input type="submit" value="Submit">
+          </div>
+        </form>
+
       </div>
-  
-      <div>
-        <h2>Seed Compounds</h2>
-        {% if smiles_filename %}
-          <label for="input_smiles">Seed compounds:</label>
-          <input type="text" id="input_smiles" 
-            name="input_smiles" value="{{smiles_filename}}" readonly> 
-        {% else %}
-        {{form}}
-        {% endif %}
-      </div>
 
-      <div>
-        <h2>Optimisation Settings</h2>
-        {% for setting, value in settings %}
-        <label for={{setting}}>{{setting}}:</label>
-        <input type="text" id={{setting}} 
-          name={{setting}} value={{value}}> 
-        <br>
-        {% endfor %}
-      </div>
-        <br>
-        <input type="submit" value="Submit">
-      </form>
+    </body>
 
-    </div>
+    <footer>
+        <form class="center" action="/">
+          <input id="backButton" type="submit" value="Return to home">
+        </form>
+    </footer>
 
-    <br>
-    <br>
-
-    <div>
-      <form action="/activity_prediction">
-        <input id="backButton" type="submit" value="Return to home">
-      </form>
-    </div>
   </body>
 </html>

@@ -17,7 +17,7 @@ from utils.genenames_utils import search_for_targets
 
 import urllib.parse as urlparse
 
-from hit_optimisation.backend import load_base_settings
+from hit_optimisation.backend import load_base_settings, load_parameter_descriptions
 
 # human_targets = get_human_targets()
 
@@ -34,6 +34,7 @@ display_keys = [
     "diversity_mols_to_seed_first_generation",
     "diversity_seed_depreciation_per_gen",
     "num_generations",
+    "max_variants_per_compound",
 ]
 
 def upload_view(request):
@@ -42,18 +43,19 @@ def upload_view(request):
         return HttpResponseRedirect("/login")
 
     base_settings = load_base_settings()
+    parameter_descriptions = load_parameter_descriptions()
 
-    display_settings = {
-        key: base_settings[key]
+    display_settings = [
+        (key, parameter_descriptions[key], base_settings[key])
         for key in display_keys
-    }
+    ]
 
     if request.method == 'POST':
         form = UploadFileForm(request.POST, request.FILES)
-        if "smiles_filename" in request.session or form.is_valid():
+        if "smiles_filename" in request.session.keys() or form.is_valid():
 
             target = request.POST["target"]
-            if "smiles_filename" in request.session:
+            if "smiles_filename" in request.session.keys():
                 uploaded_file = request.session.pop("smiles_filename") # string full location on server
             else:
                 # smiles file from client
@@ -79,13 +81,13 @@ def upload_view(request):
 
     context = {
         # "targets": human_targets,
-        "settings": display_settings.items(),
+        "settings": display_settings,
         "form": form,
         "username": request.user.username,
         "user_email": request.user.email,
     }
 
-    if "targets" in request.session.keys():
+    if "optimise" in request.session.keys() and request.session.pop("optimise") and "targets" in request.session.keys():
         targets = request.session.pop("targets")
         targets_to_gene_symbols = search_for_targets(targets, 
             only_best_scoring=True, max_hits=100)

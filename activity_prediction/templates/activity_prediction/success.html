@@ -1,24 +1,25 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    {% include 'header.html' %}
-  </head>
-  <body style="text-align: center;">
+
+  {% include 'header.html' %}
+
+  <body class="normal">
 
     {% include 'navbar.html' %}
 
-    <div>
+    <header>
       <h1>Activity prediction request success</h1>
-        <p>You will receive an email when the results are ready.</p>
-    </div>
+      <p>You will receive an email when the results are ready.</p>
+    </header>
 
-    <br>
-    <br>
-   
-    <div>
-    <form action="/activity_prediction">
-      <input type="submit" value="Go to NPAIEngine home">
-    </form> 
-  </div>
+    <main>
+      <form action="/activity_prediction">
+        <input type="submit" value="Go to NPAIEngine home">
+      </form> 
+    </main>
+
+    <footer>
+
+    </footer>
   </body>
 </html>

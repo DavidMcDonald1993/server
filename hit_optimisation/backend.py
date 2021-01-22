@@ -138,6 +138,14 @@ def load_base_settings(
     with open(settings_file, "r") as f:
         return json.load(f)
 
+def load_parameter_descriptions(
+    settings_file=os.path.join("hit_optimisation", "static",
+        "hit_optimisation", "base_settings", "autogrow_parameters.json")):
+    assert os.path.exists(settings_file)
+    print ("loading base settings from", settings_file)
+    with open(settings_file, "r") as f:
+        return json.load(f)
+
 def determine_settings(
     chain_filename,
     input_smiles_file,
@@ -244,6 +252,8 @@ def hit_optimisation(
     cmd = f'''
     python hit_optimisation/autogrow4/RunAutogrow.py\
         --json "{settings_filename}"
+        > {output_dir}/autogrow.out
+        2> {output_dir}/autogrow.err
     '''
     
     ret = os.system(cmd)

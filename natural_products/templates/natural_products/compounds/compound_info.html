@@ -1,28 +1,11 @@
 <!doctype html>
 <html lang="en">
 
-  <head>
+  {% include 'header.html' %}
+  {% load static %}
+  <script type="text/javascript" src="{%static 'natural_products/categories.js' %}"></script>
 
-    {% include 'header.html' %}
-
-    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
-    <link rel="stylesheet" href="http://cdn.datatables.net/1.10.2/css/jquery.dataTables.min.css">
-  
-    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
-    <script type="text/javascript"  src="http://cdn.datatables.net/1.10.2/js/jquery.dataTables.min.js"></script>
-    <script type="text/javascript"  src="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
-
-    {% load static %}
-
-    <script type="text/javascript"  src="{% static 'js/make_datatables.js' %}"></script>
-    <script type="text/javascript" src="{% static 'js/show_hidden.js' %}"></script>
-
-    <script type="text/javascript" src="{% static 'natural_products/categories.js' %}"></script>
-
-  </head>
-
-  <body style="text-align: center;"
-    onload="makeDataTable(
+  <body class="right" onload="makeDataTable(
       ['PROPERTIESTable', 'ALL_TARGETSTable', 
         'ANTITARGETSTable', 'EFFECTSTable', 'GENE_EXPRESSIONTable', 
         'MECHANISMSTable', 'METABOLISMTable', 'TOXICITYTable', 'TRANSPORTERSTable',
@@ -30,19 +13,31 @@
       [0, 1, 1, 1, 1, 1, 1, 1, 1, 3, 3])">
 
     {% include 'navbar.html' %}
-
-    <div style="width:75%; margin:0 auto;">
     
-      <div>
-        <h1>{{compound_name}}</h1>
-        <h2>Activities for Pa threshold: {{threshold}}</h2>
-        <form action="/natural_products">
-          <input type="submit" 
-            value="Return to screening selection">
-        </form>
-      </div>
+    <header>
+      <h1>{{compound_name}}</h1>
+      <p>Activities for Pa threshold: {{threshold}}</p>
+    </header>
 
-      <br>
+    <nav id="categorySidebar" class="sidenav sidenav-right">
+      <div style="text-align: center;">
+        <h2>Activities</h2>
+      </div>
+      <a href="#PROPERTIES" onclick="showDiv(this)">PROPERTIES</a>
+      {% if activities %}
+      {% for category, category_activities in activities.items %}
+      <a href="#{{category}}" onclick="showDiv(this)">{{category}}</a>
+      {% endfor %}
+      {% endif %}
+      {% if pathways %}
+      <a href="#PATHWAYS" onclick="showDiv(this)">PATHWAYS</a>
+      {% endif %}
+      {% if reactions %}
+      <a href="#REACTIONS" onclick="showDiv(this)">REACTIONS</a>
+      {% endif %}
+    </nav>
+
+    <main>
 
       {% if img_filename %}
       <div>
@@ -56,26 +51,6 @@
 
       <div class="hiddenDiv" style="display: none;">
 
-        <div id="categorySidebar" class="sidenav sidenav-right">
-          <div style="text-align: center;">
-            <h2>Activities</h2>
-          </div>
-          <a href="#PROPERTIES" onclick="showDiv(this)">PROPERTIES</a>
-          {% if activities %}
-          {% for category, category_activities in activities.items %}
-          <a href="#{{category}}" onclick="showDiv(this)">{{category}}</a>
-          {% endfor %}
-          {% endif %}
-          {% if pathways %}
-          <a href="#PATHWAYS" onclick="showDiv(this)">PATHWAYS</a>
-          {% endif %}
-          {% if reactions %}
-          <a href="#REACTIONS" onclick="showDiv(this)">REACTIONS</a>
-          {% endif %}
-        </div>
-
-        <div> 
-    
         <div id="nav-#PROPERTIES" style="display: inline;">
           
           <h2>Molecule Properties</h2>
@@ -128,9 +103,9 @@
             </tbody>
           </table>
         </div>
-
         {% endfor %}
         {% endif %}
+
         <!-- pathways -->
         <div id="nav-#PATHWAYS"  style="display: none;">
         
@@ -166,43 +141,51 @@
           </table>
         </div>
 
-      <!-- reactions -->
+        <!-- reactions -->
 
-      <div id="nav-#REACTIONS" style="display: none;">
+        <div id="nav-#REACTIONS" style="display: none;">
       
-        <h2>Reactions</h2>
-        <table id="REACTIONSTable" class="display table data"
-          style="width:100%;text-align:center;display:inline;">
-          
-          <thead>
-            <tr>
-              <th>Uniprot ACCs</th>
-              <th>Number Uniprot ACCs</th>
-              <th>Total ACCs</th>
-              <th>Uniprot Coverage</th>
-              <th>Reaction Name</th>
-              <th>Reaction Organism</th>
-              <th>Reactome URL</th>
-            </tr>
-          </thead>
-          
-          <tbody>
-            {% for accs, num_accs, total_accs, coverage, reaction_name, reaction_name_encoded, organism, organism_encoded, url in reactions %}
-            <tr>
-              <td>{{accs}}</td>
-              <td>{{num_accs}}</td>
-              <td>{{total_accs}}</td>
-              <td>{{coverage}}</td>
-              <td><a href="/natural_products/reactions/all/{{reaction_name_encoded}}:_:{{organism_encoded}}">{{reaction_name}}</a></td>
-              <td>{{organism}}</td>
-              <td><a href="{{url}}">{{reaction_name}}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+          <h2>Reactions</h2>
+          <table id="REACTIONSTable" class="display table data"
+            style="width:100%;text-align:center;display:inline;">
+            
+            <thead>
+              <tr>
+                <th>Uniprot ACCs</th>
+                <th>Number Uniprot ACCs</th>
+                <th>Total ACCs</th>
+                <th>Uniprot Coverage</th>
+                <th>Reaction Name</th>
+                <th>Reaction Organism</th>
+                <th>Reactome URL</th>
+              </tr>
+            </thead>
+            
+            <tbody>
+              {% for accs, num_accs, total_accs, coverage, reaction_name, reaction_name_encoded, organism, organism_encoded, url in reactions %}
+              <tr>
+                <td>{{accs}}</td>
+                <td>{{num_accs}}</td>
+                <td>{{total_accs}}</td>
+                <td>{{coverage}}</td>
+                <td><a href="/natural_products/reactions/all/{{reaction_name_encoded}}:_:{{organism_encoded}}">{{reaction_name}}</a></td>
+                <td>{{organism}}</td>
+                <td><a href="{{url}}">{{reaction_name}}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-    </div>
+    </main>
+
+    <footer>
+      <form action="/">
+        <input type="submit" 
+          value="Return to home">
+      </form>
+    </footer>
 
   </body>
 </html>

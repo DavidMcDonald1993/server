@@ -1,69 +1,29 @@
 <!doctype html>
 <html lang="en">
 
-  <head>
-
-    {% include 'header.html' %}
-    
-    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
-    <link rel="stylesheet" href="http://cdn.datatables.net/1.10.2/css/jquery.dataTables.min.css">
-
-    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
-    <script type="text/javascript"  src="http://cdn.datatables.net/1.10.2/js/jquery.dataTables.min.js"></script>
-    <script type="text/javascript"  src="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
-       
-    {% load static %}
-
-    <link rel="stylesheet" type="text/css" href="{% static 'css/tables.css' %}">
-    <script type="text/javascript" src="{% static 'js/make_datatables.js' %}"></script>
-
-    <script type="text/javascript" src="{% static 'js/show_hidden.js' %}"></script>
-
-  </head>
+  {% include 'header.html' %}
+  {% load static %}
 
   {% if show_images %}
-  <body style="text-align: center;" onload="makeDataTable(['resultsTable'], [4, ])"> 
+  <body class="right" onload="makeDataTable(['resultsTable'], [4, ])"> 
   {% else %}
-  <body style="text-align: center;" onload="makeDataTable(['resultsTable'], [3, ])">
+  <body class="right" onload="makeDataTable(['resultsTable'], [3, ])">
   {% endif %}
-  <!-- <body style="text-align: center;"> -->
-
     
     {% include 'navbar.html' %}
 
-    <div>
-      <h1>Results</h1>
-
-      <form action="/natural_products/target_selection/">
-        <input type="submit" value="Back to target selection">
-      </form>
- 
-    </div>
-
-  <div class="hiddenDiv" style="display: none;">
-
-    <!-- <div id="sidebar" class="sidenav sidenav-right">
-      <h2>Hits<h2>
-        <a href="/natural_products/export/">Export(.csv)</a>
-        <a href="/natural_products/smiles/">Export(.smi)</a>
-        <a href="/natural_products/optimise/">Optimise</a>
-    </div> -->
     {% include 'hit_navbar.html' %}
 
+    <header>
+      <h1>Hits for Targets(s): {{targets}}</h1>
+      <p>Using threshold: {{threshold}}</p> 
+      <p>Number of hits: {{num_hits}}</p> 
+    </header>
 
-    <div class="results-table" >
+    <main>
 
-      <div style="text-align: left;">
-        <h2>Looking at hits for target(s): {{targets}}</h2>
-        <h3>Using threshold(s): {{thresholds}}</h3> 
-        <h3>Number of hit(s): {{num_hits}}</h3> 
-      </div>
-
-      <br>
-  
-      <div class="table-responsive">
-        <table id=resultsTable class="display table data"
-          style="width:100%;text-align:center;display:inline;">
+      <div class="table-responsive hiddenDiv">
+        <table id=resultsTable class="display table data">
           <thead>
             <tr>
               {% if show_images %}
@@ -94,7 +54,7 @@
           {% for hit in target_hits %}
           <tr>
             {% if show_images %}
-            <td  class="bd-left"> 
+            <td class="bd-left"> 
               <img src="{% static hit.image %}" alt=""
                 style="width: 100pt; height: 100pt;"></img> 
             </td>
@@ -113,9 +73,14 @@
           </tbody>
         </table>
       </div>
-    </div>
+  
+    </main>
 
-  </div>
+    <footer>
+      <form action="/natural_products/targets/screening/select/">
+        <input type="submit" value="Back to targets selection">
+      </form>
+    </footer>
 
   </body>
 </html>

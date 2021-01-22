@@ -40,7 +40,7 @@ DEFAULT_THRESHOLD = 750
 
 MAX_RECORDS = 10000
 
-MAX_HITS_FOR_IMAGE = 500
+MAX_HITS_FOR_IMAGE = 2000
 
 VALID_ORGANISMS = (
     "Homo sapiens", 
@@ -56,7 +56,7 @@ VALID_ORGANISMS = (
 def target_select_view(request):
 
     targets = get_all_targets_for_categories(
-        categories={"MECHANISMS", "GENE_EXPRESSION"})
+        categories={"MECHANISMS", "GENE_EXPRESSION", "TOXICITY"})
     targets = (
             (c, t, urlparse.quote(t))
         for c, t in targets
@@ -68,7 +68,8 @@ def target_select_view(request):
         "targets": targets,
         "thresholds": thresholds}
     return render(request,
-        "natural_products/targets/target_select.html", context)
+        "natural_products/targets/target_select.html", 
+        context)
 
 def show_target_hits_view(request, ):
 
@@ -125,7 +126,7 @@ def show_target_hits_view(request, ):
 
     context = {
         "targets": targets,
-        "thresholds": thresholds,
+        "threshold": threshold,
         "target_hits": target_hits[:MAX_RECORDS],
         "num_hits": num_hits,
         "show_images": num_hits<MAX_HITS_FOR_IMAGE,
@@ -133,7 +134,8 @@ def show_target_hits_view(request, ):
     }
 
     return render(request,
-        "natural_products/targets/target_hits.html", context)
+        "natural_products/targets/target_hits.html", 
+        context)
         
 def pathway_select_view(request):
 
@@ -321,7 +323,7 @@ def show_reaction_hits_view(request, ):
 def all_compounds_view(request):
 
     compounds = get_info_for_multiple_compounds(
-        columns=("coconut_id", "name", "formula", "smiles"),
+        columns=("coconut_id", "name", "formula", "clean_smiles"),
         limit=MAX_RECORDS
         )
     context = {
@@ -685,6 +687,7 @@ def optimise_target_hits_view(request):
     user_id = request.user.id
     if "targets" not in request.session.keys():
         return HttpResponseRedirect("/")
+        
     targets = request.session["targets"]
     thresholds = request.session["thresholds"]
     hits = request.session["hits"]
@@ -700,5 +703,7 @@ def optimise_target_hits_view(request):
 
     smiles_filename = write_smiles_to_file(user_id, targets, thresholds, smiles)
     request.session["smiles_filename"] = smiles_filename
+
+    request.session["optimise"] = True
 
     return HttpResponseRedirect("/hit_optimisation")
