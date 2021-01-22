@@ -50,7 +50,7 @@ def upload_view(request):
         for key in display_keys
     ]
 
-    if request.method == 'POST':
+    if request.method == "POST":
         form = UploadFileForm(request.POST, request.FILES)
         if "smiles_filename" in request.session.keys() or form.is_valid():
 
