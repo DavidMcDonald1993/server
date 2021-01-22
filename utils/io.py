@@ -88,24 +88,44 @@ def embed_2D_mol_in_3D(smi):
     mol = Chem.MolFromSmiles(smi)
     my_mol_with_H = Chem.AddHs(mol)
 
-    AllChem.EmbedMolecule(my_mol_with_H)
-    AllChem.MMFFOptimizeMolecule(my_mol_with_H)
+    try:
+        AllChem.EmbedMolecule(my_mol_with_H,useRandomCoords=False)
+        AllChem.MMFFOptimizeMolecule(my_mol_with_H)
+    except ValueError:
+        AllChem.EmbedMolecule(my_mol_with_H,useRandomCoords=True)
+        AllChem.MMFFOptimizeMolecule(my_mol_with_H)
+
 
     embedded_mol = Chem.RemoveHs(my_mol_with_H)
     return embedded_mol
 
 def smiles_to_sdf(
     smiles_filename, 
-    sdf_filename):
+    sdf_filename,
+    standardise=True,
+    embed=False):
     print ("converting smiles from", smiles_filename, 
         "to SDF file", sdf_filename)
     smiles_df = read_smiles(smiles_filename, )
-    smiles_df["Molecule"] = smiles_df["SMILES"].map(embed_2D_mol_in_3D)
-    smiles_df["MoleculeStandard"] = smiles_df["SMILES"].map(standardise_smi)
-    smiles_df["clean_SMILES"] = smiles_df["MoleculeStandard"].map(Chem.MolToSmiles, na_action="ignore")
-    smiles_df = smiles_df.loc[~pd.isnull(smiles_df["Molecule"])] # drop missing values
-    # AddMoleculeColumnToFrame(smiles_df, 'SMILES', 'Molecule')
-    WriteSDF(smiles_df, sdf_filename, molColName="Molecule",
+
+    print ("num smiles:", smiles_df.shape[0])
+
+    AddMoleculeColumnToFrame(smiles_df, 'SMILES', 'Molecule')
+    molColName = "Molecule"
+
+    if standardise:
+        print ("standardising SMILES")
+        smiles_df["MoleculeStandard"] = smiles_df["SMILES"].map(standardise_smi, na_action="ignore")
+        molColName = "MoleculeStandard"
+
+    if embed:
+        print ("embedding SMILES into 3D")
+        smiles_df["MoleculeEmbedded"] = smiles_df["SMILES"].map(embed_2D_mol_in_3D, na_action="ignore")
+        molColName = "MoleculeEmbedded"
+
+    smiles_df = smiles_df.loc[~pd.isnull(smiles_df[molColName])] # drop missing values
+    print ("num SMILES remaining:", smiles_df.shape[0])
+    WriteSDF(smiles_df, sdf_filename, molColName=molColName,
         idName="RowID", properties=list(smiles_df.columns))
 
 def process_input_file(
@@ -169,7 +189,8 @@ def process_input_file(
                 smiles_filename = temp_file
                 print ("SMILES filename:", smiles_filename)
                 temp_file = temp_file_name + desired_format
-                smiles_to_sdf(smiles_filename, temp_file)
+                smiles_to_sdf(smiles_filename, temp_file,
+                    standardise=True, embed=False)
             else:
                 raise NotImplementedError
         else:
@@ -183,11 +204,11 @@ def process_input_file(
 
 if __name__ == "__main__":
     
-    # input_file = "temp.smi"
-    # desired_format = ".sdf"
-    # output_dir = "/home/david/Desktop"
+    input_file = "/home/david/Desktop/targets=PARP1_expression_enhancer-thresholds=950-hits.smi"
+    desired_format = ".sdf"
+    output_dir = "."
     
-    # processed_file = process_input_file(input_file, desired_format, output_dir)
+    processed_file = process_input_file(input_file, desired_format, output_dir)
 
     # print (processed_file)
 
@@ -197,6 +218,6 @@ if __name__ == "__main__":
     # print (Chem.MolToSmiles(embedded_mol))
 
 
-    parameter_info = load_json("autogrow_parameters.json")
+    # parameter_info = load_json("autogrow_parameters.json")
 
-    print (parameter_info)
+    # print (parameter_info)
