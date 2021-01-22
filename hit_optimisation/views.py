@@ -63,7 +63,8 @@ def upload_view(request):
            
             chain = request.POST["chain"]
            
-            user_settings = {key: int(request.POST[key]) for key in display_settings}
+            user_settings = {key: int(request.POST[key]) 
+                for key, _, _ in display_settings}
            
             if isinstance(uploaded_file, str) and uploaded_file.endswith(".smi")\
                     or uploaded_file.name.endswith(".smi"):
