@@ -20,16 +20,26 @@ def perform_enrichment_analysis(
     pdf_filename=None,
     token=None,
     to_hsa=True,
-    resource="TOTAL"):
+    resource="TOTAL",
+    num_attempts=10,):
     assert isinstance(uniprot_id_filename, str)
     assert os.path.exists(uniprot_id_filename), uniprot_id_filename
    
     print ("performing pathway enrichment")
     ana = AnalysisService()
     print ("generating token using file", uniprot_id_filename)
-    token = ana.get_token(uniprot_id_filename,
-        token=token,
-        to_hsa=to_hsa,)
+
+    for attempt_no in range(num_attempts):
+
+        try:
+            token = ana.get_token(uniprot_id_filename,
+                token=token,
+                to_hsa=to_hsa,)
+            break
+        except Exception as e:
+            print (attempt_no, "REACTOME POST EXCEPTION")
+            print (e)
+            pass
 
     tm = TokenManager(token)
 
@@ -111,11 +121,12 @@ def perform_enrichment_on_uniprot_accs(
 
 if __name__ == "__main__":
     
-    uniprot_id_filename = "jupyter_notebooks/1q21o3.txt"
-    output_csv_filename = "jupyter_notebooks/enrichment.csv"
-    found_filename = "jupyter_notebooks/found.txt"
-    not_found_filename = "jupyter_notebooks/not_found.txt"
-    pdf_filename = "jupyter_notebooks/summary.pdf"
+    uniprot_id_filename = "user_files/user_id=1/activity_prediction/targets=PARP1_expression_enhancer-thresholds=950-hits-2021-01-22-16:22:15.247338/enrichment/unique_uniprot_ACCs.txt"
+    # uniprot_id_filename = "uniprots.txt"
+    output_csv_filename = "trash/enrichment.csv"
+    found_filename = "trash/found.txt"
+    not_found_filename = "trash/not_found.txt"
+    pdf_filename = "trash/summary.pdf"
 
     enrichment, found, not_found =\
         perform_enrichment_analysis(uniprot_id_filename,

@@ -124,3 +124,16 @@ def sanitise_names(names):
         re.sub(r"( |\+|-|\*|/|=|<|>|\(|\)|,|\.|'|\[|\]|:|;|{|})", "_", name)
         for name in names]
 
+if __name__ == "__main__":
+    
+    query = '''
+    SELECT acc
+    FROM uniprot
+    LIMIT 10000
+
+    ''' 
+
+    records = mysql_query(query)
+
+    with open("uniprots.txt", "w") as f:
+        f.write("\n".join((record[0] for record in records)))

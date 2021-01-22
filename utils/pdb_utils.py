@@ -24,9 +24,8 @@ def get_human_targets():
     print ("found", len(human_targets), "human_targets")
     return set(human_targets)
 
-human_targets = get_human_targets()
-
-def get_pdb_ids_from_gene_symbol(gene_symbol): # CHANGE FOR UNIPROT DATABASE?
+def get_pdb_ids_from_gene_symbol(gene_symbol,
+    filter_human=True): # CHANGE FOR UNIPROT DATABASE?
     print ("searching for PDB IDs for gene symbol", gene_symbol)
     search_service = SearchService.TEXT
     # is_human_operator = text_operators.ExactMatchOperator(
@@ -47,8 +46,10 @@ def get_pdb_ids_from_gene_symbol(gene_symbol): # CHANGE FOR UNIPROT DATABASE?
         results = perform_search(search_service, gene_search_operator, return_type)
         # results = perform_search_with_graph(
             # query_object=is_human_and_gene_search, return_type=return_type)
+        if filter_human:
+            results = get_human_targets().intersection(results)
         print ("found", len(results), "results")
-        return sorted(set(results).intersection(human_targets))
+        return sorted(results)
 
     except JSONDecodeError as e:
         print ("EXCEPTION")

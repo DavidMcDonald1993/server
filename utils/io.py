@@ -116,6 +116,7 @@ def smiles_to_sdf(
     if standardise:
         print ("standardising SMILES")
         smiles_df["MoleculeStandard"] = smiles_df["SMILES"].map(standardise_smi, na_action="ignore")
+        smiles_df["SMILESStandard"] = smiles_df["MoleculeStandard"].map(Chem.MolToSmiles, na_action="ignore")
         molColName = "MoleculeStandard"
 
     if embed:
