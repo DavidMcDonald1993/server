@@ -205,7 +205,7 @@ def activity_predict(
                 f"{compound}_uniprot_confidences.csv")
             uniprot_confidences.to_csv(uniprot_confidences_filename)
 
-            for _, row in uniprot_confidences.drop_duplicates("uniprot_acc", keep="first").iterrows():
+            for _, row in uniprot_confidences.drop_duplicates("uniprot_ACC", keep="first").iterrows():
                 uniprot_acc = row["uniprot_ACC"]
                 target_confidence = row["target_confidence"]
                 joint_uniprot_confidences[compound].update({uniprot_acc: target_confidence})
