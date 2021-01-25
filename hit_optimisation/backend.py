@@ -16,7 +16,7 @@ import scoria
 
 import shutil
 
-from utils.io import process_input_file
+from utils.io import process_input_file, BRICS_decompose_smiles_file
 from utils.email_utils import send_mail
 from utils.users import send_file_to_user, determine_identifier
 
@@ -151,7 +151,8 @@ def determine_settings(
     input_smiles_file,
     bounding_box,
     user_settings,
-    output_dir):
+    output_dir
+    ):
 
     # loading basic settings
     settings = load_base_settings()
@@ -222,6 +223,11 @@ def hit_optimisation(
     print ("performing hit optimisation for target", pdb_id,
         "with smiles file", input_smiles_file, )
 
+    # perform BRICS decomposition
+    decomposition_file = os.path.join(output_dir,
+        "BRICS_decomposition.smi")
+    BRICS_decompose_smiles_file(input_smiles_file, decomposition_file)
+
     # download and process pdb file
     pdb_file = download_pdb_file(pdb_id, 
         download_dir=output_dir)
@@ -243,16 +249,17 @@ def hit_optimisation(
 
     # determine run settings
     settings_filename = determine_settings(
-        chain_filename, 
-        input_smiles_file, 
-        bounding_box, 
-        user_settings, 
-        output_dir)
+        chain_filename=chain_filename, 
+        # input_smiles_file=input_smiles_file, 
+        input_smiles_file=decomposition_file,
+        bounding_box=bounding_box, 
+        user_settings=user_settings, 
+        output_dir=output_dir)
 
     cmd = f'''
     python hit_optimisation/autogrow4/RunAutogrow.py\
-        --json "{settings_filename}"
-        > {output_dir}/autogrow.out
+        --json "{settings_filename}"\
+        > {output_dir}/autogrow.out\
         2> {output_dir}/autogrow.err
     '''
     

@@ -157,7 +157,10 @@ def activity_predict(
 
         pass_out_file = base_name + "-PASS-out.sdf"
 
-        cmd = "PASS2019toSDF.exe {} {}".format(input_sdf_file, pass_out_file)
+        cmd = f'''
+        PASS2019toSDF.exe {input_sdf_file} {pass_out_file}\
+            > pass.out 2> pass.err
+        '''
         print ("executing command:", cmd)
 
         ret = os.system(cmd)
@@ -183,15 +186,22 @@ def activity_predict(
 
         # max_confidences = confidences.max(axis=1)
         # threshold?
-        predicted_uniprot_dir = os.path.join(pass_output_dir, "predicted_uniprots")
+        predicted_uniprot_dir = os.path.join(pass_output_dir, "predicted_uniprot_ACCs")
         os.makedirs(predicted_uniprot_dir, exist_ok=True)
+
+        compounds_with_no_targets = []
 
         for compound in confidences:
             print ("determining predicted targets for compound", compound,
                 "using threshold", enrichment_threshold)
             compound_confidences = confidences[compound]
             targets = [k for k, v in compound_confidences.items() 
-                if v>enrichment_threshold]
+                if v > enrichment_threshold]
+
+            if len(targets) == 0:
+                print ("NO TARGETS FOR COMPOUND", compound)
+                compounds_with_no_targets.append(compound)
+                continue
 
             # get uniprots for targets
             targets_to_uniprot = get_uniprots_for_targets(targets)
@@ -210,6 +220,11 @@ def activity_predict(
                 target_confidence = row["target_confidence"]
                 joint_uniprot_confidences[compound].update({uniprot_acc: target_confidence})
 
+        compounds_with_no_targets_filename = os.path.join(pass_output_dir, 
+            f"compounds_with_no_predicted_targets_above_{enrichment_threshold}.txt")
+        print ("writing list of missing compounds to", compounds_with_no_targets_filename)
+        with open(compounds_with_no_targets_filename, "w") as f:
+            f.write("\n".join(compounds_with_no_targets))
 
     
     if ppb2_predict:

@@ -19,6 +19,16 @@ from rdkit.Chem.PandasTools import LoadSDF
 from rdkit import Chem
 from rdkit.Chem import AllChem
 from rdkit.Chem.PandasTools import WriteSDF, AddMoleculeColumnToFrame
+from rdkit.Chem.BRICS import BRICSDecompose
+
+
+def BRICS_decompose_smiles(smi):
+    mol = Chem.MolFromSmiles(smi)
+    if mol is None:
+        return mol
+    return BRICSDecompose(mol)
+
+
 
 def valid_smiles(smi):
     assert smi is not None
@@ -140,7 +150,7 @@ def process_input_file(
     assert desired_format in valid_input_file_types 
     if not isinstance(input_file, str):
         assert hasattr(input_file, "name")
-        print ("input file has been recieved from client -- downloading")
+        print ("input file has been received from client -- downloading")
         input_file_type = os.path.splitext(input_file.name)[1]
         assert input_file_type in valid_input_file_types
         # write compounds to server local directory
@@ -203,13 +213,31 @@ def process_input_file(
     
     return temp_file
 
+def BRICS_decompose_smiles_file(smiles_file, out_file, keep_original=True):
+    print ("performing BRICS decomposition on smiles file", smiles_file,
+        "outputting to", out_file)
+    smiles = read_smiles(smiles_file, return_series=True)
+
+    decomposed_smiles = [] 
+
+    for compound, smi in smiles.items():
+        if keep_original:
+            decomposed_smiles.append((compound, smi))
+            for i, fragment in enumerate(BRICS_decompose_smiles(smi)):
+                decomposed_smiles.append((f"{compound}_{i+1}", fragment))
+
+    write_smiles(decomposed_smiles, out_file)
+
 if __name__ == "__main__":
     
-    input_file = "/home/david/Desktop/targets=PARP1_expression_enhancer-thresholds=950-hits.smi"
-    desired_format = ".sdf"
-    output_dir = "."
+    input_file = "/home/david/Desktop/targets=PARP1_expression_enhancer-thresholds=950-hits-clean.smi"
+    # desired_format = ".sdf"
+    # output_dir = "."
+    out_file = "decomposed_test.smi"
     
-    processed_file = process_input_file(input_file, desired_format, output_dir)
+    # processed_file = process_input_file(input_file, desired_format, output_dir)
+
+    BRICS_decompose_smiles_file(input_file, out_file)
 
     # print (processed_file)
 

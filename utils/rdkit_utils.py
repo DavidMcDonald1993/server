@@ -93,9 +93,11 @@ def LoadSDF(filename, idName='ID', molColName='ROMol', includeFingerprints=False
 
 if __name__ == "__main__":
 
-    smiles_to_sdf("/home/david/Desktop/test_compounds.smi", "/home/david/Desktop/test_compounds.sdf")
+    # smiles_to_sdf("/home/david/Desktop/test_compounds.smi", "/home/david/Desktop/test_compounds.sdf")
 
     # mol = Chem.MolFromSmiles("Cn1cc(Cn2cnc(-c3cnn(C)c3)c2-c2ccc(C#N)cc2)cn1")
+
+    print (BRICS_decompose_smiles("Cn1cc(Cn2cnc(-c3cnn(C)c3)c2-c2ccc(C#N)cc2)cn1"))
     # print(dict((k, mol.GetProp(k)) for k in mol.GetPropNames()))
 
     # import glob 
