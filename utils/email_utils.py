@@ -29,7 +29,7 @@ def send_mail(
     host_information = load_json("host_credentials.json")
     credentials = load_json("email_credentials.json")
 
-    print ("sending email to user", receiver_name, "at address", receiver_address)
+    print ("sending email to user", receiver_name, "at address", receiver_address, "with subject", subject)
     print ("sending file", attach_file_name)
 
     #Setup the MIME

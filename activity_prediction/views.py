@@ -67,7 +67,7 @@ def upload_file_view(request):
             p = mp.Process(target=activity_predict,
                 args=(request.user, uploaded_file),
                 kwargs={
-                    "threshold": threshold, 
+                    "enrichment_threshold": threshold, 
                     "pass_predict": use_pass, 
                     "ppb2_predict": use_ppb,
                     "perform_enrichment": perform_enrichment,

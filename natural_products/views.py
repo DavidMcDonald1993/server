@@ -339,6 +339,7 @@ def compound_info_view(request, compound_id):
     threshold = DEFAULT_THRESHOLD
 
     context = {
+        "compound_id": compound_id,
         "threshold": threshold,
     }
 
@@ -371,8 +372,9 @@ def compound_info_view(request, compound_id):
         threshold=threshold,
     )
 
+    from rdkit import Chem
+
     context.update({
-        "compound_id": compound_id,
         "compound_name": compound_name,
         "compound_info": compound_info,
         "activities": activities,

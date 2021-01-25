@@ -9,6 +9,8 @@ import pandas as pd
 
 import shutil
 
+from collections import defaultdict
+
 from utils.pass_utils import determine_confidences
 from utils.enrichment_utils import perform_enrichment_on_uniprot_accs
 from utils.io import process_input_file, write_json
@@ -116,7 +118,8 @@ def activity_predict(
     input_file, 
     compression="zip",
     root_dir="user_files",
-    threshold=500,
+    enrichment_threshold=750,
+    max_confidence=1000,
     pass_predict=True,
     ppb2_predict=True,
     perform_enrichment=True,
@@ -134,6 +137,8 @@ def activity_predict(
 
     output_dir = os.path.join(root_dir, identifier)
     os.makedirs(output_dir, exist_ok=True)
+
+    joint_uniprot_confidences = defaultdict(dict)
 
     if pass_predict:
 
@@ -176,20 +181,36 @@ def activity_predict(
         for threshold in range(500, 1000, 100):
             write_actives(confidences, threshold, output_dir=pass_output_dir)
 
-        max_confidences = confidences.max(axis=1)
+        # max_confidences = confidences.max(axis=1)
         # threshold?
+        predicted_uniprot_dir = os.path.join(pass_output_dir, "predicted_uniprots")
+        os.makedirs(predicted_uniprot_dir, exist_ok=True)
 
-        # get uniprots for targets
-        targets_to_uniprot = get_uniprots_for_targets(max_confidences.index)
+        for compound in confidences:
+            print ("determining predicted targets for compound", compound,
+                "using threshold", enrichment_threshold)
+            compound_confidences = confidences[compound]
+            targets = [k for k, v in compound_confidences.items() 
+                if v>enrichment_threshold]
 
-        uniprot_confidences = pd.DataFrame(
-            sorted([ (target, max_confidences[target], uniprot, association_score)
-            for target, uniprot, association_score in targets_to_uniprot], 
-                key=lambda x: x[1], reverse=True), # sort by confidence
-            columns=["target", "max_confidence", "uniprot_ACC", "association_score"])
-        uniprot_confidences_filename = os.path.join(pass_output_dir,
-            "unthresholded_uniprot_confidences.csv")
-        uniprot_confidences.to_csv(uniprot_confidences_filename)
+            # get uniprots for targets
+            targets_to_uniprot = get_uniprots_for_targets(targets)
+
+            uniprot_confidences = pd.DataFrame(
+                sorted([ (target, compound_confidences[target], uniprot, association_score)
+                for target, uniprot, association_score in targets_to_uniprot], 
+                    key=lambda x: x[1], reverse=True), # sort by confidence (DESC)
+                columns=["target", "target_confidence", "uniprot_ACC", "association_score"])
+            uniprot_confidences_filename = os.path.join(predicted_uniprot_dir,
+                f"{compound}_uniprot_confidences.csv")
+            uniprot_confidences.to_csv(uniprot_confidences_filename)
+
+            for _, row in uniprot_confidences.drop_duplicates("uniprot_acc", keep="first").iterrows():
+                uniprot_acc = row["uniprot_ACC"]
+                target_confidence = row["target_confidence"]
+                joint_uniprot_confidences[compound].update({uniprot_acc: target_confidence})
+
+
     
     if ppb2_predict:
 
@@ -215,7 +236,8 @@ def activity_predict(
 
         # rescale by compound to range [0, 1000]
         novel_classifier_predictions = \
-            rescale_predicted_uniprot_confidences(novel_classifier_predictions)
+            rescale_predicted_uniprot_confidences(novel_classifier_predictions,
+            max_confidence=max_confidence)
 
         novel_classifier_prediction_filename = os.path.join(ppb2_output_dir,
             "PPB2_uniprot_predictions_rescaled.csv")
@@ -228,12 +250,34 @@ def activity_predict(
             write_actives(novel_classifier_predictions, threshold, 
                 output_dir=ppb2_output_dir)
 
-        if not pass_predict:
-            uniprot_confidences = pd.DataFrame()
-            uniprot_targets = novel_classifier_predictions.index
-            uniprot_confidences["uniprot_ACC"] =\
-                pd.Series(uniprot_targets, index=uniprot_targets)
-            uniprot_confidences["max_confidence"] = novel_classifier_predictions.max(1)
+        for compound in novel_classifier_predictions:
+            print ("determining PPB2 predicted targets for compound", compound,
+                "using threshold", enrichment_threshold)
+        
+            compound_uniprot_confidences = novel_classifier_predictions[compound]
+
+            for acc, confidence in compound_uniprot_confidences.items():
+                if confidence < enrichment_threshold:
+                    continue
+                # predicted by both models
+                if acc in joint_uniprot_confidences[compound]:
+                    joint_uniprot_confidences[compound][acc] = max_confidence
+                else:
+                    joint_uniprot_confidences[compound][acc] = confidence
+
+
+
+        # if not pass_predict:
+        #     uniprot_confidences = pd.DataFrame()
+        #     uniprot_targets = novel_classifier_predictions.index
+        #     uniprot_confidences["uniprot_ACC"] =\
+        #         pd.Series(uniprot_targets, index=uniprot_targets)
+        #     uniprot_confidences["max_confidence"] = novel_classifier_predictions.max(1)
+
+    # write joint confidences
+    joint_uniprot_confidences_filename = os.path.join(output_dir, 
+        "uniprot_confidences.json")
+    write_json(joint_uniprot_confidences, joint_uniprot_confidences_filename)
             
 
     if perform_enrichment:
@@ -243,7 +287,7 @@ def activity_predict(
         '''
 
         ret = perform_enrichment_on_uniprot_accs(
-            uniprot_confidences,
+            joint_uniprot_confidences,
             output_dir=output_dir, threshold=threshold)
     
 

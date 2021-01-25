@@ -6,6 +6,7 @@ sys.path.insert(1,
     os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 
 import io
+from pathlib import Path
 
 import pandas as pd
 
@@ -14,32 +15,43 @@ from reactomepy.code.rest.token_mgr import TokenManager
 
 def perform_enrichment_analysis(
     uniprot_id_filename,
-    output_csv_filename,
-    found_filename,
-    not_found_filename,
+    output_dir,
+    # output_csv_filename,
+    # found_filename,
+    # not_found_filename,
     pdf_filename=None,
     token=None,
     to_hsa=True,
     resource="TOTAL",
-    num_attempts=10,):
+    ):
     assert isinstance(uniprot_id_filename, str)
     assert os.path.exists(uniprot_id_filename), uniprot_id_filename
+
+
+    # filenames to output enrichment
+    output_csv_filename = os.path.join(output_dir, 
+        "enrichment.csv")
+    found_filename = os.path.join(output_dir,
+        "found.txt")
+    not_found_filename = os.path.join(output_dir,
+        "not_found.txt")
+    pdf_filename = os.path.join(output_dir,
+        "enrichment_summary.pdf")
+
    
     print ("performing pathway enrichment")
     ana = AnalysisService()
     print ("generating token using file", uniprot_id_filename)
 
-    for attempt_no in range(num_attempts):
-
-        try:
-            token = ana.get_token(uniprot_id_filename,
-                token=token,
-                to_hsa=to_hsa,)
-            break
-        except Exception as e:
-            print (attempt_no, "REACTOME POST EXCEPTION")
-            print (e)
-            pass
+    try:
+        token = ana.get_token(
+            uniprot_id_filename,
+            token=token,
+            to_hsa=to_hsa,)
+    except Exception as e:
+        print ("Enrichment analysis POST fail")
+        Path(os.path.join(output_dir, "fail")).touch()
+        return
 
     tm = TokenManager(token)
 
@@ -81,6 +93,7 @@ def perform_enrichment_on_uniprot_accs(
     output_dir,
     threshold=500,
     ):
+    assert isinstance(uniprot_confidences, dict)
 
     output_dir = os.path.join(output_dir, "enrichment")
     os.makedirs(output_dir, exist_ok=True)
@@ -88,34 +101,30 @@ def perform_enrichment_on_uniprot_accs(
     print ("perfoming enrichment analysis on uniprot confidences file",
         "to directory", output_dir)
 
-    above_threshold = uniprot_confidences.loc[
-        uniprot_confidences["max_confidence"] > threshold]
+    for compound in uniprot_confidences:
+        print ("performing enrichment analysis for compound", compound)
 
-    unique_uniprots = set(above_threshold["uniprot_ACC"])
-    unique_uniprots_filename = os.path.join(output_dir, 
-        "unique_uniprot_ACCs.txt")
-    print ("writing unique uniprots to", unique_uniprots_filename)
-    with open(unique_uniprots_filename, "w") as f:
-        f.write("\n".join(unique_uniprots))
+        compound_output_dir = os.path.join(output_dir, 
+            str(compound))
+        os.makedirs(compound_output_dir, exist_ok=True)
 
-    if len(unique_uniprots) > 0:
+        unique_uniprots = uniprot_confidences[compound].keys()
+        unique_uniprots_filename = os.path.join(compound_output_dir, 
+            "unique_uniprot_ACCs.txt")
+        print ("writing unique uniprots to", unique_uniprots_filename)
+        with open(unique_uniprots_filename, "w") as f:
+            f.write("\n".join(unique_uniprots))
 
-        # filenames to output enrichment
-        output_csv_filename = os.path.join(output_dir, 
-            "enrichment.csv")
-        found_filename = os.path.join(output_dir,
-            "found.txt")
-        not_found_filename = os.path.join(output_dir,
-            "not_found.txt")
-        pdf_filename = os.path.join(output_dir,
-            "enrichment_summary.pdf")
+        if len(unique_uniprots) > 0:
 
-        perform_enrichment_analysis(
-            unique_uniprots_filename,
-            output_csv_filename,
-            found_filename,
-            not_found_filename,
-            pdf_filename)
+            perform_enrichment_analysis(
+                unique_uniprots_filename,
+                compound_output_dir)
+                # output_csv_filename,
+                # found_filename,
+                # not_found_filename,
+                # pdf_filename)
+        print ()
 
     return 0
 

@@ -34,5 +34,5 @@
     "redock_elite_from_previous_gen": true,
     "reduce_files_sizes": false,
     "gypsum_thoroughness": 1,
-    "gypsum_timeout": 60
+    "gypsum_timeout": 600
 }
