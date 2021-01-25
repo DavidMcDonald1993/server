@@ -26,7 +26,7 @@ def get_all_targets_for_categories(categories=None, existing_conn=None):
        INNER JOIN targets AS t ON (m.target_id=t.target_id)
        {f"WHERE c.category_name IN {categories}" 
         if isinstance(categories, tuple) 
-            else f"WHERE c.category_name='{categories}'" if isinstance(categories, str)
+            else f'WHERE c.category_name="{categories}"' if isinstance(categories, str)
             else ""}
     '''
 
@@ -47,7 +47,7 @@ def get_uniprots_for_targets(targets, existing_conn=None):
         INNER JOIN targets_to_uniprot AS tu ON (t.target_id=tu.target_id)
         INNER JOIN uniprot AS u ON (tu.uniprot_id=u.uniprot_id)
         WHERE t.target_name {f"IN {targets}" if isinstance(targets, tuple)
-            else f"='{targets}'"}
+            else f'="{targets}"'}
     '''
     return mysql_query(query, existing_conn=existing_conn)
 
@@ -69,7 +69,7 @@ def get_uniprots_for_compound(
     INNER JOIN uniprot AS u 
         ON (cu.uniprot_id=u.uniprot_id)
     WHERE cu.above_{threshold}=(1)
-    AND {f"c.coconut_id='{coconut_id}'" if isinstance(coconut_id, str)
+    AND {f'c.coconut_id="{coconut_id}"' if isinstance(coconut_id, str)
         else f"c.coconut_id IN {coconut_id}"}
     '''
 
@@ -110,7 +110,7 @@ def get_all_pathways(
         FROM pathway AS p
         {active_filter if filter_actives else ""}
         {f"WHERE p.organism IN {organisms}" 
-            if isinstance(organisms, tuple) else f"WHERE p.organism='{organisms}'" 
+            if isinstance(organisms, tuple) else f'WHERE p.organism="{organisms}"' 
                 if isinstance(organisms, str) else ""}
     '''
     return mysql_query(query, existing_conn=existing_conn)
@@ -145,7 +145,7 @@ def get_all_reactions(
         FROM reaction AS r
         {active_filter if filter_actives else ""}
         {f"WHERE r.organism IN {organisms}" 
-            if isinstance(organisms, tuple) else f"WHERE r.organism='{organisms}'" 
+            if isinstance(organisms, tuple) else f'WHERE r.organism="{organisms}"' 
                 if isinstance(organisms, str) else ""}
     '''
     return mysql_query(query, existing_conn=existing_conn)
@@ -193,7 +193,7 @@ def get_all_pathways_for_compounds(
     WHERE {f"c.coconut_id IN {coconut_ids}" if isinstance(coconut_ids, tuple)
         else f'c.coconut_id="{coconut_ids}"'}
     {f"AND a.above_{threshold}=(1)" if threshold>0 and filter_pa_pi else ""}
-    {f"AND p.organism='{organism}'" if organism is not None else ""}
+    {f'AND p.organism="{organism}"' if organism is not None else ""}
     GROUP BY p.pathway_name, p.organism
     {f"LIMIT {limit}" if limit is not None else ""}
     '''
@@ -239,7 +239,7 @@ def get_all_reactions_for_compounds(
     WHERE {f"c.coconut_id IN {coconut_ids}" if isinstance(coconut_ids, tuple)
         else f'c.coconut_id="{coconut_ids}"'}
     {f"AND a.above_{threshold}=(1)" if threshold>0 and filter_pa_pi else ""}
-    {f"AND r.organism='{organism}'" if organism is not None else ""}
+    {f'AND r.organism="{organism}"' if organism is not None else ""}
     GROUP BY r.reaction_name, r.organism
     {f"LIMIT {limit}" if limit is not None else ""}
     '''
@@ -557,7 +557,7 @@ def get_all_activities_for_compound(
     INNER JOIN targets AS t ON (cm.target_id=t.target_id) 
     INNER JOIN activities AS a ON (t.target_id=a.target_id)
     INNER JOIN compounds AS c ON (a.compound_id=c.compound_id)
-    WHERE c.coconut_id='{coconut_id}'
+    WHERE c.coconut_id="{coconut_id}"
     {f"AND a.above_{threshold}=(1)" if threshold > 0 and filter_pa_pi else ""}
     '''
     compound_hits = mysql_query(all_targets_query)

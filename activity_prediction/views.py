@@ -52,7 +52,7 @@ def login_unsuccessful_view(request):
 
 def upload_file_view(request):
     if not request.user.is_authenticated:
-        return HttpResponseRedirect("login_unsucessful")
+        return HttpResponseRedirect("/login")
 
     if request.method == 'POST':
         form = UploadFileForm(request.POST, request.FILES)

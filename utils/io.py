@@ -216,21 +216,21 @@ def process_input_file(
 def BRICS_decompose_smiles_file(smiles_file, out_file, keep_original=True):
     print ("performing BRICS decomposition on smiles file", smiles_file,
         "outputting to", out_file)
-    smiles = read_smiles(smiles_file, return_series=True)
+    smiles = read_smiles(smiles_file, return_series=True, )
 
     decomposed_smiles = [] 
 
     for compound, smi in smiles.items():
         if keep_original:
             decomposed_smiles.append((compound, smi))
-            for i, fragment in enumerate(BRICS_decompose_smiles(smi)):
-                decomposed_smiles.append((f"{compound}_{i+1}", fragment))
+        for i, fragment in enumerate(BRICS_decompose_smiles(smi)):
+            decomposed_smiles.append((f"{compound}_{i+1}", fragment))
 
     write_smiles(decomposed_smiles, out_file)
 
 if __name__ == "__main__":
     
-    input_file = "/home/david/Desktop/targets=PARP1_expression_enhancer-thresholds=950-hits-clean.smi"
+    input_file = "/home/david/Desktop/targets=PARP1_expression_enhancer-thresholds=950-hits.smi"
     # desired_format = ".sdf"
     # output_dir = "."
     out_file = "decomposed_test.smi"
