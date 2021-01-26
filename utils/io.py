@@ -21,12 +21,8 @@ from rdkit.Chem import AllChem
 from rdkit.Chem.PandasTools import WriteSDF, AddMoleculeColumnToFrame
 from rdkit.Chem.BRICS import BRICSDecompose
 
+import re
 
-def BRICS_decompose_smiles(smi):
-    mol = Chem.MolFromSmiles(smi)
-    if mol is None:
-        return mol
-    return BRICSDecompose(mol)
 
 
 
@@ -213,18 +209,32 @@ def process_input_file(
     
     return temp_file
 
+def BRICS_decompose_smiles(smi, minFragmentSize=3):
+    mol = Chem.MolFromSmiles(smi)
+    if mol is None:
+        return mol
+    return BRICSDecompose(mol, minFragmentSize=minFragmentSize)
+
 def BRICS_decompose_smiles_file(smiles_file, out_file, keep_original=True):
     print ("performing BRICS decomposition on smiles file", smiles_file,
         "outputting to", out_file)
     smiles = read_smiles(smiles_file, return_series=True, )
 
-    decomposed_smiles = [] 
+    expr = re.compile(r'\[[0-9]+\*\]')
+    empty_brackets = re.compile(r"\(\)")
+
+    decomposed_smiles = dict()
 
     for compound, smi in smiles.items():
-        if keep_original:
-            decomposed_smiles.append((compound, smi))
-        for i, fragment in enumerate(BRICS_decompose_smiles(smi)):
-            decomposed_smiles.append((f"{compound}_{i+1}", fragment))
+        if keep_original and smi not in decomposed_smiles:
+            decomposed_smiles[smi] = compound
+        for i, fragment in enumerate(map( lambda s: 
+            empty_brackets.sub("", expr.sub("", s)), BRICS_decompose_smiles(smi))):
+            # decomposed_smiles.append((f"{compound}_{i+1}", fragment))
+            if fragment not in decomposed_smiles:
+                decomposed_smiles[fragment] = f"{compound}_BRICS_frag_{i+1}"
+
+    decomposed_smiles = [(compound, smi) for smi, compound in decomposed_smiles.items()]
 
     write_smiles(decomposed_smiles, out_file)
 
@@ -234,7 +244,7 @@ if __name__ == "__main__":
     # desired_format = ".sdf"
     # output_dir = "."
     out_file = "decomposed_test.smi"
-    
+
     # processed_file = process_input_file(input_file, desired_format, output_dir)
 
     BRICS_decompose_smiles_file(input_file, out_file)

@@ -38,7 +38,7 @@ STEP = -50
 
 DEFAULT_THRESHOLD = 750
 
-MAX_RECORDS = 10000
+# MAX_RECORDS = 10000
 
 MAX_HITS_FOR_IMAGE = 2000
 
@@ -127,7 +127,7 @@ def show_target_hits_view(request, ):
     context = {
         "targets": targets,
         "threshold": threshold,
-        "target_hits": target_hits[:MAX_RECORDS],
+        "target_hits": target_hits,#[:MAX_RECORDS],
         "num_hits": num_hits,
         "show_images": num_hits<MAX_HITS_FOR_IMAGE,
         "allow_optimise": True
@@ -218,7 +218,7 @@ def show_pathway_hits_view(request, ):
     context = {
         "pathways": pathways,
         "threshold": threshold,
-        "pathway_hits": pathway_hits[:MAX_RECORDS],
+        "pathway_hits": pathway_hits,#[:MAX_RECORDS],
         "num_hits": num_hits,
         "show_images": num_hits<MAX_HITS_FOR_IMAGE,
         "allow_optimise": False
@@ -310,7 +310,7 @@ def show_reaction_hits_view(request, ):
     context = {
         "reactions": reactions,
         "threshold": threshold,
-        "reaction_hits": reaction_hits[:MAX_RECORDS],
+        "reaction_hits": reaction_hits,#[:MAX_RECORDS],
         "num_hits": num_hits,
         "show_images": num_hits<MAX_HITS_FOR_IMAGE,
         "allow_optimise": False
@@ -319,16 +319,72 @@ def show_reaction_hits_view(request, ):
     return render(request,
         "natural_products/reactions/reaction_hits.html", context)
 
+# def compound_search_view(request):
+
+#     if request.method == 'POST':
+#         pass
+#     else:
+
+#         pass
+
+#     return render(request, 
+#         "")
+
 
 def all_compounds_view(request):
 
-    compounds = get_info_for_multiple_compounds(
-        columns=("coconut_id", "name", "formula", "clean_smiles"),
-        limit=MAX_RECORDS
+    context = {}
+
+    if request.method == 'POST':
+
+        name_like = request.POST["name_like"]
+        formula_like = request.POST["formula_like"]
+        smiles_like = request.POST["smiles_like"]
+
+        if name_like == "":
+            name_like = None 
+        if formula_like == "":
+            formula_like = None
+        if smiles_like == "":
+            smiles_like = None
+
+        columns = [
+            "image_path",
+            "coconut_id",
+        ]
+
+        show_name = request.POST.get("show_name") == "on"
+        show_formula = request.POST.get("show_formula") == "on"
+        show_smiles = request.POST.get("show_smiles") == "on"
+
+        if show_name:
+            columns.append("name")
+        if show_formula:
+            columns.append("formula")
+        if show_smiles:
+            columns.append("smiles")
+
+        compounds = get_info_for_multiple_compounds(
+            name_like=name_like,
+            formula_like=formula_like,
+            smiles_like=smiles_like,
+            columns=columns,
         )
-    context = {
-        "compounds": compounds
-    }
+
+        num_hits = len(compounds)
+
+        compounds = [
+            {k: v for k, v in zip(columns, hit)}
+            for hit in compounds
+        ]
+
+        print (compounds[0])
+
+        context["compounds"] = compounds
+        context["show_name"] = show_name
+        context["show_formula"] = show_formula
+        context["show_smiles"] = show_smiles
+        context["show_images"] = num_hits < MAX_HITS_FOR_IMAGE
 
     return render(request, 
         "natural_products/compounds/all_compounds.html", context)
@@ -453,7 +509,7 @@ def target_info_view(request, target):
     context = {
         "target": target,
         "threshold": threshold,
-        "target_hits": target_hits[:MAX_RECORDS],
+        "target_hits": target_hits,#[:MAX_RECORDS],
         "num_hits": num_hits,
         "show_images": num_hits<MAX_HITS_FOR_IMAGE,
         "allow_optimise": True
@@ -541,7 +597,7 @@ def pathway_info_view(request, pathway_organism):
         "pathway": pathway,
         "organism": organism,
         "threshold": threshold,
-        "pathway_hits": pathway_hits[:MAX_RECORDS],
+        "pathway_hits": pathway_hits,#[:MAX_RECORDS],
         "num_hits": num_hits,
         "show_images": num_hits<MAX_HITS_FOR_IMAGE,
         "allow_optimise": False
@@ -629,7 +685,7 @@ def reaction_info_view(request, reaction_organism):
     context = {
         "reaction": reaction,
         "threshold": threshold,
-        "reaction_hits": reaction_hits[:MAX_RECORDS],
+        "reaction_hits": reaction_hits,#[:MAX_RECORDS],
         "num_hits": num_hits,
         "show_images": num_hits<MAX_HITS_FOR_IMAGE,
         "allow_optimise": False

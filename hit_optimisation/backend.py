@@ -224,9 +224,11 @@ def hit_optimisation(
         "with smiles file", input_smiles_file, )
 
     # perform BRICS decomposition
-    decomposition_file = os.path.join(output_dir,
-        "BRICS_decomposition.smi")
-    BRICS_decompose_smiles_file(input_smiles_file, decomposition_file)
+    # decomposition_file = os.path.join(output_dir,
+    #     "BRICS_decomposition.smi")
+    input_base, ext = os.path.splitext(input_smiles_file)
+    brics_decomposition_out_file = f"{input_base}-BRICS-frags.smi" 
+    BRICS_decompose_smiles_file(input_smiles_file, brics_decomposition_out_file)
 
     # download and process pdb file
     pdb_file = download_pdb_file(pdb_id, 
@@ -251,17 +253,18 @@ def hit_optimisation(
     settings_filename = determine_settings(
         chain_filename=chain_filename, 
         # input_smiles_file=input_smiles_file, 
-        input_smiles_file=decomposition_file,
+        input_smiles_file=brics_decomposition_out_file,
         bounding_box=bounding_box, 
         user_settings=user_settings, 
         output_dir=output_dir)
 
     cmd = f'''
     python hit_optimisation/autogrow4/RunAutogrow.py\
-        --json "{settings_filename}"\
-        > {output_dir}/autogrow.out\
-        2> {output_dir}/autogrow.err
+        --json "{settings_filename}"
     '''
+        # > {output_dir}/autogrow.out\
+        # 2> {output_dir}/autogrow.err
+    # '''
     
     ret = os.system(cmd)
     # assert ret == 0

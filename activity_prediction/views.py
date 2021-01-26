@@ -59,8 +59,10 @@ def upload_file_view(request):
         if form.is_valid():
             uploaded_file = request.FILES["file_field"] # name of attribute
             threshold = int(request.POST["threshold"])
-            use_pass = request.POST.get("use_pass") == "on"
-            use_ppb = request.POST.get("use_ppb") == "on"
+            # use_pass = request.POST.get("use_pass") == "on"
+            use_pass = True
+            # use_ppb = request.POST.get("use_ppb") == "on"
+            use_ppb = False
             perform_enrichment = (use_pass or use_ppb) and request.POST.get("perform_enrichment") == "on"
 
             # handle with multi processing 

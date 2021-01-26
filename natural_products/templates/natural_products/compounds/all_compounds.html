@@ -2,6 +2,7 @@
 <html lang="en">
 
   {% include 'header.html' %}
+  {% load static %}
 
   <body class="normal" onload="makeDataTable(['allCompoundsTable'], [1])" >
 
@@ -10,30 +11,145 @@
     <header>
       <h1>All natural products</h1>
     </header>
+
     <main>
+
+      {% if compounds %}
+
+      <div>
+        <form method="get" action="/natural_products/compounds/">
+          <input type="submit" value="Search for different compounds">
+        </form>
+      </div>
+
       <div class="table-responsive results-table hiddenDiv" >
         <table id="allCompoundsTable" class="display table data" style="width:100%;text-align:center;">
           <thead>
             <tr>
+              {% if show_images %}
+              <th>Image</th>
+              {% endif %}
               <th>ID</th>
+              {% if show_name %}
               <th>Name</th>
+              {% endif %}
+              {% if show_formula %}
               <th>Molecular Formula</th>
+              {% endif %}
+              {% if show_smiles %}
               <th>SMILES</th>
+              {% endif %}
             </tr>
           </thead>
           <tbody>
-            {% for id, name, formula, smiles in compounds %}
+            {% for compound in compounds %}
             <tr>
-              <td> <a href="/natural_products/compounds/all/{{id}}"> 
-              {{ id }} </a> </td>
-              <td>{{name}}</td> 
-              <td>{{formula}}</td> 
-              <td>{{smiles}}</td> 
+              {% if show_images %}
+              <td>  <img src="{% static compound.image_path %}" alt=""
+                style="width: 100pt; height: 100pt;"></img> </td>
+              {% endif %}
+              <td> <a href="/natural_products/compounds/all/{{compound.coconut_id}}"> 
+              {{ compound.coconut_id }} </a> </td>
+              {% if show_name %}
+              <td>{{compound.name}}</td> 
+              {% endif %}
+              {% if show_formula %}
+              <td>{{compound.formula}}</td>
+              {% endif %} 
+              {% if show_smiles %}
+              <td>{{compound.smiles}}</td> 
+              {% endif %}
             </tr>
             {% endfor %}
           </tbody>
         </table>
       </div>
+
+    {% else %}
+
+    <form enctype="multipart/form-data" action="/natural_products/compounds/" method="post">
+      {% csrf_token %}
+
+      <h2>Filter natural product library</h2>
+      <br>
+      <br>
+      <p>Leave fields blank to ignore filter</p>
+      
+      <div>
+        <table class="center">
+          <tr>
+            <td>
+              <label for="name_like">Name contains:</label>
+            </td>
+            <td>
+              <input type="text" id="name_like" name="name_like">
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <label for="formula_like">Formula contains:</label>
+            </td>
+            <td>
+              <input type="text" id="formula_like" name="formula_like">
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <label for="smiles_like">SMILES contains:</label>
+            </td>
+            <td>
+              <input type="text" id="smiles_like" name="smiles_like">
+            </td>
+          <!-- <br> -->
+          </tr>
+          <!-- <label for="formula_like">Molecular formula contains:</label>
+          <input type="text" id="formula_like" name="formula_like">
+          <br>
+          <label for="smiles_like">SMILES contains:</label>
+          <input type="text" id="smiles_like" name="smiles_like"> -->
+        </table>
+
+      </div>
+
+      <div>
+          <h3>Show</h3>
+          <table class="center">
+            <tr>
+              <td>
+                <label for="show_name">Name</label>
+              </td>
+              <td>
+                <input id="show_name" name="show_name" type="checkbox" checked>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <label for="show_formula">Formula</label>
+              </td>
+              <td>
+                <input id="show_formula" name="show_formula" type="checkbox" checked>
+              </td>
+            </tr>
+
+            <tr>
+              <td>
+                <label for="show_smiles">SMILES</label>
+              </td>
+              <td>
+                <input id="show_smiles" name="show_smiles" type="checkbox" checked>
+              </td>
+            </tr>
+          </table>
+      </div>
+      <br>
+      <br>
+      <input type="submit" value="Submit">
+
+    </form>
+
+
+    {% endif %}
+    
     </main>
 
   <footer>

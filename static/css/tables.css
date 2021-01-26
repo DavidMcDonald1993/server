@@ -4,6 +4,12 @@
     /* overflow-x: scroll; */
 /* } */
 
+
+table.center {
+    margin-left: auto;
+    margin-right: auto;
+}
+
 .bd-left {
     border-left: solid 1px;
 }

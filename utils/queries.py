@@ -304,7 +304,7 @@ def get_target_hits(
     ))
     query = f'''
         SELECT c.compound_id, c.coconut_id AS `ID`, c.image_path AS `Image`, c.name AS `Molecule Name`, 
-            c.formula AS `Molecular Formula`, c.clean_smiles AS `SMILES`,
+            c.formula AS `Molecular Formula`, c.smiles AS `SMILES`,
         {columns}
         FROM compounds AS c
         {tables}
@@ -398,7 +398,7 @@ def get_pathway_hits(
 
     query = f'''
         SELECT c.compound_id, c.coconut_id AS `ID`, c.image_path AS `Image`, c.name AS `Molecule Name`, 
-            c.formula AS `Molecular Formula`, c.clean_smiles AS `SMILES`,
+            c.formula AS `Molecular Formula`, c.smiles AS `SMILES`,
         {columns}
         FROM compounds AS c
         {tables}
@@ -406,7 +406,7 @@ def get_pathway_hits(
         AND `{pathway_names[0]}_pathway`.pathway_name="{pathways[0]}"
         AND `{pathway_names[0]}_pathway`.organism="{organisms[0]}"
         {conditions}
-        GROUP BY c.compound_id, c.coconut_id, c.name, c.formula, c.clean_smiles, {group_by}
+        GROUP BY c.compound_id, c.coconut_id, c.name, c.formula, c.smiles, {group_by}
         ORDER BY `{pathway_names[0]} Uniprot Coverage` DESC
         {f"LIMIT {limit}" if limit is not None else ""}
     '''
@@ -492,7 +492,7 @@ def get_reaction_hits(
 
     query = f'''
         SELECT c.compound_id, c.coconut_id AS `ID`, c.image_path AS `Image`, c.name AS `Molecule Name`, 
-            c.formula AS `Molecular Formula`, c.clean_smiles AS `SMILES`,
+            c.formula AS `Molecular Formula`, c.smiles AS `SMILES`,
         {columns}
         FROM compounds AS c
         {tables}
@@ -500,7 +500,7 @@ def get_reaction_hits(
         AND `{reaction_names[0]}_reaction`.reaction_name="{reactions[0]}"
         AND `{reaction_names[0]}_reaction`.organism="{organisms[0]}"
         {conditions}
-        GROUP BY c.compound_id, c.coconut_id, c.name, c.formula, c.clean_smiles, {group_by}
+        GROUP BY c.compound_id, c.coconut_id, c.name, c.formula, c.smiles, {group_by}
         ORDER BY `{reaction_names[0]} Uniprot Coverage` DESC
         {f"LIMIT {limit}" if limit is not None else ""}
     '''
@@ -514,23 +514,36 @@ def get_reaction_hits(
     return records, cols[1:]
 
 def get_info_for_multiple_compounds(
-    compounds=None, 
+    compound_ids=None, 
+    name_like=None,
+    formula_like=None,
+    smiles_like=None,
     columns=("coconut_id", "name", "formula", "smiles"),
     limit=None):
 
-    if compounds is not None:
-        if not isinstance(compounds, str):
-            if isinstance(compounds, list) or isinstance(compounds, set):
-                compounds = tuple(compounds)
-            assert isinstance(compounds, tuple)
-            if len(compounds) == 1:
-                compounds = compounds[0]
+    if compound_ids is not None:
+        if not isinstance(compound_ids, str):
+            if isinstance(compound_ids, list) or isinstance(compound_ids, set):
+                compound_ids = tuple(compound_ids)
+            assert isinstance(compound_ids, tuple)
+            if len(compound_ids) == 1:
+                compound_ids = compound_ids[0]
+
+    conditions = [
+        f"coconut_id IN {compound_ids}" if isinstance(compound_ids, tuple)
+            else f'coconut_id="{compound_ids}"' if isinstance(compound_ids, str) else None,
+        f'name LIKE "%{name_like}%"' if name_like is not None else None,
+        f'formula LIKE "%{formula_like}%"' if formula_like is not None else None,
+        f'smiles LIKE "%{smiles_like}%"' if smiles_like is not None else None,
+    ]
+
+    conditions = " AND ".join(filter(lambda x: x, conditions))
+    print (conditions)
 
     compound_query = f'''
         SELECT {(", ".join(columns))}
         FROM compounds
-        {f"WHERE coconut_id IN {compounds}" if isinstance(compounds, tuple)
-        else f'WHERE coconut_id="{compounds}"' if isinstance(compounds, str) else ""}
+        {f"WHERE {conditions}" if conditions != "" else ""}
         {f"LIMIT {limit}" if limit is not None else ""}
     '''
 
@@ -611,8 +624,16 @@ if __name__ == "__main__":
     # with open("id_to_db_id.json", "w") as f:
     #     json.dump(id_to_db_id, f, sort_keys=True, indent=4)
    
-    compound_id=["CNP0000002", "CNP0000005"]
+    # compound_id=["CNP0000002", "CNP0000005"]
 
-    records = get_uniprots_for_compound(compound_id, threshold=700)
+    # records = get_uniprots_for_compound(compound_id, threshold=700)
+    # for record in records:
+    #     print (record)
+
+
+    name_like = "gink"
+
+    records = get_info_for_multiple_compounds(name_like=None, compound_ids=None, formula_like="H%2")
+
     for record in records:
         print (record)
