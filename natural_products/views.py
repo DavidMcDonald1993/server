@@ -378,6 +378,7 @@ def all_compounds_view(request):
             for hit in compounds
         ]
 
+        context["show_results"] = True
         context["compounds"] = compounds
         context["show_name"] = show_name
         context["show_formula"] = show_formula

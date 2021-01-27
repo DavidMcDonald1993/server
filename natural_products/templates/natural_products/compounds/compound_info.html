@@ -24,17 +24,11 @@
         <h2>Activities</h2>
       </div>
       <a href="#PROPERTIES" onclick="showDiv(this)">PROPERTIES</a>
-      {% if activities %}
       {% for category, category_activities in activities.items %}
       <a href="#{{category}}" onclick="showDiv(this)">{{category}}</a>
       {% endfor %}
-      {% endif %}
-      {% if pathways %}
       <a href="#PATHWAYS" onclick="showDiv(this)">PATHWAYS</a>
-      {% endif %}
-      {% if reactions %}
       <a href="#REACTIONS" onclick="showDiv(this)">REACTIONS</a>
-      {% endif %}
     </nav>
 
     <main>
