@@ -378,8 +378,6 @@ def all_compounds_view(request):
             for hit in compounds
         ]
 
-        print (compounds[0])
-
         context["compounds"] = compounds
         context["show_name"] = show_name
         context["show_formula"] = show_formula
