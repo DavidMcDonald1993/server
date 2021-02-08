@@ -173,7 +173,7 @@ if __name__ == "__main__":
     # print (search_for_hgnc_id("HGNC:3018"))
 
     # targets = ["1,2-alpha-L-fucosidase inhibitor"]
-    targets = ["ACTG1"]
+    targets = ["CHEMBL2169726"]
 
     search_terms = prepare_search_terms(targets)
     print (list(search_terms))

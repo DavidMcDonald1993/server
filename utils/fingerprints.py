@@ -29,11 +29,8 @@ from standardiser import standardise
 from utils.io import read_smiles, load_labels
 
 # RDK
-def get_rdk_mol(smi, perform_standardisation=True):
+def get_rdk_mol(smi, perform_standardisation=False):
     mol = Chem.MolFromSmiles(smi)
-    # if mol is None:
-    #     mol = Chem.MolFromSmiles(smi, sanitize=False)
-        # mol.UpdatePropertyCache()
     assert mol is not None, ("MOL IS NONE", smi)
     if mol is not None and perform_standardisation:
         try:
@@ -70,7 +67,6 @@ def get_rdk_maccs(smiles, n_proc=8):
         rdk_maccs_fingerprints)
 
     return sp.vstack(rdk_maccs_fingerprints)
-
 
 def rdk_wrapper(smi, n_bits=1024):
     mol = get_rdk_mol(smi)
@@ -241,7 +237,7 @@ def compute_fp(smiles, all_fp, n_bits=1024, n_proc=4):
             smiles.shape[0], "SMILES",
             "using", n_proc, "cores")
         if fp == "morg2":
-            fps.append(get_morg(smiles, n_bits=n_bits, n_proc=n_proc))
+            fps.append(get_morg(smiles, radius=2, n_bits=n_bits, n_proc=n_proc))
         elif fp == "morg3":
             fps.append(get_morg(smiles, radius=3, n_bits=n_bits, n_proc=n_proc))
         elif fp == "rdk":
@@ -321,6 +317,6 @@ if __name__ == "__main__":
 
     smiles = "O=C1OC2C(C(=C)C)CC1C3(O)CC4OC54C(=O)OC[CH]253C"
 
-    mol = Chem.MolFromSmiles(smiles, dkmwoldm)
+    mol = Chem.MolFromSmiles(smiles, )
 
     print (mol)

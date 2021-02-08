@@ -105,6 +105,7 @@ from utils.ppb2_utils import perform_predicton_with_novel_classifier, rescale_pr
 #     return 0
 
 def write_actives(confidence_df, threshold, output_dir):
+    print (confidence_df.head())
     actives = {compound:
         sorted([(target, confidence) for target, confidence in confidence_df[compound].items()
             if confidence > threshold], key=lambda x: x[1], reverse=True)
@@ -240,36 +241,44 @@ def activity_predict(
             desired_format=".smi", output_dir=ppb2_output_dir)
 
         # use classifier to generate uniprot confidences
-        novel_classifier_predictions = perform_predicton_with_novel_classifier(
+        pred, probs = perform_predicton_with_novel_classifier(
             input_smiles_file)
 
-        novel_classifier_prediction_filename = os.path.join(ppb2_output_dir,
+        pred_filename = os.path.join(
+            ppb2_output_dir,
             "PPB2_uniprot_predictions.csv")
         print ("writing novel classifier predictions to", 
-            novel_classifier_prediction_filename)
-        novel_classifier_predictions.to_csv(novel_classifier_prediction_filename)
+            pred_filename)
+        pred.to_csv(pred_filename)
+
+        probs_filename = os.path.join(
+            ppb2_output_dir,
+            "PPB2_uniprot_probabilities.csv")
+        print ("writing novel classifier probability predictions to", 
+            probs_filename)
+        probs.to_csv(probs_filename)
 
         # rescale by compound to range [0, 1000]
-        novel_classifier_predictions = \
-            rescale_predicted_uniprot_confidences(novel_classifier_predictions,
+        probs = \
+            rescale_predicted_uniprot_confidences(probs,
             max_confidence=max_confidence)
 
-        novel_classifier_prediction_filename = os.path.join(ppb2_output_dir,
-            "PPB2_uniprot_predictions_rescaled.csv")
-        print ("writing novel classifier predictions to", 
-            novel_classifier_prediction_filename)
-        novel_classifier_predictions.to_csv(novel_classifier_prediction_filename)
+        rescaled_probs_filename = os.path.join(ppb2_output_dir,
+            "PPB2_uniprot_probabilities_rescaled.csv")
+        print ("writing rescaled novel classifier probabilities to", 
+            rescaled_probs_filename)
+        probs.to_csv(rescaled_probs_filename)
 
         # write jsons for threshold(s)?
         for threshold in range(500, 1000, 100):
-            write_actives(novel_classifier_predictions, threshold, 
+            write_actives(probs, threshold, 
                 output_dir=ppb2_output_dir)
 
-        for compound in novel_classifier_predictions:
+        for compound in probs: # columns
             print ("determining PPB2 predicted targets for compound", compound,
                 "using threshold", enrichment_threshold)
         
-            compound_uniprot_confidences = novel_classifier_predictions[compound]
+            compound_uniprot_confidences = probs[compound]
 
             for acc, confidence in compound_uniprot_confidences.items():
                 if confidence < enrichment_threshold:
@@ -284,10 +293,10 @@ def activity_predict(
 
         # if not pass_predict:
         #     uniprot_confidences = pd.DataFrame()
-        #     uniprot_targets = novel_classifier_predictions.index
+        #     uniprot_targets = probs.index
         #     uniprot_confidences["uniprot_ACC"] =\
         #         pd.Series(uniprot_targets, index=uniprot_targets)
-        #     uniprot_confidences["max_confidence"] = novel_classifier_predictions.max(1)
+        #     uniprot_confidences["max_confidence"] = probs.max(1)
 
     # write joint confidences
     joint_uniprot_confidences_filename = os.path.join(output_dir, 
