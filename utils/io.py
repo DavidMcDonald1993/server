@@ -203,7 +203,7 @@ def process_input_file(
         else:
             raise NotImplementedError #conversion not yet implemented
     else:
-        print ("no conversion necesary")
+        print ("no conversion necessary")
     
     assert temp_file.endswith(desired_format)
     

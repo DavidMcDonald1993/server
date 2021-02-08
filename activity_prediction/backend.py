@@ -158,9 +158,12 @@ def activity_predict(
 
         pass_out_file = base_name + "-PASS-out.sdf"
 
+        out_stream = os.path.join(pass_output_dir, "pass.out")
+        err_stream = os.path.join(pass_output_dir, "pass.err")
+
         cmd = f'''
         PASS2019toSDF.exe {input_sdf_file} {pass_out_file}\
-            > pass.out 2> pass.err
+            > {out_stream} 2> {err_stream}
         '''
         print ("executing command:", cmd)
 
