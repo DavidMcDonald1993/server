@@ -425,14 +425,20 @@ class PPB2(BaseEstimator, ClassifierMixin):
         queries, 
         mode="predict"):
         print ("fitting unique NB models for each query",
-            "in mode", mode)
+            "in mode", mode, "with k = ", self.k)
 
         n_queries = queries.shape[0]
 
-        with mp.Pool(processes=self.n_proc) as p:
-            predictions = p.map(
-                functools.partial(self._fit_local_nb, mode=mode),
-                (query for query in queries))
+        if self.n_proc > 1:
+            with mp.Pool(processes=self.n_proc) as p:
+                predictions = p.map(
+                    functools.partial(self._fit_local_nb, mode=mode),
+                    (query for query in queries))
+        else:
+            predictions = [
+                self._fit_local_nb(query, mode=mode)
+                for query in queries
+            ]
 
         predictions = np.array(predictions)
         assert predictions.shape[0] == n_queries

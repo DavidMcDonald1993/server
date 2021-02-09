@@ -22,7 +22,8 @@ def perform_predicton_with_novel_classifier(
     smiles,
     # model_filename="models/morg3-xgc.pkl.gz",
     model_filename="models/morg2-nn+nb.pkl.gz",
-    n_proc=6,
+    k=2000,
+    n_proc=1,
     ):
     '''
     Predict from SMILES using novel classifier
@@ -41,6 +42,7 @@ def perform_predicton_with_novel_classifier(
     model = load_model(model_filename)
     if hasattr(model, "n_proc"):
         model.set_n_proc(n_proc)
+    model.set_k(k)
     
     # make prediction using pretrained model
     # return as n_targets x n_compounds

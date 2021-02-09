@@ -67,7 +67,8 @@ def determine_targets(prediction_SDF_filename, threshold=0):
     active_targets = defaultdict(list)
 
     for chunk in prediction_chunks:
-        assert "PASS_ACTIVITY_SPECTRUM" in chunk.columns
+        if "PASS_ACTIVITY_SPECTRUM" not in chunk.columns:
+            continue
         if not (chunk["ID"]=="").any():
             chunk = chunk.set_index("ID", drop=True)
         chunk = chunk.loc[~pd.isnull(chunk["PASS_ACTIVITY_SPECTRUM"])]
@@ -98,7 +99,8 @@ def determine_confidences(prediction_SDF_filename, threshold=0):
     confidences = dict()#pd.DataFrame(dtype=int)
 
     for chunk in prediction_chunks:
-        assert "PASS_ACTIVITY_SPECTRUM" in chunk.columns
+        if "PASS_ACTIVITY_SPECTRUM" in chunk.columns:
+            continue
         if not (chunk["ID"]=="").any():
             chunk = chunk.set_index("ID", drop=True)
         chunk = chunk.loc[~pd.isnull(chunk["PASS_ACTIVITY_SPECTRUM"])]

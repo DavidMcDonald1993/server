@@ -105,9 +105,9 @@ from utils.ppb2_utils import perform_predicton_with_novel_classifier, rescale_pr
 #     return 0
 
 def write_actives(confidence_df, threshold, output_dir):
-    print (confidence_df.head())
     actives = {compound:
-        sorted([(target, confidence) for target, confidence in confidence_df[compound].items()
+        sorted([(target, confidence) 
+            for target, confidence in confidence_df[compound].items()
             if confidence > threshold], key=lambda x: x[1], reverse=True)
             for compound in confidence_df}
     active_targets_filename = os.path.join(output_dir,

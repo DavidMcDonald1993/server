@@ -104,12 +104,12 @@ def mysql_insert_many(sql, rows, existing_conn=None, chunksize=1000000):
     cursor = db.cursor()
 
     if isinstance(rows, list):
-        print ("inserting", len(rows), "rows")
+        print ("inserting", len(rows), "row(s)")
         cursor.executemany(sql, rows)
     else:
 
         for chunk in to_chunks(rows):
-            print ("inserting", len(chunk), "rows")
+            print ("inserting", len(chunk), "row(s)")
             cursor.executemany(sql, chunk)
 
     db.commit()
