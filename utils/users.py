@@ -7,6 +7,7 @@ import secrets
 
 from utils.mysql_utils import mysql_create_table, mysql_query, mysql_insert_many
 from utils.email_utils import send_mail
+from utils.io import sanitise_filename
 
 from datetime import datetime
 
@@ -94,6 +95,7 @@ def determine_identifier(input_file):
     if not isinstance(input_file, str):
         assert hasattr(input_file, "name")
         input_file = input_file.name 
+    input_file = sanitise_filename(input_file)
     input_file = os.path.basename(input_file)
     input_file, _ = os.path.splitext(input_file) # remove extension
     input_file = input_file.replace("/", "_")

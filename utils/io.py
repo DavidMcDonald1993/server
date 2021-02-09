@@ -23,8 +23,8 @@ from rdkit.Chem.BRICS import BRICSDecompose
 
 import re
 
-
-
+def sanitise_filename(filename):
+    return filename.replace(" ", "")
 
 def valid_smiles(smi):
     assert smi is not None
@@ -146,21 +146,27 @@ def process_input_file(
     assert desired_format in valid_input_file_types 
     if not isinstance(input_file, str):
         assert hasattr(input_file, "name")
+        input_filename = input_file.name
+        print ("NAME", input_filename)
+        input_filename = sanitise_filename(input_filename)
         print ("input file has been received from client -- downloading")
-        input_file_type = os.path.splitext(input_file.name)[1]
+        input_file_type = os.path.splitext(input_filename)[1]
         assert input_file_type in valid_input_file_types
-        # write compounds to server local directory
+        # write compounds to local directory of server
         temp_file = os.path.join(output_dir,
-            input_file.name)
+            input_filename)
+        print ("downloading file to", temp_file)
         with open(temp_file, "wb+") as out_file:
             for chunk in input_file.chunks():
                 out_file.write(chunk)
     else:
         print ("input file is a local file")
-        input_file_type = os.path.splitext(input_file)[1]
+        input_file_sanitised = sanitise_filename(input_file)
+        input_file_type = os.path.splitext(input_file_sanitised)[1]
         assert input_file_type in valid_input_file_types
         temp_file = os.path.join(output_dir,
-            os.path.basename(input_file)) # no uploaded file
+            os.path.basename(input_file_sanitised)) # no uploaded file
+        print ("copying file to", temp_file)
         shutil.copyfile(input_file, temp_file)
     
     temp_file_name, _ = os.path.splitext(temp_file)
@@ -240,14 +246,14 @@ def BRICS_decompose_smiles_file(smiles_file, out_file, keep_original=True):
 
 if __name__ == "__main__":
     
-    input_file = "/home/david/Desktop/targets=PARP1_expression_enhancer-thresholds=950-hits.smi"
-    # desired_format = ".sdf"
-    # output_dir = "."
-    out_file = "decomposed_test.smi"
+    input_file = "/home/david/Desktop/Aurora-B .txt"
+    desired_format = ".sdf"
+    output_dir = "."
+    # out_file = "decomposed_test.smi"
 
-    # processed_file = process_input_file(input_file, desired_format, output_dir)
+    processed_file = process_input_file(input_file, desired_format, output_dir)
 
-    BRICS_decompose_smiles_file(input_file, out_file)
+    # BRICS_decompose_smiles_file(input_file, out_file)
 
     # print (processed_file)
 

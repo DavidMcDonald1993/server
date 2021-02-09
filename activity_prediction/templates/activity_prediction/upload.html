@@ -2,6 +2,8 @@
 <html>
   {% include 'header.html'%}
 
+  {% load static %}
+
   <body class="normal">
 
       {% include 'navbar.html' %}
@@ -27,9 +29,21 @@
           <div>
             <h2>Activity Prediction</h2>
             <label for="use_pass">PASS</label>
-            <input id="use_pass" name="use_pass" type="checkbox" checked>
-            <label for="use_pass">PPB2</label>
-            <input id="use_ppb" name="use_ppb" type="checkbox" checked>
+            <input id="use_pass" name="use_pass" type="checkbox" checked="checked">
+            <label for="use_ppb">PPB2</label>
+            <input id="use_ppb" name="use_ppb" type="checkbox" checked="checked" 
+              onChange="$('#ppb2_option_div').fadeToggle('slow');">
+          </div>
+
+          <div id="ppb2_option_div" style="display: inline;">
+            
+            <label for="ppb2_option">Select fingerprint-classifier:</label>
+            <select name="ppb2_option" id="ppb2_option">
+              {% for model in model_choices %}
+                <option value="{{model}}">{{model}}</option>
+              {% endfor %}
+            </select> 
+
           </div>
 
           <div>

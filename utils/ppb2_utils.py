@@ -20,14 +20,23 @@ def load_model(model_filename):
 
 def perform_predicton_with_novel_classifier(
     smiles,
-    # model_filename="models/morg3-xgc.pkl.gz",
-    model_filename="models/morg2-nn+nb.pkl.gz",
+    model="morg2-nn+nb",
     k=2000,
     n_proc=1,
     ):
     '''
     Predict from SMILES using novel classifier
     '''
+    assert model in {"morg2-nn+nb", "morg3-xgc"}
+    print ("performing prediction with model:", model)
+    model_filename = os.path.join("models",
+        f"{model}.pkl.gz")
+    
+    model = load_model(model_filename)
+    if hasattr(model, "n_proc"):
+        model.set_n_proc(n_proc)
+    model.set_k(k)
+  
     if isinstance(smiles, str): # read from file
         assert smiles.endswith(".smi")
     
@@ -39,11 +48,6 @@ def perform_predicton_with_novel_classifier(
 
     assert isinstance(smiles, pd.Series)
 
-    model = load_model(model_filename)
-    if hasattr(model, "n_proc"):
-        model.set_n_proc(n_proc)
-    model.set_k(k)
-    
     # make prediction using pretrained model
     # return as n_targets x n_compounds
     pred = model.predict(smiles).T 

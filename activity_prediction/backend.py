@@ -123,6 +123,7 @@ def activity_predict(
     max_confidence=1000,
     pass_predict=True,
     ppb2_predict=True,
+    model="morg2-nn+nb",
     perform_enrichment=True,
     ):
 
@@ -245,7 +246,8 @@ def activity_predict(
 
         # use classifier to generate uniprot confidences
         pred, probs = perform_predicton_with_novel_classifier(
-            input_smiles_file)
+            input_smiles_file,
+            model=model)
 
         pred_filename = os.path.join(
             ppb2_output_dir,

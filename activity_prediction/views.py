@@ -54,6 +54,11 @@ def upload_file_view(request):
     if not request.user.is_authenticated:
         return HttpResponseRedirect("/login")
 
+    ppb2_options = [
+        "morg2-nn+nb",
+        "morg3-xgc",
+    ]
+
     if request.method == 'POST':
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
@@ -62,6 +67,12 @@ def upload_file_view(request):
             use_pass = request.POST.get("use_pass") == "on"
             # use_pass = True
             use_ppb = request.POST.get("use_ppb") == "on"
+
+            if use_ppb:
+                model = request.POST["ppb2_option"]
+            else:
+                model = None
+
             # use_ppb = False
             perform_enrichment = (use_pass or use_ppb) and request.POST.get("perform_enrichment") == "on"
 
@@ -72,6 +83,7 @@ def upload_file_view(request):
                     "enrichment_threshold": threshold, 
                     "pass_predict": use_pass, 
                     "ppb2_predict": use_ppb,
+                    "model": model,
                     "perform_enrichment": perform_enrichment,
                 })
             p.start()
@@ -82,9 +94,12 @@ def upload_file_view(request):
     else:
         form = UploadFileForm()
 
-    context = {"form": form}
-    context["username"] = request.user.username
-    context["user_email"] = request.user.email
+    context = {
+        "form": form,
+        "username": request.user.username,
+        "user_email": request.user.email,
+        "model_choices": ppb2_options
+    }
     
     return render(request, 
         'activity_prediction/upload.html', 
