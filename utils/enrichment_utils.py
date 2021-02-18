@@ -16,10 +16,6 @@ from reactomepy.code.rest.token_mgr import TokenManager
 def perform_enrichment_analysis(
     uniprot_id_filename,
     output_dir,
-    # output_csv_filename,
-    # found_filename,
-    # not_found_filename,
-    pdf_filename=None,
     token=None,
     to_hsa=True,
     resource="TOTAL",
@@ -38,7 +34,11 @@ def perform_enrichment_analysis(
     pdf_filename = os.path.join(output_dir,
         "enrichment_summary.pdf")
 
-   
+    print ("outputting csv file to", output_csv_filename)    
+    print ("outputting found file to", found_filename)    
+    print ("outputting not found file to", not_found_filename)    
+    print ("outputting pdf to", pdf_filename)    
+
     print ("performing pathway enrichment")
     ana = AnalysisService()
     print ("generating token using file", uniprot_id_filename)
@@ -49,7 +49,8 @@ def perform_enrichment_analysis(
             token=token,
             to_hsa=to_hsa,)
     except Exception as e:
-        print ("Enrichment analysis POST fail")
+        
+        print ("Enrichment analysis POST fail", e)
         Path(os.path.join(output_dir, "fail")).touch()
         return
 
@@ -113,6 +114,7 @@ def perform_enrichment_on_uniprot_accs(
             "unique_uniprot_ACCs.txt")
         print ("writing unique uniprots to", unique_uniprots_filename)
         with open(unique_uniprots_filename, "w") as f:
+            f.write("#UNIPROT\n")
             f.write("\n".join(unique_uniprots))
 
         if len(unique_uniprots) > 0:
@@ -130,18 +132,21 @@ def perform_enrichment_on_uniprot_accs(
 
 if __name__ == "__main__":
     
-    uniprot_id_filename = "user_files/user_id=1/activity_prediction/targets=PARP1_expression_enhancer-thresholds=950-hits-2021-01-22-16:22:15.247338/enrichment/unique_uniprot_ACCs.txt"
+    # uniprot_id_filename = "/home/david/Desktop/enrichment/10-hydroxy aconitine | aconifine /unique_uniprot_ACCs.txt"
+    uniprot_id_filename = "unique_uniprot_ACCs.txt"
     # uniprot_id_filename = "uniprots.txt"
-    output_csv_filename = "trash/enrichment.csv"
-    found_filename = "trash/found.txt"
-    not_found_filename = "trash/not_found.txt"
-    pdf_filename = "trash/summary.pdf"
+    # output_csv_filename = "trash/enrichment.csv"
+    # found_filename = "trash/found.txt"
+    # not_found_filename = "trash/not_found.txt"
+    # pdf_filename = "trash/summary.pdf"
 
     enrichment, found, not_found =\
         perform_enrichment_analysis(uniprot_id_filename,
-        output_csv_filename,
-        found_filename, not_found_filename,
-        pdf_filename=pdf_filename)
+        output_dir="trash"
+        )
+        # output_csv_filename,
+        # found_filename, not_found_filename,
+        # pdf_filename=pdf_filename)
 
     
 

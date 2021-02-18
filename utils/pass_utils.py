@@ -99,7 +99,7 @@ def determine_confidences(prediction_SDF_filename, threshold=0):
     confidences = dict()#pd.DataFrame(dtype=int)
 
     for chunk in prediction_chunks:
-        if "PASS_ACTIVITY_SPECTRUM" in chunk.columns:
+        if "PASS_ACTIVITY_SPECTRUM" not in chunk.columns:
             continue
         if not (chunk["ID"]=="").any():
             chunk = chunk.set_index("ID", drop=True)
@@ -112,8 +112,8 @@ def determine_confidences(prediction_SDF_filename, threshold=0):
                 na_action="ignore")
 
         for compound, compound_confidences in chunk_confidences.items():
-            index, values = zip(*compound_confidences)
-            confidences[compound] = pd.Series(values, index=index)
+            targets, confidences = zip(*compound_confidences)
+            confidences[compound] = pd.Series(confidences, index=targets)
             # for target, confidence in confidences:
             #     if activities["Pa"] > threshold and activities["Pa"] > activities["Pi"]:
             #         active_targets[compound].append((target, activities["Conf"]))
