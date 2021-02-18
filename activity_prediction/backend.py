@@ -125,6 +125,7 @@ def activity_predict(
     ppb2_predict=True,
     model="morg2-nn+nb",
     perform_enrichment=True,
+    group_compounds=False,
     ):
 
     '''
@@ -194,7 +195,7 @@ def activity_predict(
         predicted_uniprot_dir = os.path.join(pass_output_dir, "predicted_uniprot_ACCs")
         os.makedirs(predicted_uniprot_dir, exist_ok=True)
 
-        compounds_with_no_targets = []
+        compounds_with_no_pass_targets = []
 
         for compound in confidences:
             print ("determining predicted targets for compound", compound,
@@ -205,7 +206,7 @@ def activity_predict(
 
             if len(targets) == 0:
                 print ("NO TARGETS FOR COMPOUND", compound)
-                compounds_with_no_targets.append(compound)
+                compounds_with_no_pass_targets.append(compound)
                 continue
 
             # get uniprots for targets
@@ -229,7 +230,7 @@ def activity_predict(
             f"compounds_with_no_predicted_targets_above_{enrichment_threshold}.txt")
         print ("writing list of missing compounds to", compounds_with_no_targets_filename)
         with open(compounds_with_no_targets_filename, "w") as f:
-            f.write("\n".join(compounds_with_no_targets))
+            f.write("\n".join(compounds_with_no_pass_targets))
 
     
     if ppb2_predict:
@@ -307,7 +308,6 @@ def activity_predict(
     joint_uniprot_confidences_filename = os.path.join(output_dir, 
         "uniprot_confidences.json")
     write_json(joint_uniprot_confidences, joint_uniprot_confidences_filename)
-            
 
     if perform_enrichment:
 
@@ -317,9 +317,9 @@ def activity_predict(
 
         ret = perform_enrichment_on_uniprot_accs(
             joint_uniprot_confidences,
-            output_dir=output_dir, threshold=threshold)
+            output_dir=output_dir, threshold=threshold,
+            group_compounds=group_compounds)
     
-
     # build zip file containing all targets / run settings / run output
     archive_filename = os.path.join(root_dir,
         identifier)

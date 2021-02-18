@@ -75,6 +75,7 @@ def upload_file_view(request):
 
             # use_ppb = False
             perform_enrichment = (use_pass or use_ppb) and request.POST.get("perform_enrichment") == "on"
+            group_compounds = request.POST.get("group_compounds") =="on"
 
             # handle with multi processing 
             p = mp.Process(target=activity_predict,
@@ -85,6 +86,7 @@ def upload_file_view(request):
                     "ppb2_predict": use_ppb,
                     "model": model,
                     "perform_enrichment": perform_enrichment,
+                    "group_compounds": group_compounds
                 })
             p.start()
             print ("process spawned")
