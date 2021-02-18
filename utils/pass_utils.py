@@ -96,7 +96,7 @@ def determine_confidences(prediction_SDF_filename, threshold=0):
 
     prediction_chunks = LoadSDF(prediction_SDF_filename)
 
-    confidences = dict()#pd.DataFrame(dtype=int)
+    all_confidences = dict()#pd.DataFrame(dtype=int)
 
     for chunk in prediction_chunks:
         if "PASS_ACTIVITY_SPECTRUM" not in chunk.columns:
@@ -111,14 +111,14 @@ def determine_confidences(prediction_SDF_filename, threshold=0):
                     map(remove_invalid_characters, s.split("\n"))),
                 na_action="ignore")
 
-        for compound, compound_confidences in chunk_confidences.items():
-            targets, confidences = zip(*compound_confidences)
-            confidences[compound] = pd.Series(confidences, index=targets)
+        for compound, target_confidences in chunk_confidences.items():
+            targets, confidences = zip(*target_confidences)
+            all_confidences[compound] = pd.Series(confidences, index=targets)
             # for target, confidence in confidences:
             #     if activities["Pa"] > threshold and activities["Pa"] > activities["Pi"]:
             #         active_targets[compound].append((target, activities["Conf"]))
 
-    return pd.DataFrame(confidences)
+    return pd.DataFrame(all_confidences)
         
 if __name__ == "__main__":
     # for category in get_categories():
