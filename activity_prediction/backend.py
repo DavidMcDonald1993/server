@@ -17,6 +17,7 @@ from utils.io import process_input_file, write_json
 from utils.queries import get_uniprots_for_targets
 from utils.users import send_file_to_user, determine_identifier
 from utils.ppb2_utils import perform_predicton_with_novel_classifier, rescale_predicted_uniprot_confidences
+from utils.uniprot_utils import query_uniprot
 
 # def perform_predicton_with_novel_classifier(
 #     smiles,
@@ -280,29 +281,40 @@ def activity_predict(
             write_actives(probs, threshold, 
                 output_dir=ppb2_output_dir)
 
+        acc_genes_proteins = dict()
+
         for compound in probs: # columns
             print ("determining PPB2 predicted targets for compound", compound,
                 "using threshold", enrichment_threshold)
         
             compound_uniprot_confidences = probs[compound]
 
-            for acc, confidence in compound_uniprot_confidences.items():
-                if confidence < enrichment_threshold:
-                    continue
-                # predicted by both models
-                if acc in joint_uniprot_confidences[compound]:
-                    joint_uniprot_confidences[compound][acc] = max_confidence
-                else:
-                    joint_uniprot_confidences[compound][acc] = confidence
+            compound_confidence_output_dir = os.path.join(ppb2_output_dir, 
+                "compound_confidences")
+            os.makedirs(compound_confidence_output_dir, exist_ok=True)
 
+            # write acc + protein + gene + confidence to file
+            compound_confidence_filename = os.path.join(compound_confidence_output_dir, 
+                f"{compound}_confidences_above_{enrichment_threshold}.tsv")
+            with open(compound_confidence_filename, "w") as f:
+                f.write("ACC\tProteinName\tGeneName\tConfidence\n")
+                for acc, confidence in compound_uniprot_confidences.items():
+                    if confidence < enrichment_threshold:
+                        continue
 
+                    # query uniprot to get proteins and genes from ACC
+                    if acc not in acc_genes_proteins:
+                        acc_genes_proteins[acc] = query_uniprot(acc=acc)
+                    protein_genes = acc_genes_proteins[acc]
+                    for protein, gene in protein_genes:
+                        f.write(f"{acc}\t{protein}\t{gene}\t{confidence}\n")
 
-        # if not pass_predict:
-        #     uniprot_confidences = pd.DataFrame()
-        #     uniprot_targets = probs.index
-        #     uniprot_confidences["uniprot_ACC"] =\
-        #         pd.Series(uniprot_targets, index=uniprot_targets)
-        #     uniprot_confidences["max_confidence"] = probs.max(1)
+                    # predicted by both models
+                    if acc in joint_uniprot_confidences[compound]:
+                        joint_uniprot_confidences[compound][acc] = max_confidence
+                    else:
+                        joint_uniprot_confidences[compound][acc] = confidence
+
 
     # write joint confidences
     joint_uniprot_confidences_filename = os.path.join(output_dir, 

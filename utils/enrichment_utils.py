@@ -151,7 +151,7 @@ def perform_enrichment_on_uniprot_accs(
             if len(unique_uniprots) > 0:
 
                 perform_enrichment_analysis(
-                    unique_uniprots_filename,
+                    uniprot_filename,
                     compound_output_dir)
             print ()
 
