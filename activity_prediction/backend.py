@@ -144,6 +144,8 @@ def activity_predict(
 
     joint_uniprot_confidences = defaultdict(dict)
 
+    acc_genes_proteins = dict()
+
     if pass_predict:
 
         '''
@@ -206,18 +208,25 @@ def activity_predict(
                 if v > enrichment_threshold]
 
             if len(targets) == 0:
-                print ("NO TARGETS FOR COMPOUND", compound)
+                print ("NO TARGETS PREDICTED FOR COMPOUND", compound, "ABOVE THRESHOLD", enrichment_threshold)
                 compounds_with_no_pass_targets.append(compound)
                 continue
 
             # get uniprots for targets
             targets_to_uniprot = get_uniprots_for_targets(targets)
 
+            # get proteins / genes from uniprots
+            uniprot_confidences = []
+            for target, uniprot, association_score in targets_to_uniprot:
+                if uniprot not in acc_genes_proteins:
+                    acc_genes_proteins[uniprot] = query_uniprot(acc=uniprot)
+                for protein, gene in acc_genes_proteins[uniprot]:
+                    uniprot_confidences.append((target, compound_confidences[target],
+                        uniprot, protein, gene, association_score))
+
             uniprot_confidences = pd.DataFrame(
-                sorted([ (target, compound_confidences[target], uniprot, association_score)
-                for target, uniprot, association_score in targets_to_uniprot], 
-                    key=lambda x: x[1], reverse=True), # sort by confidence (DESC)
-                columns=["target", "target_confidence", "uniprot_ACC", "association_score"])
+                sorted(uniprot_confidences, key=lambda x: x[1], reverse=True), # sort by confidence (DESC)
+                columns=["target", "target_confidence", "uniprot_ACC", "protein", "gene", "target-acc association_score"])
             uniprot_confidences_filename = os.path.join(predicted_uniprot_dir,
                 f"{compound}_uniprot_confidences.csv")
             uniprot_confidences.to_csv(uniprot_confidences_filename)
@@ -225,6 +234,7 @@ def activity_predict(
             for _, row in uniprot_confidences.drop_duplicates("uniprot_ACC", keep="first").iterrows():
                 uniprot_acc = row["uniprot_ACC"]
                 target_confidence = row["target_confidence"]
+                # get proteins / genes from uniprot ACC 
                 joint_uniprot_confidences[compound].update({uniprot_acc: target_confidence})
 
         compounds_with_no_targets_filename = os.path.join(pass_output_dir, 
@@ -281,7 +291,6 @@ def activity_predict(
             write_actives(probs, threshold, 
                 output_dir=ppb2_output_dir)
 
-        acc_genes_proteins = dict()
 
         for compound in probs: # columns
             print ("determining PPB2 predicted targets for compound", compound,
