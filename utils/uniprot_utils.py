@@ -12,6 +12,10 @@ import urllib.request
 
 def query_uniprot(acc=None, gene=None, size=1000):
 
+    if acc.startswith("CHEMBL"):
+        print ("invalid ACC", acc) #TODO
+        return []
+
     if acc is not None:
         request_url = f"https://www.ebi.ac.uk/proteins/api/proteins?offset=0&size={size}&accession={acc}"
     else:
