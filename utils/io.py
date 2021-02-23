@@ -24,7 +24,8 @@ from rdkit.Chem.BRICS import BRICSDecompose
 import re
 
 def sanitise_filename(filename):
-    return filename.replace(" ", "")
+    # return filename.replace(" ", "_")
+    return re.sub(r"[ |/]", "_", filename)
 
 def valid_smiles(smi):
     assert smi is not None
@@ -162,12 +163,16 @@ def download_from_client(input_file, output_dir):
             out_file.write(chunk)
     return temp_file
 
-
 def replace_missing_names(names):
     missing = 1
     changed = False
     for i in range(len(names)):
-        if names[i] == "":
+        name = names[i]
+        name_sanitised = sanitise_filename(name)
+        if name_sanitised != name:
+            changed = True
+            names[i] = name_sanitised
+        if name_sanitised == "":
             changed = True
             names[i] = f"unknown_compound_{i}"
     return changed, names

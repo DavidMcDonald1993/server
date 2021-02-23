@@ -99,9 +99,9 @@ def determine_identifier(input_file):
     input_file = os.path.basename(input_file)
     input_file, _ = os.path.splitext(input_file) # remove extension
     input_file = input_file.replace("/", "_")
-    return input_file
-    # return "{}-{}".format(input_file, 
-        # str(datetime.now()).replace(" ", "-"))
+    # return input_file
+    return "{}-{}".format(input_file, 
+        str(datetime.now()).replace(" ", "_"))
 
 if __name__ == "__main__":
 
