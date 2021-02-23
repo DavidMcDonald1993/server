@@ -17,6 +17,12 @@ import multiprocessing as mp
 
 from django.contrib.auth import authenticate, login, logout
 
+import pandas as pd
+import zipfile
+
+# from utils.io import load_json
+import json
+
 def index_view(request):
     if not request.user.is_authenticated:
         return HttpResponseRedirect("/login")
@@ -126,20 +132,53 @@ def download_view(request, token):
         user = authenticate(request, username=username, password=password)
 
         if user is not None:
-            # return HttpResponseRedirect("/")
-            # if "authenticated" in request.session.keys() and request.session["authenticated"]:
-            #     del request.session["authenticated"]
-            #     filename = get_file_from_token(token, user.id)
-            #     if filename is None:
-            #         return HttpResponseRedirect("/download_error")
-            #     response = FileResponse(open(filename, 'rb'))
-            #     return response
 
             context["authenticated"] = True # change page 
             request.session["authenticated_user_id"] = user.id
 
-            
-            # context["filename"] = filename
+            # display summary on download screen
+            filename = get_file_from_token(token, user.id)
+
+            if "activity_prediction" in filename:
+                zf = zipfile.ZipFile(filename)
+
+                # all compounds in 
+
+                compounds = sorted(filter(lambda s: s!="", 
+                    set([os.path.dirname(f) for f in zf.namelist() ])))
+                if "compound_group" in compounds:
+                    compounds = ["compound_group"]
+
+                summary = {
+                    compound: dict() for compound in compounds
+                }
+
+                # predicted targets
+                # context["predicted_targets"] = json.loads(
+                #     zf.open("uniprot_confidences.json").read())
+                for compound in compounds:
+                    summary[compound]["Targets"] = \
+                        pd.read_csv(zf.open(f"{compound}/combined_uniprot_confidences.tsv"),
+                            sep="\t")
+                    summary[compound]["Enrichment"] = \
+                        pd.read_csv(zf.open(f"{compound}/enrichment.csv"),
+                            sep=",")
+                    summary[compound]["SimilarDrugs"] = \
+                        pd.read_csv(zf.open(f"{compound}/similar_drugs.tsv"),
+                            sep="\t")
+                    summary[compound]["AssociatedDisease"] = \
+                        pd.read_csv(zf.open(f"{compound}/associated_diseases.tsv"),
+                            sep="\t")
+                context["summary"] = summary
+
+                # # enrichment dfs
+                # context["enrichment_dfs"] = []
+                # for filename in filter(lambda z: 
+                #         z.filename.endswith("enrichment.csv"), zf.filelist):
+                #     df = pd.read_csv(zf.open(filename.filename))
+                #     context["enrichment_dfs"].append(
+                #         (filename.filename, df.head()))
+
         else:
             context["login_error"] = True
     

@@ -9,8 +9,12 @@ from utils.pass_utils import (remove_invalid_characters, parse_pass_spectra, get
 
 from natural_products.backend import get_coconut_compound_info_from_mongo
 from utils.queries import get_info_for_multiple_compounds
+from utils.uniprot_utils import query_uniprot
 
 from functools import partial
+
+import numpy as np
+import pandas as pd
 
 def create_and_populate_compounds_table(): 
 
@@ -151,7 +155,6 @@ def populate_activities_from_PASS_sdf_file(sdf_file):
     target_to_id = get_all_targets()
     categories = get_categories()
 
-    import pandas as pd
     from collections import defaultdict
     # from rdkit.Chem.PandasTools import LoadSDF
     from utils.rdkit_utils import LoadSDF
@@ -288,14 +291,40 @@ def create_uniprot_table():
 
     return mysql_create_table(create_uniprot_table_sql)
 
-def add_uniprot_accs(uniprot_accs, existing_conn=None):
-    print ("inserting", len(uniprot_accs), "UNIPROT ACCs")
-    insert_uniprots_sql = '''
-    INSERT INTO uniprot (acc) VALUES (%s)
-        ON DUPLICATE KEY UPDATE acc=acc
-    '''
+def add_uniprot_accs(accs, fill_out=False, existing_conn=None):
+    print ("inserting", len(accs), "UNIPROT ACCs")
+
+    if fill_out:
+        rows = [
+            (acc, protein, gene, organism)
+            for acc in accs
+            for protein, gene, organism in query_uniprot(acc)
+        ]
+
+        for row in rows:
+            print (row)
+
+        insert_uniprots_sql = '''
+        INSERT INTO uniprot (acc, protein, gene, organism, filled) 
+        VALUES (%s, %s, %s, %s, 1)
+            ON DUPLICATE KEY UPDATE acc=VALUES(acc),
+            protein=VALUES(protein), gene=VALUES(gene),
+            organism=VALUES(organism), filled=VALUES(filled)
+        '''
+    else:
+        rows = (
+            (acc, ) 
+            for acc in accs
+        ) 
+
+        insert_uniprots_sql = '''
+        INSERT INTO uniprot (acc) 
+        VALUES (%s)
+            ON DUPLICATE KEY UPDATE acc=VALUES(acc)
+        '''
+
     mysql_insert_many(insert_uniprots_sql, 
-        ((uniprot_acc,) for uniprot_acc in uniprot_accs),
+        rows,
         existing_conn=existing_conn)
 
     return 0
@@ -417,7 +446,6 @@ def create_pathway_table():
 
 
 def populate_pathways():
-    import pandas as pd
 
     # read pathways
     pathways = pd.read_csv("/home/david/Desktop/all_pathways.csv",
@@ -456,7 +484,6 @@ def create_uniprot_to_pathway_table():
     return mysql_create_table(create_uniprot_to_pathway_table_sql)
 
 def populate_uniprot_to_pathways():
-    import pandas as pd
 
     uniprot_to_pathways = pd.read_csv(
         "/home/david/Desktop/uniprot_to_pathway.csv", 
@@ -539,7 +566,6 @@ def create_reaction_table():
 
 
 def populate_reactions():
-    import pandas as pd
 
     # read reactions
     reactions = pd.read_csv("/home/david/Desktop/reactions.csv",
@@ -577,7 +603,6 @@ def create_uniprot_to_reaction_table():
     return mysql_create_table(create_uniprot_to_reaction_table_sql)
 
 def populate_uniprot_to_reactions():
-    import pandas as pd
 
     uniprot_to_reaction = pd.read_csv(
         "/home/david/Desktop/uniprot_to_reaction.csv", 
@@ -669,36 +694,395 @@ def create_compound_to_uniprot_table():
 def populate_compound_to_uniprot_table(
     predictions_filename,
     min_confidence=650):
-    import pandas as pd
+
+    get_compounds_sql = '''
+    SELECT compound_id, coconut_id
+    FROM compounds
+    '''
+    compound_id_map = {c: i for i, c in mysql_query(get_compounds_sql)}
+
+    get_acc_sql = '''
+    SELECT uniprot_id, acc
+    FROM uniprot
+    '''
+    uniprot_id_map = {a: i for i, a in mysql_query(get_acc_sql)}
 
     insert_compound_to_uniprot_sql = '''
         INSERT INTO compound_to_uniprot
             (compound_id, uniprot_id, confidence_score)
             VALUES (%s, %s, %s)
-            ON DUPLICATE KEY UPDATE compound_id=compound_id
+            ON DUPLICATE KEY UPDATE confidence_score=VALUES(confidence_score)
     '''
 
     print ("reading from", predictions_filename)
     predictions_df = pd.read_csv(predictions_filename, index_col=0)
 
-    rows = ((compound_id, target_id, confidence_score)
-        for compound_id, row in predictions_df.iterrows()
-        for target_id, confidence_score in row.items()
-        if confidence_score>=min_confidence)
+    rows = ((compound_id_map[compound_id], uniprot_id_map[target_id], confidence_score)
+        for target_id, row in predictions_df.iterrows()
+        for compound_id, confidence_score in row.items()
+        if compound_id in compound_id_map and target_id in uniprot_id_map 
+            and confidence_score>=min_confidence)
 
     return mysql_insert_many(insert_compound_to_uniprot_sql, rows)
 
+def create_disease_table():
+
+    sql = '''
+    CREATE TABLE `disease` (
+        disease_id SMALLINT NOT NULL AUTO_INCREMENT,
+        disease_name VARCHAR(500) NOT NULL UNIQUE,
+        icd VARCHAR(500),
+        PRIMARY KEY (disease_id)
+    )
+
+    '''
+
+    return mysql_create_table(sql)
+
+def populate_disease_table():
+
+    disease_df = pd.read_csv(
+        "../../disease_gene_identification/data/ttd/all_diseases_new.csv",
+        index_col=0)
+    
+    sql = '''
+    INSERT INTO `disease` (disease_name, icd)
+    VALUES (%s, %s)
+    ON DUPLICATE KEY UPDATE disease_name=VALUES(disease_name),
+        icd=VALUES(icd)
+    '''
+
+    rows = (
+        (name, row["ICD"])
+        for name, row in disease_df.iterrows()
+    )
+    return mysql_insert_many(sql, rows)
+
+
+def create_drug_table():
+
+    sql = '''
+    CREATE TABLE `drug` (
+    `drug_id` mediumint NOT NULL AUTO_INCREMENT,
+    `drug_name` varchar(500) DEFAULT NULL,
+    `inchi` varchar(3200) DEFAULT NULL,
+    `canonical_smiles` varchar(2000) DEFAULT NULL,
+    `drug_type` varchar(100) DEFAULT NULL,
+    `drug_class` varchar(100) DEFAULT NULL,
+    `company` varchar(1000) DEFAULT NULL,
+    `ttd_id` varchar(10) NOT NULL UNIQUE,
+    PRIMARY KEY (`drug_id`)
+    )
+    '''
+
+    return mysql_create_table(sql)
+
+def populate_drug_table():
+
+    drug_df = pd.read_csv(
+        # "../../disease_gene_identification/data/ttd/all_drugs.csv",
+        "../../disease_gene_identification/data/ttd/all_drugs_new.csv",
+        index_col=0)
+
+    assert "D08KNK" in drug_df.index
+    
+    sql = '''
+    INSERT INTO `drug` (drug_name, inchi, canonical_smiles,
+        drug_class, drug_type, company, ttd_id)
+    VALUES (%s, %s, %s, %s, %s, %s, %s)
+    ON DUPLICATE KEY UPDATE drug_name=VALUES(drug_name),
+        inchi=VALUES(inchi), canonical_smiles=VALUES(canonical_smiles),
+        drug_class=VALUES(drug_class), drug_type=VALUES(drug_type),
+        company=VALUES(company),
+        ttd_id=VALUES(ttd_id)
+    '''
+
+    rows = (
+        (
+            (row["DRUGNAME"] if not pd.isnull(row["DRUGNAME"]) else None), 
+            (row["DRUGINCH"] if not pd.isnull(row["DRUGINCH"]) else None), 
+            (row["DRUGSMIL"] if not pd.isnull(row["DRUGSMIL"]) else None),
+            (row["DRUGCLAS"] if not pd.isnull(row["DRUGCLAS"]) else None),
+            (row["DRUGTYPE"] if not pd.isnull(row["DRUGTYPE"]) else None),
+            (row["DRUGCOMP"] if not pd.isnull(row["DRUGCOMP"]) else None),
+            ttd_id
+        )
+        for ttd_id, row in drug_df.iterrows()
+        # if not pd.isnull(row["DRUGNAME"])
+    )
+    return mysql_insert_many(sql, rows)
+
+def create_uniprot_to_drug_table():
+    sql = '''
+    CREATE TABLE `uniprot_to_drug` (
+    uniprot_id MEDIUMINT,
+    drug_id MEDIUMINT,
+    moa VARCHAR(50),
+    highest_status VARCHAR(50),
+    activity VARCHAR(1000),
+    reference VARCHAR(1000),
+    PRIMARY KEY(uniprot_id, drug_id),
+    FOREIGN KEY(uniprot_id) REFERENCES uniprot(uniprot_id),
+    FOREIGN KEY(drug_id) REFERENCES drug(drug_id)
+    )
+
+    '''
+
+    return mysql_create_table(sql)
+
+def populate_uniprot_to_drug_table(existing_conn=None):
+
+    from utils.io import load_json
+
+    ttd_target_id_to_acc = load_json(
+        "../../disease_gene_identification/data/ttd/ttd_target_id_to_uniprot_acc.json")
+
+    # read latest mapping from uniprot to drug (TTD)
+    uniprot_to_drug_df = pd.read_csv(
+        "../../disease_gene_identification/data/ttd/P1-07-Drug-TargetMapping.csv", 
+        index_col=None)
+
+    # get unique accs from uniprot_to_drug_df
+    unique_accs = {acc
+        for target_id in uniprot_to_drug_df["TargetID"].values
+        if target_id in ttd_target_id_to_acc
+        for acc in ttd_target_id_to_acc[target_id] # list of accs for each ttd_id
+    }
+    add_uniprot_accs(unique_accs)
+
+    # get acc to id mapping
+    uniprot_query = '''
+    SELECT uniprot_id, acc
+    FROM uniprot
+    '''
+    records = mysql_query(uniprot_query, existing_conn=existing_conn)
+    acc_to_id = {
+        u: i for i, u in records
+    }
+
+    # get ttd_drug_to to id
+    drug_query = '''
+    SELECT drug_id, ttd_id
+    FROM drug
+    '''
+    records = mysql_query(drug_query, existing_conn=existing_conn)
+    ttd_drug_id_to_id = {
+        d: i for i, d in records
+    }
+
+    insert_sql = '''
+    INSERT INTO uniprot_to_drug (uniprot_id, drug_id, moa, highest_status,
+        activity, reference)
+    VALUES (%s, %s, %s, %s, %s, %s)
+    ON DUPLICATE KEY UPDATE uniprot_id=VALUES(uniprot_id),
+        drug_id=VALUES(drug_id), moa=VALUES(moa), highest_status=VALUES(highest_status),
+        reference=VALUES(reference)
+    '''
+
+
+    for _, row in uniprot_to_drug_df.iterrows():
+        assert row["TargetID"].startswith("T"), row["TargetID"]
+        assert row["DrugID"].startswith("D"), row["DrugID"]
+        assert row["DrugID"] in ttd_drug_id_to_id, row["DrugID"]
+
+    rows = (
+        (   
+            acc_to_id[acc], # target to acc to our id
+            ttd_drug_id_to_id[row["DrugID"]], # TTD id to our id
+            row["Highest_status"], row["MOA"], row["Activity"],
+            row["Reference"]
+        )
+        for _, row in uniprot_to_drug_df.iterrows() 
+        if row["TargetID"] in ttd_target_id_to_acc
+        for acc in ttd_target_id_to_acc[row["TargetID"]]
+    )
+
+    return mysql_insert_many(insert_sql, rows, existing_conn=existing_conn)
+
+def create_uniprot_to_disease_table():
+
+    sql = '''
+    CREATE TABLE `uniprot_to_disease` (
+        uniprot_id MEDIUMINT NOT NULL,
+        disease_id SMALLINT NOT NULL,
+        clinical_status VARCHAR(100),
+        PRIMARY KEY (uniprot_id, disease_id),
+        FOREIGN KEY(uniprot_id) REFERENCES uniprot(uniprot_id),
+        FOREIGN KEY(disease_id) REFERENCES disease(disease_id)
+    )
+
+    '''
+    return mysql_create_table(sql)
+
+def populate_uniprot_to_disease_table(existing_conn=None):
+
+    from utils.io import load_json
+
+    ttd_target_id_to_acc = load_json(
+        "../../disease_gene_identification/data/ttd/ttd_target_id_to_uniprot_acc.json")
+
+    uniprot_to_disease_df = pd.read_csv(
+        "../../disease_gene_identification/data/ttd/targets_to_disease_new.csv",
+        index_col=0)
+
+    # get unique accs from uniprot_to_drug_df
+    unique_accs = {acc
+        for target_id in uniprot_to_disease_df["TargetID"].values
+        if target_id in ttd_target_id_to_acc
+        for acc in ttd_target_id_to_acc[target_id] # list of accs for each ttd_id
+    }
+    add_uniprot_accs(unique_accs)
+
+    # get acc to id mapping
+    uniprot_query = '''
+    SELECT uniprot_id, acc
+    FROM uniprot
+    '''
+    records = mysql_query(uniprot_query, existing_conn=existing_conn)
+    acc_to_id = {
+        u: i for i, u in records
+    }
+
+    disease_query = '''
+    SELECT disease_id, disease_name
+    FROM disease
+    '''
+    records = mysql_query(disease_query, existing_conn=existing_conn)
+    disease_to_id = {d: i for i, d in records}
+
+    unique_diseases = set(uniprot_to_disease_df["Disease"])
+    for disease in unique_diseases:
+        assert disease in disease_to_id, disease
+
+    insert_sql = '''
+    INSERT INTO uniprot_to_disease(uniprot_id,
+        disease_id, clinical_status)
+    VALUES (%s, %s, %s)
+    ON DUPLICATE KEY UPDATE uniprot_id=VALUES(uniprot_id),
+        disease_id=VALUES(disease_id), clinical_status=VALUES(clinical_status)
+    '''
+   
+    rows = (
+        (   
+            acc_to_id[acc], # target to acc to our id
+            disease_to_id[row["Disease"]],
+            row["ClinicalStatus"]
+        )
+        for _, row in uniprot_to_disease_df.iterrows() 
+        if row["TargetID"] in ttd_target_id_to_acc
+        for acc in ttd_target_id_to_acc[row["TargetID"]]
+    )
+
+    return mysql_insert_many(insert_sql, rows)
+
+
+
+def create_drug_to_disease_table():
+
+    sql = '''
+    CREATE TABLE `drug_to_disease` (
+        drug_id MEDIUMINT NOT NULL,
+        disease_id SMALLINT NOT NULL,
+        clinical_status VARCHAR(100),
+        PRIMARY KEY (drug_id, disease_id),
+        FOREIGN KEY(drug_id) REFERENCES drug(drug_id),
+        FOREIGN KEY(disease_id) REFERENCES disease(disease_id)
+    )
+
+    '''
+    return mysql_create_table(sql)
+
+
+def populate_drug_to_disease_table(existing_conn=None):
+
+    from utils.io import load_json
+
+
+    drug_to_disease_df = pd.read_csv(
+        "../../disease_gene_identification/data/ttd/disease_to_drug_new.csv",
+        index_col=0)
+
+    # get acc to id mapping
+    drug_query = '''
+    SELECT drug_id, ttd_id
+    FROM drug
+    '''
+    records = mysql_query(drug_query, existing_conn=existing_conn)
+    drug_to_id = {
+        d: i for i, d in records
+    }
+
+    disease_query = '''
+    SELECT disease_id, disease_name
+    FROM disease
+    '''
+    records = mysql_query(disease_query, existing_conn=existing_conn)
+    disease_to_id = {d: i for i, d in records}
+
+    unique_diseases = set(drug_to_disease_df["Disease"])
+    for disease in unique_diseases:
+        assert disease in disease_to_id, disease
+
+    insert_sql = '''
+    INSERT INTO drug_to_disease(drug_id,
+        disease_id, clinical_status)
+    VALUES (%s, %s, %s)
+    ON DUPLICATE KEY UPDATE drug_id=VALUES(drug_id),
+        disease_id=VALUES(disease_id), clinical_status=VALUES(clinical_status)
+    '''
+   
+    rows = (
+        (   
+            drug_to_id[drug], # ttd target id to our id
+            disease_to_id[row["Disease"]],
+            row["ClinicalStatus"]
+        )
+        for _, row in drug_to_disease_df.iterrows() 
+        for drug in row["DrugID"].split("-") # deal with multipe drugs
+    )
+
+    return mysql_insert_many(insert_sql, rows)
+
+
+
 if __name__ == "__main__":
-    # populate_targets_to_uniprot()
 
-    # import pandas as pd
-    # targets = pd.read_csv("models/target_ids.txt", 
-    #     index_col=0, header=None, names=["uniprot"])
-    # targets = tuple(targets["uniprot"])
+    for _ in range(100):
+        query = '''
+        SELECT acc FROM uniprot
+        WHERE filled=0
+        limit 500
+        '''
 
-    # add_uniprot_accs(targets)
+        accs = mysql_query(query)
 
-    # create_compound_to_uniprot_table()
-    for chunk_no in range(11):
-        predictions_filename = f"coconut_uniprot_predictions_chunk_{chunk_no}.csv.gz"
-        populate_compound_to_uniprot_table(predictions_filename)
+        add_uniprot_accs(
+            sorted((acc[0] for acc in accs)),
+            fill_out=True)
+    
+
+
+    # model = "morg3-xgc"
+    # for chunk_no in range(3, 10):
+    #     predictions_filename = f"coconut_ppb2_predictions/{model}_chunk_{chunk_no}.csv"
+    #     populate_compound_to_uniprot_table(predictions_filename, min_confidence=900)
+    #     # df = pd.read_csv(predictions_filename, index_col=0)
+    #     # accs = df.index 
+
+    #     # add_uniprot_accs(accs, fill_out=True)
+
+
+    # create_drug_table()
+    # populate_drug_table()
+
+    # create_uniprot_to_drug_table()
+    # populate_uniprot_to_drug_table()
+
+    # create_disease_table()
+    # populate_disease_table()
+
+    # create_uniprot_to_disease_table()
+    # populate_uniprot_to_disease_table()
+
+    # create_drug_to_disease_table()
+    # populate_drug_to_disease_table()

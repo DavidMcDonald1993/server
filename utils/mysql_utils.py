@@ -106,13 +106,15 @@ def mysql_insert_many(sql, rows, existing_conn=None, chunksize=1000000):
     if isinstance(rows, list):
         print ("inserting", len(rows), "row(s)")
         cursor.executemany(sql, rows)
+        db.commit()
+
     else:
 
         for chunk in to_chunks(rows):
             print ("inserting", len(chunk), "row(s)")
             cursor.executemany(sql, chunk)
+            db.commit()
 
-    db.commit()
 
     if existing_conn is None:
         db.close()

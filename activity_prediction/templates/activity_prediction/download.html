@@ -2,7 +2,7 @@
 <html>
   {% include 'header.html' %}
 
-  <body class="no-nav">
+  <body class="no-nav" onload="makeDataTable('all')">
  
     <header>
       <h1>Download page</h1>
@@ -19,7 +19,48 @@
           <br>
           <br>
 
-          <form action="/activity_prediction">
+          {% if summary %}
+          <div>
+            <h2>Result Summary</h2>
+            {% for compound, compound_summary in summary.items %}
+            <div>
+              <h3>{{compound}}</h3>
+              {% for result, df in compound_summary.items %}
+                <div>
+                  <p>
+                    {{result}}
+                  </p>
+                  <table class="display table data" style="width:100%;text-align:center;">
+
+                    <thead>
+                      <tr>
+                        {% for column in df %} 
+                        <th>{{ column }}</th> 
+                        {% endfor %} 
+                      </tr>
+                    </thead>
+    
+                    <tbody>
+                      
+                       {% for _, row in df.iterrows %}
+                      <tr>
+                        {% for data in row %}
+                          <td>{{data}}</td>
+                        {% endfor %}
+                      </tr>
+                       {% endfor %}
+    
+                    </tbody>
+    
+                  </table>
+                </div>
+              {% endfor %}
+            </div>
+            {% endfor%}
+          </div>
+          {% endif %}
+
+          <form action="/">
               <input type="submit" value="Go to NPAIEngine home">
           </form> 
       </div>

@@ -15,7 +15,7 @@ import shutil
 
 from standardiser import standardise
 
-from rdkit.Chem.PandasTools import LoadSDF
+from rdkit.Chem.PandasTools import LoadSDF, WriteSDF
 from rdkit import Chem
 from rdkit.Chem import AllChem
 from rdkit.Chem.PandasTools import WriteSDF, AddMoleculeColumnToFrame
@@ -135,41 +135,77 @@ def smiles_to_sdf(
     WriteSDF(smiles_df, sdf_filename, molColName=molColName,
         idName="RowID", properties=list(smiles_df.columns))
 
-def process_input_file(
+def copy_file(input_file, output_dir):
+    print ("input file is a local file")
+    input_file_sanitised = sanitise_filename(input_file)
+    input_file_type = os.path.splitext(input_file_sanitised)[1]
+    assert input_file_type in valid_input_file_types
+    temp_file = os.path.join(output_dir,
+        os.path.basename(input_file_sanitised)) # no uploaded file
+    print ("copying file to", temp_file)
+    shutil.copyfile(input_file, temp_file)
+    return temp_file
+
+def download_from_client(input_file, output_dir):
+    assert hasattr(input_file, "name")
+    input_filename = input_file.name
+    print ("NAME", input_filename)
+    input_filename = sanitise_filename(input_filename)
+    print ("input file has been received from client -- downloading")
+
+    # write compounds to local directory of server
+    temp_file = os.path.join(output_dir,
+        input_filename)
+    print ("downloading file to", temp_file)
+    with open(temp_file, "wb+") as out_file:
+        for chunk in input_file.chunks():
+            out_file.write(chunk)
+    return temp_file
+
+
+def replace_missing_names(names):
+    missing = 1
+    changed = False
+    for i in range(len(names)):
+        if names[i] == "":
+            changed = True
+            names[i] = f"unknown_compound_{i}"
+    return changed, names
+
+def get_compound_names(filename):
+    print ("getting compound names from", filename)
+    if filename.endswith(".sdf"):
+        sdf_id_col = "ID"
+        sdf = LoadSDF(filename, idName=sdf_id_col)
+        names = list(sdf[sdf_id_col].values)
+        changed, names = replace_missing_names(names)
+        if changed:
+            sdf[sdf_id_col] = names
+            print ("names have changed, writing SDF to file", filename)
+            WriteSDF(sdf, out=filename, idName=sdf_id_col)
+    else: # assume smiles file
+        smiles = read_smiles(filename, 
+            filter_valid=True, return_series=True)
+        names = list(smiles.index)
+        _, names = replace_missing_names(names)
+        # if changed:
+            
+        print ("names have changed, writing smiles to file", filename)
+        write_smiles([(name, smi) 
+            for name, smi in zip(names, smiles.values)], 
+        filename)
+
+    return names
+
+def convert_file(
     input_file, 
     desired_format,
     output_dir, 
-    valid_input_file_types=(".smi", ".txt", ".sml", ".sdf")):
-    '''
-    process input file from client
-    '''
-    assert desired_format in valid_input_file_types 
-    if not isinstance(input_file, str):
-        assert hasattr(input_file, "name")
-        input_filename = input_file.name
-        print ("NAME", input_filename)
-        input_filename = sanitise_filename(input_filename)
-        print ("input file has been received from client -- downloading")
-        input_file_type = os.path.splitext(input_filename)[1]
-        assert input_file_type in valid_input_file_types
-        # write compounds to local directory of server
-        temp_file = os.path.join(output_dir,
-            input_filename)
-        print ("downloading file to", temp_file)
-        with open(temp_file, "wb+") as out_file:
-            for chunk in input_file.chunks():
-                out_file.write(chunk)
-    else:
-        print ("input file is a local file")
-        input_file_sanitised = sanitise_filename(input_file)
-        input_file_type = os.path.splitext(input_file_sanitised)[1]
-        assert input_file_type in valid_input_file_types
-        temp_file = os.path.join(output_dir,
-            os.path.basename(input_file_sanitised)) # no uploaded file
-        print ("copying file to", temp_file)
-        shutil.copyfile(input_file, temp_file)
-    
-    temp_file_name, _ = os.path.splitext(temp_file)
+    valid_input_file_types=(".smi", ".txt", ".sml", ".sdf"),
+    ):
+
+    input_file_name, input_file_type = os.path.splitext(input_file)
+    assert input_file_type in valid_input_file_types
 
     # convert if necessary
     if input_file_type != desired_format:
@@ -180,18 +216,18 @@ def process_input_file(
                 # convert SDF to smiles
                 print ("converting SDF to SMILES")
                 print ("SDF filename:", temp_file)
-                sdf_df = LoadSDF(temp_file, smilesName="SMILES")
+                sdf_df = LoadSDF(input_file, smilesName="SMILES")
                 # write smiles
                 smiles = [(row["ID"], row["SMILES"])
                     for _, row in sdf_df.iterrows()]
                 # write smiles to temp_file
-                temp_file = temp_file_name + desired_format
+                input_file = input_file_name + desired_format
                 write_smiles(smiles, temp_file)
             elif input_file_type in {".txt", ".sml"}:
                 # rename .txt smiles format to .smi
                 print ("INPUT FILE TYPE:", input_file_type)
-                os.rename(temp_file, temp_file_name + desired_format)
-                temp_file = temp_file_name + desired_format
+                os.rename(input_file, input_file_name + desired_format)
+                input_file = input_file_name + desired_format
             else:
                 raise NotImplementedError
 
@@ -201,19 +237,20 @@ def process_input_file(
                 print ("converting SMILES to SDF")
                 smiles_filename = temp_file
                 print ("SMILES filename:", smiles_filename)
-                temp_file = temp_file_name + desired_format
+                input_file = input_file_name + desired_format
                 smiles_to_sdf(smiles_filename, temp_file,
                     standardise=True, embed=False)
             else:
                 raise NotImplementedError
+        
         else:
             raise NotImplementedError #conversion not yet implemented
     else:
         print ("no conversion necessary")
     
-    assert temp_file.endswith(desired_format)
-    
-    return temp_file
+    assert input_file.endswith(desired_format)
+
+    return input_file
 
 def BRICS_decompose_smiles(smi, minFragmentSize=3):
     mol = Chem.MolFromSmiles(smi)
@@ -246,12 +283,15 @@ def BRICS_decompose_smiles_file(smiles_file, out_file, keep_original=True):
 
 if __name__ == "__main__":
     
-    input_file = "/home/david/Desktop/Aurora-B .txt"
+    input_file = "/home/david/Desktop/Book1.smi"
     desired_format = ".sdf"
     output_dir = "."
     # out_file = "decomposed_test.smi"
 
-    processed_file = process_input_file(input_file, desired_format, output_dir)
+    compound_names = get_compound_names(input_file)
+    print (compound_names)
+
+    # processed_file = process_input_file(input_file, desired_format, output_dir)
 
     # BRICS_decompose_smiles_file(input_file, out_file)
 

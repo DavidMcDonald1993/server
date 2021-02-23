@@ -27,7 +27,13 @@ from utils.queries import (
     get_pathway_hits,
     get_reaction_hits,
     get_all_activities_for_compound,
-    get_info_for_multiple_compounds
+    get_info_for_multiple_compounds,
+    get_inferred_uniprots_for_compounds,
+    get_predicted_uniprots_for_compound,
+    get_drugs_for_uniprots,
+    get_diseases_for_uniprots,
+    get_all_pathways_for_uniprots,
+    get_all_reactions_for_uniprots,
 )
 
 # Create your views here.
@@ -319,18 +325,6 @@ def show_reaction_hits_view(request, ):
     return render(request,
         "natural_products/reactions/reaction_hits.html", context)
 
-# def compound_search_view(request):
-
-#     if request.method == 'POST':
-#         pass
-#     else:
-
-#         pass
-
-#     return render(request, 
-#         "")
-
-
 def all_compounds_view(request):
 
     context = {}
@@ -414,18 +408,34 @@ def compound_info_view(request, compound_id):
         threshold=threshold, 
     )
 
-    for key in activities:
-        print (key, len(activities[key]))
+    inferred_uniprots = [ record[1:] # drop coconut id
+        for record in get_inferred_uniprots_for_compounds(compound_id, threshold=DEFAULT_THRESHOLD)]
+    predicted_uniprots = [ record[1:]
+        for record in get_predicted_uniprots_for_compound(compound_id)]
 
-    pathways = get_all_pathways_for_compounds(
-        compound_id, 
-        threshold=threshold,
-    )
 
-    reactions = get_all_reactions_for_compounds(
-        compound_id,  
-        threshold=threshold,
-    )
+    all_accs = {record[0] for record in inferred_uniprots}
+    all_accs = all_accs.union({record[0] for record in predicted_uniprots})
+
+    if len(all_accs) > 0:
+        pathways = get_all_pathways_for_uniprots(all_accs)
+        reactions = get_all_reactions_for_uniprots(all_accs)
+        drugs = get_drugs_for_uniprots(all_accs)
+        diseases = get_diseases_for_uniprots(all_accs)
+    else:
+        pathways = []
+        reactions = []
+        drugs = []
+        diseases = []
+    # pathways = get_all_pathways_for_compounds(
+    #     compound_id, 
+    #     threshold=threshold,
+    # )
+
+    # reactions = get_all_reactions_for_compounds(
+    #     compound_id,  
+    #     threshold=threshold,
+    # )
 
     from rdkit import Chem
 
@@ -433,8 +443,12 @@ def compound_info_view(request, compound_id):
         "compound_name": compound_name,
         "compound_info": compound_info,
         "activities": activities,
+        "inferred_uniprots": inferred_uniprots,
+        "predicted_uniprots": predicted_uniprots,
         "pathways": pathways,
         "reactions": reactions,
+        "drugs": drugs,
+        "diseases": diseases,
     })
 
     return render(request,

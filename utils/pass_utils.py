@@ -118,7 +118,7 @@ def determine_confidences(prediction_SDF_filename, threshold=0):
             #     if activities["Pa"] > threshold and activities["Pa"] > activities["Pi"]:
             #         active_targets[compound].append((target, activities["Conf"]))
 
-    return pd.DataFrame(all_confidences)
+    return pd.DataFrame(all_confidences).to_dict()
         
 if __name__ == "__main__":
     # for category in get_categories():

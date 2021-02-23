@@ -1,3 +1,9 @@
+import sys
+import os.path
+sys.path.insert(1, 
+    os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
+
+
 
 import os
 import gzip 
@@ -89,3 +95,28 @@ def rescale_predicted_uniprot_confidences(predictions, max_confidence=1000):
     # predictions[predictions>0] = max_confidence 
     # return predictions   
     return predictions.apply(partial(rescale_col, max_confidence=max_confidence), axis=0).astype(int)
+
+
+if __name__ == "__main__":
+
+    '''
+    PPB2 predictions on COCONUT NPs
+    '''
+    model = "morg2-nn+nb"
+
+    # chunk_no = 0
+
+    for chunk_no in range(10):
+        coconut_chunk_filename = f"../../ppb2/coconut_data/COCONUT_split_{chunk_no}.smi"
+
+
+        ppb2_predictions, ppb2_probs = perform_predicton_with_novel_classifier(
+            coconut_chunk_filename,
+            model=model,
+            n_proc=8,
+        )
+
+        ppb2_probs = rescale_predicted_uniprot_confidences(ppb2_probs)
+
+        prediction_filename = f"coconut_ppb2_predictions/{model}_chunk_{chunk_no}.csv"
+        ppb2_probs.to_csv(prediction_filename)

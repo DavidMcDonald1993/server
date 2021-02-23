@@ -99,61 +99,61 @@ def write_uniprots(uniprots, filename):
 def perform_enrichment_on_uniprot_accs(
     uniprot_confidences, 
     output_dir,
-    threshold=500,
-    group_compounds=False,
+    # threshold=500,
+    # group_compounds=False,
     ):
     assert isinstance(uniprot_confidences, dict)
 
-    output_dir = os.path.join(output_dir, "enrichment")
-    os.makedirs(output_dir, exist_ok=True)
+    # output_dir = os.path.join(output_dir, "enrichment")
+    # os.makedirs(output_dir, exist_ok=True)
 
     print ("perfoming enrichment analysis on uniprot confidences file",
         "to directory", output_dir)
 
-    if group_compounds:
-        uniprot_confidences = pd.DataFrame(uniprot_confidences) # convert to dataframe for ranking
-        rank_df = uniprot_confidences.rank(axis=0, ascending=False, na_option="bottom")
-        rank_df_filename = os.path.join(output_dir, "target_ranks.csv")
-        print ("writing rank df to", rank_df_filename)
-        rank_df.to_csv(rank_df_filename)
+    # if group_compounds:
+    #     uniprot_confidences = pd.DataFrame(uniprot_confidences) # convert to dataframe for ranking
+    #     rank_df = uniprot_confidences.rank(axis=0, ascending=False, na_option="bottom")
+    #     rank_df_filename = os.path.join(output_dir, "target_ranks.csv")
+    #     print ("writing rank df to", rank_df_filename)
+    #     rank_df.to_csv(rank_df_filename)
 
-        mean_rank_df = rank_df.mean(axis=1).sort_values()
-        mean_rank_df_filename = os.path.join(output_dir, "mean_ranks.csv")
-        print ("writing mean rank df to", mean_rank_df_filename)
-        mean_rank_df.to_csv(mean_rank_df_filename)
+    #     mean_rank_df = rank_df.mean(axis=1).sort_values()
+    #     mean_rank_df_filename = os.path.join(output_dir, "mean_ranks.csv")
+    #     print ("writing mean rank df to", mean_rank_df_filename)
+    #     mean_rank_df.to_csv(mean_rank_df_filename)
 
-        n_targets = mean_rank_df.shape[0]
-        # just take top 10%
-        unique_uniprots = mean_rank_df[:n_targets//10].keys()
-        uniprot_filename = os.path.join(output_dir, "uniprot_ACCs.txt")
+    #     n_targets = mean_rank_df.shape[0]
+    #     # just take top 10%
+    #     unique_uniprots = mean_rank_df[:n_targets//10].keys()
+    #     uniprot_filename = os.path.join(output_dir, "uniprot_ACCs.txt")
 
+    #     write_uniprots(unique_uniprots, uniprot_filename)
+
+    #     if len(unique_uniprots) > 0:
+
+    #         perform_enrichment_analysis(
+    #             uniprot_filename,
+    #             output_dir)
+
+    # else:
+    for compound in uniprot_confidences:
+        print ("performing enrichment analysis for compound", compound)
+
+        compound_output_dir = os.path.join(output_dir, 
+            str(compound))
+        os.makedirs(compound_output_dir, exist_ok=True)
+
+        unique_uniprots = uniprot_confidences[compound].keys()
+        uniprot_filename = os.path.join(compound_output_dir, 
+            "uniprot_ACCs.txt")
         write_uniprots(unique_uniprots, uniprot_filename)
 
         if len(unique_uniprots) > 0:
 
             perform_enrichment_analysis(
                 uniprot_filename,
-                output_dir)
-
-    else:
-        for compound in uniprot_confidences:
-            print ("performing enrichment analysis for compound", compound)
-
-            compound_output_dir = os.path.join(output_dir, 
-                str(compound))
-            os.makedirs(compound_output_dir, exist_ok=True)
-
-            unique_uniprots = uniprot_confidences[compound].keys()
-            uniprot_filename = os.path.join(compound_output_dir, 
-                "uniprot_ACCs.txt")
-            write_uniprots(unique_uniprots, uniprot_filename)
-
-            if len(unique_uniprots) > 0:
-
-                perform_enrichment_analysis(
-                    uniprot_filename,
-                    compound_output_dir)
-            print ()
+                compound_output_dir)
+        print ()
 
     return 0
 

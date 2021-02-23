@@ -32,8 +32,6 @@ def query_uniprot(acc=None, gene=None, size=1000):
 
     response_body = r.text
     response_body = json.loads(response_body)
-    # if len(response_body) == 1:
-        # response_dict = response_body[0]
     hits = []
     for response_dict in response_body:
         assert isinstance(response_dict, dict)
@@ -54,7 +52,7 @@ def query_uniprot(acc=None, gene=None, size=1000):
             else:
                 assert False, protein_name
         else:
-            protein_name = ""
+            protein_name = None
         if "gene" in response_dict:
             genes = response_dict["gene"]
             assert isinstance(genes, list)
@@ -62,9 +60,28 @@ def query_uniprot(acc=None, gene=None, size=1000):
                 genes = [gene["name"]["value"] for gene in genes]
             elif "orfNames" in genes[0]:
                 genes = [gene["orfNames"][0]["value"] for gene in genes]
+            elif "olnNames" in genes[0]:
+                genes = [gene["olnNames"][0]["value"] for gene in genes]
+            assert isinstance(genes[0], str), (acc, genes[0])
+            genes = ",".join(genes)
         else:
-            genes = [""]
-        hits.extend([(protein_name, gene) for gene in genes])
+            genes = None
+        if "organism" in response_dict:
+            organism = response_dict["organism"]
+            assert "names" in organism
+            organism = organism["names"]
+            organism = "-".join(["{}:{}".\
+                format(name["type"], name["value"])
+                for name in organism])
+        else:
+            organism = None
+
+        hits.append((protein_name, genes, organism))
+    
+    if len(hits) == 0:
+        hits = [(None, None, None)]
+    assert len(hits) > 0
+
     return hits
 
 
@@ -98,15 +115,15 @@ def map_to_uniprot(query, map_from="CHEMBL_ID", map_to="ACC", return_format="tab
 
 if __name__ == "__main__":
 
-    # uniprots = []
-    # with open("unique_uniprot_ACCs.txt", "r") as f:
-    #     for line in f.readlines():
-    #         uniprots.append(line.rstrip())
+    uniprots = []
+    with open("unique_uniprot_ACCs.txt", "r") as f:
+        for line in f.readlines():
+            uniprots.append(line.rstrip())
     # print (uniprots)
-    acc = "C4YTQ8"
-    # for acc in uniprots:
-    hits = query_uniprot(acc=acc)
-    print (acc, hits)
+    # acc = "C4YTQ8"
+    for acc in uniprots:
+        hits = query_uniprot(acc=acc)
+        # print (acc, hits)
     # print (hits)
     # query_uniprot(size=-1, gene="CHEMBL2169726")#gene="PARP1", size=-1)
     # map_to_uniprot(["Q25856"])

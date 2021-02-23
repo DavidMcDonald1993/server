@@ -16,7 +16,7 @@ import scoria
 
 import shutil
 
-from utils.io import process_input_file, BRICS_decompose_smiles_file
+from utils.io import download_from_client, convert_file, BRICS_decompose_smiles_file
 from utils.email_utils import send_mail
 from utils.users import send_file_to_user, determine_identifier
 
@@ -217,7 +217,10 @@ def hit_optimisation(
     print ("outputting to directory", output_dir)
 
     # download file if file is a GET request
-    input_smiles_file = process_input_file(input_file, 
+    input_file = download_from_client(input_file, output_dir)
+
+    # convert if necessary
+    input_smiles_file = convert_file(input_file, 
         desired_format=".smi", output_dir=output_dir)
 
     print ("performing hit optimisation for target", pdb_id,
@@ -261,10 +264,9 @@ def hit_optimisation(
     cmd = f'''
     python hit_optimisation/autogrow4/RunAutogrow.py\
         --json "{settings_filename}"
+        > {output_dir}/autogrow.out\
+        2> {output_dir}/autogrow.err
     '''
-        # > {output_dir}/autogrow.out\
-        # 2> {output_dir}/autogrow.err
-    # '''
     
     ret = os.system(cmd)
     # assert ret == 0

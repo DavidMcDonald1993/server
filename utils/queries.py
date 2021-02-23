@@ -42,7 +42,7 @@ def get_uniprots_for_targets(targets, existing_conn=None):
         if len(targets) == 1:
             targets = targets[0]
     query = f'''
-        SELECT DISTINCT t.target_name, u.acc, tu.score
+        SELECT DISTINCT t.target_name, u.acc, u.protein, u.gene, tu.score
         FROM targets AS t
         INNER JOIN targets_to_uniprot AS tu ON (t.target_id=tu.target_id)
         INNER JOIN uniprot AS u ON (tu.uniprot_id=u.uniprot_id)
@@ -51,27 +51,33 @@ def get_uniprots_for_targets(targets, existing_conn=None):
     '''
     return mysql_query(query, existing_conn=existing_conn)
 
-def get_uniprots_for_compound(
+def get_predicted_uniprots_for_compound(
     coconut_id, 
-    threshold=0,
+    threshold=900,
     filter_pa_pi=True,
     existing_conn=None):
 
     if isinstance(coconut_id, list) or isinstance(coconut_id, set):
         coconut_id = tuple(coconut_id)
 
-    get_uniprots_sql = f'''
-    SELECT c.coconut_id AS `ID`, cu.confidence_score AS `Confidence Score`, 
-        u.acc AS `Uniprot ACC`
+    get_predicted_uniprots_sql = f'''
+    SELECT c.coconut_id AS `ID`, 
+        u.acc AS `Predicted Uniprot ACC`,
+        u.protein AS `Predicted Uniprot Protein`,
+        u.gene AS `Predicted Uniprot Gene(s)`,
+        u.organism AS `Predicted Uniprot Organism`,
+        cu.confidence_score AS `Confidence Score`
     FROM compounds AS c
     INNER JOIN compound_to_uniprot AS cu 
         ON (c.compound_id=cu.compound_id)
     INNER JOIN uniprot AS u 
         ON (cu.uniprot_id=u.uniprot_id)
-    WHERE cu.above_{threshold}=(1)
-    AND {f'c.coconut_id="{coconut_id}"' if isinstance(coconut_id, str)
+    WHERE {f'c.coconut_id="{coconut_id}"' if isinstance(coconut_id, str)
         else f"c.coconut_id IN {coconut_id}"}
+    {f"AND cu.above_{threshold}=(1)" if threshold > 900 else ""}
+    ORDER BY `Confidence Score` DESC
     '''
+    # currently only storing confidences>=900
 
     # get_uniprots_sql = f'''
     #     SELECT c.coconut_id, t.target_name, u.acc
@@ -86,7 +92,40 @@ def get_uniprots_for_compound(
     #     {f"AND a.Pa>a.Pi" if filter_pa_pi else ""}
     # '''
 
-    return mysql_query(get_uniprots_sql, existing_conn=existing_conn)
+    return mysql_query(get_predicted_uniprots_sql, existing_conn=existing_conn)
+
+def get_inferred_uniprots_for_compounds(
+    coconut_id, 
+    threshold=750,
+    filter_pa_pi=True,
+    existing_conn=None):
+    assert filter_pa_pi
+
+    if isinstance(coconut_id, list) or isinstance(coconut_id, set):
+        coconut_id = tuple(coconut_id)
+
+    get_inferred_uniprots_sql = f'''
+    SELECT c.coconut_id AS `ID`, 
+        u.acc AS `Inferred Uniprot ACC`,
+        u.protein AS `Inferred Uniprot Protein`,
+        u.gene AS `Inferred Uniprot Gene(s)`,
+        u.organism AS `Inferred Uniprot Organism`,
+        GROUP_CONCAT(t.target_name SEPARATOR '-') AS `Mechanisms`,
+        AVG(a.confidence_score) AS `Mean Inferred Confidence`
+    FROM compounds AS c
+    INNER JOIN activities AS a ON (c.compound_id=a.compound_id)
+    INNER JOIN targets AS t ON (a.target_id=t.target_id)
+    INNER JOIN targets_to_uniprot AS tu ON (a.target_id=tu.target_id)
+    INNER JOIN uniprot AS u ON (tu.uniprot_id=u.uniprot_id)
+    WHERE {f"c.coconut_id='{coconut_id}'" if isinstance(coconut_id, str)
+        else f"c.coconut_id IN {coconut_id}"}
+    {f"AND a.above_{threshold}=(1)" if threshold>0 and filter_pa_pi else ""}
+    GROUP BY `Inferred Uniprot ACC`
+    ORDER BY `Mean Inferred Confidence` DESC
+    '''
+
+    return mysql_query(get_inferred_uniprots_sql, existing_conn=existing_conn)
+
 
 def get_all_pathways(
     filter_actives=True,
@@ -210,6 +249,46 @@ def get_all_pathways_for_compounds(
 
     return records
 
+def get_all_pathways_for_uniprots(
+    accs,
+    organism=None,
+    existing_conn=None,
+    limit=None,
+    ):
+    if isinstance(accs, list) or isinstance(accs, set):
+        accs = tuple(accs)
+    else:
+        assert isinstance(accs, str)
+
+    query = f'''
+    SELECT GROUP_CONCAT(DISTINCT(u.acc) SEPARATOR '-') AS `Uniprot ACCS`, 
+        COUNT(DISTINCT(u.acc)) AS `Number Uniprot ACCs`,
+        p.num_uniprot AS `Total Uniprot ACCs`,
+        COUNT(DISTINCT(u.acc)) / p.num_uniprot AS `Uniprot Coverage`,      
+        p.pathway_name AS `Pathway Name`, p.organism AS `Organism`, 
+        p.pathway_url AS `Pathway URL`
+    FROM uniprot AS u
+    INNER JOIN uniprot_to_pathway AS up ON (u.uniprot_id=up.uniprot_id)
+    INNER JOIN pathway AS p ON (up.pathway_id=p.pathway_id)
+    WHERE {f"u.acc IN {accs}" if isinstance(accs, tuple)
+        else f'u.acc="{accs}"'}
+    {f'AND p.organism="{organism}"' if organism is not None else ""}
+    GROUP BY p.pathway_name, p.organism
+    {f"LIMIT {limit}" if limit is not None else ""}
+    '''
+    records = mysql_query(query, existing_conn=existing_conn)
+
+    records = [
+        (uniprots, uniprot_count, total_uniprots,
+            coverage, pathway_name, urlparse.quote(pathway_name),
+            organism, urlparse.quote(organism), url)
+        for uniprots, uniprot_count, total_uniprots,
+            coverage, pathway_name,
+            organism, url in records
+    ]
+
+    return records
+
 def get_all_reactions_for_compounds(
     coconut_ids,
     organism=None,
@@ -256,6 +335,45 @@ def get_all_reactions_for_compounds(
 
     return records
 
+
+def get_all_reactions_for_uniprots(
+    accs,
+    organism=None,
+    existing_conn=None,
+    limit=None,
+    ):
+    if isinstance(accs, list) or isinstance(accs, set):
+        accs = tuple(accs)
+    else:
+        assert isinstance(accs, str)
+    query = f'''
+    SELECT GROUP_CONCAT(DISTINCT(u.acc) SEPARATOR '-') AS `Uniprot ACCS`, 
+        COUNT(DISTINCT(u.acc)) AS `Number Uniprot ACCs`,
+        r.num_uniprot AS `Total Uniprot ACCs`,
+        COUNT(DISTINCT(u.acc)) / r.num_uniprot AS `Uniprot Coverage`,   
+        r.reaction_name AS `Reaction Name`, r.organism AS `Organism`, 
+        r.reaction_url AS `Reaction URL`
+    FROM uniprot AS u
+    INNER JOIN uniprot_to_reaction AS ur ON (u.uniprot_id=ur.uniprot_id)
+    INNER JOIN reaction AS r ON (ur.reaction_id=r.reaction_id)
+    WHERE {f"u.acc IN {accs}" if isinstance(accs, tuple)
+        else f'u.acc="{accs}"'}
+    {f'AND r.organism="{organism}"' if organism is not None else ""}
+    GROUP BY r.reaction_name, r.organism
+    {f"LIMIT {limit}" if limit is not None else ""}
+    '''
+    records = mysql_query(query, existing_conn=existing_conn)
+
+    records = [
+        (uniprots, uniprot_count, total_uniprots,
+            coverage, reaction_name, urlparse.quote(reaction_name,),
+            organism, urlparse.quote(organism), url)
+        for uniprots, uniprot_count, total_uniprots,
+            coverage, reaction_name,
+            organism, url in records
+    ]
+
+    return records
 
 def get_target_hits(
     targets, 
@@ -538,7 +656,6 @@ def get_info_for_multiple_compounds(
     ]
 
     conditions = " AND ".join(filter(lambda x: x, conditions))
-    print (conditions)
 
     compound_query = f'''
         SELECT {(", ".join(columns))}
@@ -590,7 +707,69 @@ def get_all_activities_for_compound(
    
     return dict(category_activities)
 
+def get_drugs_for_uniprots(accs):
+    if isinstance(accs, list) or isinstance(accs, set):
+        accs = tuple(accs)
+    else:
+        assert isinstance(accs, str)
+    sql = f'''
+    SELECT d.drug_name, d.inchi, 
+        d.canonical_smiles, d.drug_type, d.drug_class, d.company, 
+        ud.moa, ud.highest_status,
+        u.acc, 
+        ud.activity, 
+        ud.reference
+    FROM uniprot AS `u`
+    INNER JOIN uniprot_to_drug as `ud`
+        ON (u.uniprot_id=ud.uniprot_id)
+    INNER JOIN drug as `d`
+        ON (ud.drug_id=d.drug_id)
+    WHERE {f"u.acc IN {accs}" if isinstance(accs, tuple)
+        else f'u.acc="{accs}"'}
+    '''
+    return mysql_query(sql)
+
+def get_diseases_for_uniprots(accs):
+    if isinstance(accs, list) or isinstance(accs, set):
+        accs = tuple(accs)
+    else:
+        assert isinstance(accs, str)
+    sql = f'''
+    SELECT d.disease_name, d.icd,
+        u.acc, ud.clinical_status
+    FROM uniprot AS `u`
+    INNER JOIN uniprot_to_disease as `ud`
+        ON (u.uniprot_id=ud.uniprot_id)
+    INNER JOIN disease as `d`
+        ON (ud.disease_id=d.disease_id)
+    WHERE {f"u.acc IN {accs}" if isinstance(accs, tuple)
+        else f'u.acc="{accs}"'}
+    '''
+    return mysql_query(sql)
+
+def get_protein_gene_from_acc(accs):
+    if isinstance(accs, list) or isinstance(accs, set):
+        accs = tuple(accs)
+    else:
+        assert isinstance(accs, str)
+    query = f'''
+    SELECT acc, protein, gene
+    FROM uniprot AS `u`
+    WHERE {f"u.acc IN {accs}" if isinstance(accs, tuple)
+        else f'u.acc="{accs}"'}
+    '''
+    return mysql_query(query)
+
 if __name__ == "__main__":
+
+    # records = get_inferred_uniprots_for_compounds("CNP0000002")
+
+    # records = get_diseases_for_uniprots("P00533")
+
+    # for record in records:
+    #     print (record)
+
+    print (get_protein_gene_from_acc("P00533"))
 
     # hits = get_all_activities_for_compound("CNP0000002", threshold=650)
 
@@ -631,9 +810,9 @@ if __name__ == "__main__":
     #     print (record)
 
 
-    name_like = "gink"
+    # name_like = "gink"
 
-    records = get_info_for_multiple_compounds(name_like=None, compound_ids=None, formula_like="H%2")
+    # records = get_info_for_multiple_compounds(name_like=None, compound_ids=None, formula_like="H%2")
 
-    for record in records:
-        print (record)
+    # for record in records:
+    #     print (record)
