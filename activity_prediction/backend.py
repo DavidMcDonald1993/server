@@ -182,7 +182,7 @@ def perform_pass_prediction(
             "all_PASS_confidences.tsv")
         compound_target_confidences = confidences[compound]
         targets_sorted_by_confidence = sorted(
-            compound_target_confidences, key=compound_confidences.get,
+            compound_target_confidences, key=compound_target_confidences.get,
             reverse=True)
         with open(compound_output_file, "w") as f:
             f.write("Target\tConfidence\n")
