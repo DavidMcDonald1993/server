@@ -190,7 +190,7 @@ def perform_pass_prediction(
             # if confidence < threshold:
                 # break
             # confidence_dict[target] = 
-            f.write(f"{target}\t{confidence}\n")
+            f.write(f"{target}\t{targets_sorted_by_confidence[target]}\n")
 
     # predicted_uniprot_dir = os.path.join(pass_output_dir, 
     #     "predicted_uniprot_ACCs")
