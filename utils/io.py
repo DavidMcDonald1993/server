@@ -235,10 +235,10 @@ def convert_file(
             if input_file_type in {".smi", ".sml", ".txt"}:
                 # convert from SMILES to SDF
                 print ("converting SMILES to SDF")
-                smiles_filename = temp_file
+                smiles_filename = input_file
                 print ("SMILES filename:", smiles_filename)
                 input_file = input_file_name + desired_format
-                smiles_to_sdf(smiles_filename, temp_file,
+                smiles_to_sdf(smiles_filename, input_file,
                     standardise=True, embed=False)
             else:
                 raise NotImplementedError
