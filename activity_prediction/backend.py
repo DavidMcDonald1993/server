@@ -186,11 +186,8 @@ def perform_pass_prediction(
             reverse=True)
         with open(compound_output_file, "w") as f:
             f.write("Target\tConfidence\n")
-        for target in targets_sorted_by_confidence:
-            # if confidence < threshold:
-                # break
-            # confidence_dict[target] = 
-            f.write(f"{target}\t{compound_target_confidences[target]}\n")
+            for target in targets_sorted_by_confidence:
+                f.write(f"{target}\t{compound_target_confidences[target]}\n")
 
     # predicted_uniprot_dir = os.path.join(pass_output_dir, 
     #     "predicted_uniprot_ACCs")
