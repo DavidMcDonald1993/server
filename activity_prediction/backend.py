@@ -146,7 +146,7 @@ def perform_pass_prediction(
     err_stream = os.path.join(pass_output_dir, "pass.err")
 
     cmd = f'''
-    PASS2019toSDF.exe {input_sdf_file} {pass_out_file}
+    PASS2019toSDF.exe {input_file} {pass_out_file}
     '''
     #     > {out_stream} 2> {err_stream}
     # '''
