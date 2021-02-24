@@ -37,10 +37,10 @@
 
           <div id="ppb2_option_div" style="display: inline;">
             
-            <label for="ppb2_option">Select fingerprint-classifier:</label>
+            <label for="ppb2_option">Select machine learning algorithm:</label>
             <select name="ppb2_option" id="ppb2_option">
-              {% for model in model_choices %}
-                <option value="{{model}}">{{model}}</option>
+              {% for alias, model in model_choices %}
+                <option value="{{model}}">{{alias}}</option>
               {% endfor %}
             </select> 
 

@@ -61,8 +61,8 @@ def upload_file_view(request):
         return HttpResponseRedirect("/login")
 
     ppb2_options = [
-        "morg2-nn+nb",
-        "morg3-xgc",
+        ("Algorithm 1", "morg2-nn+nb"),
+        ("Algorithm 2", "morg3-xgc"),
     ]
 
     if request.method == 'POST':
