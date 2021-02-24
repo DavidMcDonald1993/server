@@ -5,7 +5,7 @@
   {% load static %}
   <script type="text/javascript" src="{%static 'natural_products/categories.js' %}"></script>
 
-  <body class="right" onload="makeDataTable(
+  <body class="left right" onload="makeDataTable(
       ['PROPERTIESTable', 'ALL_TARGETSTable', 
         'ANTITARGETSTable', 'EFFECTSTable', 'GENE_EXPRESSIONTable', 
         'MECHANISMSTable', 'METABOLISMTable', 'TOXICITYTable', 'TRANSPORTERSTable',
@@ -258,30 +258,34 @@
             <tr>
               <th>Drug Name</th>
               <!-- <th>Drug INCHI</th> -->
-              <th>Drug SMILES</th>
+              <!-- <th>Drug SMILES</th> -->
               <th>Drug Type</th>
               <th>Drug Class</th>
               <th>Drug Company</th>
-              <th>Drug MOA</th>
+              <th>Disease</th>
               <th>Drug Highest Status</th>
               <th>Target ACC</th>
+              <th>Confidence</th>
+              <th>Confidence Type</th>
               <th>Activity</th>
               <th>Reference</th>
             </tr>
           </thead>
           
           <tbody>
-            {% for name, inchi, smiles, type, class, company, moa, status, acc, activity, reference in drugs %}
+            {% for name, inchi, smiles, type, class, company, disease, status, acc, confidence, confidence_type, activity, reference in drugs %}
             <tr>
               <td>{{name}}</td>
               <!-- <td>{{inchi}}</td> -->
-              <td>{{smiles}}</td>
+              <!-- <td>{{smiles}}</td> -->
               <td>{{type}}</td>
               <td>{{class}}</td>
               <td>{{company}}</td>
-              <td>{{moa}}</td>
+              <td>{{disease}}</td>
               <td>{{status}}</td>
               <td>{{acc}}</td>
+              <td>{{confidence}}</td>
+              <td>{{confidence_type}}</td>
               <td>{{activity}}</td>
               <td>{{reference}}</td>
             </tr>
@@ -295,7 +299,7 @@
 
     <div id="nav-#DISEASE" style="display: none;">
 
-      <h2>Drug</h2>
+      <h2>Diseases</h2>
       <table id="DISEASETable" class="display table data"
         style="width:100%;text-align:center;display:inline;">
         
@@ -304,16 +308,20 @@
             <th>Disease Name</th>
             <th>ICD</th>
             <th>Target ACC</th>
+            <th>Confidence</th>
+            <th>Confidence Type</th>
             <th>Clinical Status</th>
           </tr>
         </thead>
         
         <tbody>
-          {% for name, icd, acc, status in diseases %}
+          {% for name, icd, acc, confidence, confidence_type, status in diseases %}
           <tr>
             <td>{{name}}</td>
             <td>{{icd}}</td>
             <td>{{acc}}</td>
+            <td>{{confidence}}</td>
+            <td>{{confidence_type}}</td>
             <td>{{status}}</td>
           </tr>
           {% endfor %}

@@ -413,15 +413,49 @@ def compound_info_view(request, compound_id):
     predicted_uniprots = [ record[1:]
         for record in get_predicted_uniprots_for_compound(compound_id)]
 
-
-    all_accs = {record[0] for record in inferred_uniprots}
-    all_accs = all_accs.union({record[0] for record in predicted_uniprots})
+    all_accs = {
+        record[0]  : (int(record[-1]), "inferred") # inferred confidence
+        for record in inferred_uniprots
+    }
+    # add predicted ACCs
+    for record in predicted_uniprots:
+        acc = record[0]
+        if acc in all_accs:
+            all_accs[acc] = (1000, "combined")
+        else:
+            all_accs[acc] = (record[-1], "predicted")
+    # all_accs = all_accs.union({record[0] for record in predicted_uniprots})
 
     if len(all_accs) > 0:
-        pathways = get_all_pathways_for_uniprots(all_accs)
-        reactions = get_all_reactions_for_uniprots(all_accs)
-        drugs = get_drugs_for_uniprots(all_accs)
-        diseases = get_diseases_for_uniprots(all_accs)
+        pathways = get_all_pathways_for_uniprots(list(all_accs))
+        reactions = get_all_reactions_for_uniprots(list(all_accs))
+        '''
+        add confidences to drugs and diseases
+        '''
+        drugs = get_drugs_for_uniprots(list(all_accs))
+        '''
+        d.drug_name, d.inchi, 
+        d.canonical_smiles, d.drug_type, d.drug_class, d.company, 
+        disease.disease_name, drd.clinical_status,
+        u.acc, 
+        ud.activity, 
+        ud.reference
+        '''
+        drugs = [
+            (drug_name, inchi, smiles, drug_type, drug_class, company,
+                disease_name, status, acc, f"{all_accs[acc][0]}", f"{all_accs[acc][1]}", activity, reference)
+            for drug_name, inchi, smiles, drug_type, drug_class, company,\
+                disease_name, status, acc, activity, reference in drugs
+        ]
+        diseases = get_diseases_for_uniprots(list(all_accs))
+        '''
+        d.disease_name, d.icd,
+        u.acc, ud.clinical_status
+        '''
+        diseases = [
+            (disease_name, icd, acc, f"{all_accs[acc][0]}", f"{all_accs[acc][1]}", status)
+            for disease_name, icd, acc, status in diseases
+        ]
     else:
         pathways = []
         reactions = []

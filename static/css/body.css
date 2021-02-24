@@ -17,12 +17,21 @@ body.normal {
     grid-template-columns: 1fr 7fr;
 }
 
-body.right {
+body.left.right {
     grid-template-areas:
     "nav-left head nav-right"
     "nav-left main nav-right"
     "nav-left foot nav-right";
     grid-template-columns: 1fr 6fr 1fr;
+}
+
+
+body.right {
+    grid-template-areas:
+    "head nav-right"
+    "main nav-right"
+    "foot nav-right";
+    grid-template-columns: 7fr 1fr;
 }
 
 body.no-nav {

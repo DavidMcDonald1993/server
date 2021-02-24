@@ -169,12 +169,12 @@ def replace_missing_names(names):
     for i in range(len(names)):
         name = names[i]
         name_sanitised = sanitise_filename(name)
+        if name_sanitised == "":
+            name_sanitised = f"unknown_compound_{missing}"
+            missing += 1
         if name_sanitised != name:
             changed = True
             names[i] = name_sanitised
-        if name_sanitised == "":
-            changed = True
-            names[i] = f"unknown_compound_{i}"
     return changed, names
 
 def get_compound_names(filename):

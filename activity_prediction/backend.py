@@ -179,7 +179,7 @@ def perform_pass_prediction(
         compound_output_dir = os.path.join(output_dir,
             compound)
         compound_output_file = os.path.join(compound_output_dir,
-            "all_PASS_confidences.tsv")
+            "all_mechanism_toxicity_confidences.tsv")
         compound_target_confidences = confidences[compound]
         targets_sorted_by_confidence = sorted(
             compound_target_confidences, key=compound_target_confidences.get,
@@ -363,10 +363,10 @@ def perform_drug_identificaton(
             filename)
         with open(filename, "w") as f:
             f.write(f"DrugName\tINCHI\tSMILES\tType\t")
-            f.write(f"Class\tCompany\tMOA\tHighestStatus\tACC\tConfidence\tActivity\tReference\n")
-            for name, inchi, smiles, drug_type, drug_class, company, moa, status, acc, activity, reference in drugs:
+            f.write(f"Class\tCompany\tDisease\tStatus\tACC\tConfidence\tActivity\tReference\n")
+            for name, inchi, smiles, drug_type, drug_class, company, disease, status, acc, activity, reference in drugs:
                 f.write(f"{name}\t{inchi}\t{smiles}\t{drug_type}\t")
-                f.write(f"{drug_class}\t{company}\t{moa}\t{status}\t")
+                f.write(f"{drug_class}\t{company}\t{disease}\t{status}\t")
                 f.write(f"{acc}\t{compound_uniprot_confidences[compound][acc]}\t{activity}\t{reference}\n")
 
 def perform_disease_identification(

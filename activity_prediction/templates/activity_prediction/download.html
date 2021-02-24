@@ -1,16 +1,33 @@
 <!doctype html>
 <html>
   {% include 'header.html' %}
+  {% load static %}
+  <script type="text/javascript" src="{% static 'activity_prediction/js/hide_divs.js' %}"></script>
 
-  <body class="no-nav" onload="makeDataTable('all')">
+  {% if authenticated %}
+
+  <body class="right" onload="makeDataTable('all')">
  
     <header>
       <h1>Download page</h1>
     </header>
 
-    <main>
+    {% if summary %}
+    <!-- buttons -->
 
-      {% if authenticated %}
+    <nav id="categorySidebar" class="sidenav sidenav-right">
+      {% for compound, compound_summary in summary.items %}
+      <div style="text-align: center;">
+        <h3>{{compound}}</h3>
+      </div>
+      {% for result_name, df in compound_summary.items %}
+        <a href="#{{compound}}-{{result_name}}" onclick="showDiv(this)">{{result_name}}</a>
+      {% endfor %}
+      {% endfor %}
+    </nav>
+    {% endif %}
+
+    <main>
 
       <div>
           <p>The download should begin shortly. If it doesn't, click
@@ -21,16 +38,21 @@
 
           {% if summary %}
           <div>
+
+    
+
             <h2>Result Summary</h2>
+
+
             {% for compound, compound_summary in summary.items %}
-            <div>
+            <div id={{compound}}-results>
               <h3>{{compound}}</h3>
-              {% for result, df in compound_summary.items %}
-                <div>
-                  <p>
-                    {{result}}
-                  </p>
-                  <table class="display table data" style="width:100%;text-align:center;">
+              {% for result_name, df in compound_summary.items %}
+                <div id="nav-#{{compound}}-{{result_name}}" 
+                  style="display: none;">
+                  <h3>{{result_name}}</h3>
+                  <table class="display table data" 
+                    style="width:100%;text-align:center;">
 
                     <thead>
                       <tr>
@@ -65,7 +87,25 @@
           </form> 
       </div>
 
+      </main>
+      
+      <footer>
+
+      </footer>
+
+
+    </body>
+
       {% else %}
+    <body class="no-nav">
+
+     
+    <header>
+      <h1>Download page</h1>
+    </header>
+
+    <main>
+
       <div>   
         <h2>Please log in to download file:</h2>
         {% if login_error %}

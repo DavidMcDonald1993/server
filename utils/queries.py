@@ -715,7 +715,7 @@ def get_drugs_for_uniprots(accs):
     sql = f'''
     SELECT d.drug_name, d.inchi, 
         d.canonical_smiles, d.drug_type, d.drug_class, d.company, 
-        ud.moa, ud.highest_status,
+        disease.disease_name, drd.clinical_status,
         u.acc, 
         ud.activity, 
         ud.reference
@@ -724,6 +724,12 @@ def get_drugs_for_uniprots(accs):
         ON (u.uniprot_id=ud.uniprot_id)
     INNER JOIN drug as `d`
         ON (ud.drug_id=d.drug_id)
+    INNER JOIN drug_to_disease as `drd`
+        ON (ud.drug_id=drd.drug_id)
+    LEFT JOIN uniprot_to_disease as `udis`
+        ON (u.uniprot_id=udis.uniprot_id AND udis.disease_id=drd.disease_id)
+    INNER JOIN disease
+        ON (drd.disease_id=disease.disease_id)
     WHERE {f"u.acc IN {accs}" if isinstance(accs, tuple)
         else f'u.acc="{accs}"'}
     '''
@@ -764,12 +770,12 @@ if __name__ == "__main__":
 
     # records = get_inferred_uniprots_for_compounds("CNP0000002")
 
-    # records = get_diseases_for_uniprots("P00533")
+    records = get_drugs_for_uniprots("P00533")
 
-    # for record in records:
-    #     print (record)
+    for record in records:
+        print (record)
 
-    print (get_protein_gene_from_acc("P00533"))
+    # print (get_protein_gene_from_acc("P00533"))
 
     # hits = get_all_activities_for_compound("CNP0000002", threshold=650)
 
