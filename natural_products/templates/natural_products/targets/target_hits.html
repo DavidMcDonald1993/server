@@ -5,9 +5,9 @@
   {% load static %}
 
   {% if show_images %}
-  <body class="right" onload="makeDataTable(['resultsTable'], [4, ])"> 
+  <body class="left right" onload="makeDataTable(['resultsTable'], [4, ])"> 
   {% else %}
-  <body class="right" onload="makeDataTable(['resultsTable'], [3, ])">
+  <body class="left right" onload="makeDataTable(['resultsTable'], [3, ])">
   {% endif %}
     
     {% include 'navbar.html' %}

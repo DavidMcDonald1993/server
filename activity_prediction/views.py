@@ -61,9 +61,18 @@ def upload_file_view(request):
         return HttpResponseRedirect("/login")
 
     ppb2_options = [
-        ("Algorithm 1", "morg2-nn+nb"),
-        ("Algorithm 2", "morg3-xgc"),
+        "morg2-nn+nb",
+        "morg3-xgc"
     ]
+    ppb2_options = [
+        (f"Algorithm {i+1}", alg)
+        for i, alg in enumerate(ppb2_options)
+    ]
+
+    # ppb2_options = [
+    #     ("Algorithm 1", "morg2-nn+nb"),
+    #     ("Algorithm 2", "morg3-xgc"),
+    # ]
 
     if request.method == 'POST':
         form = UploadFileForm(request.POST, request.FILES)
