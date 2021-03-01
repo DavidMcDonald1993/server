@@ -58,7 +58,10 @@ def LoadSDF(filename, idName='ID', molColName='ROMol', includeFingerprints=False
                                 strictParsing=strictParsing)):
         if mol is None:
             continue
-        row = dict((k, mol.GetProp(k)) for k in mol.GetPropNames())
+        try:
+            row = dict((k, mol.GetProp(k)) for k in mol.GetPropNames())
+        except UnicodeDecodeError:
+            continue
         if molColName is not None and not embedProps:
             for prop in mol.GetPropNames():
                 mol.ClearProp(prop)

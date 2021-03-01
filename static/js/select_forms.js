@@ -3,7 +3,8 @@ $(document).ready(function() {
 
       var empty = false;
       $('select').each(function() {
-          if ($(this).val() == '') {
+          var element = $(this);
+          if (element.css("display") != "none" && element.val() == '') {
               empty = true;
           }
       });

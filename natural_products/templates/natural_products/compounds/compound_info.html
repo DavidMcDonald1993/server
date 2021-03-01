@@ -3,17 +3,9 @@
 
   {% include 'header.html' %}
   {% load static %}
-  <script type="text/javascript" src="{%static 'natural_products/categories.js' %}"></script>
+  <script type="text/javascript" src="{%static 'natural_products/js/categories.js' %}"></script>
 
-  <body class="left right" onload="makeDataTable(
-      ['PROPERTIESTable', 'ALL_TARGETSTable', 
-        'ANTITARGETSTable', 'EFFECTSTable', 'GENE_EXPRESSIONTable', 
-        'MECHANISMSTable', 'METABOLISMTable', 'TOXICITYTable', 'TRANSPORTERSTable',
-        'PREDICTEDUNIPROTTable', 'INFERREDUNIPROTTable', 
-        'PATHWAYSTable', 'REACTIONSTable',
-        'DRUGTable', 'DISEASETable'
-      ], 
-      [0, 1, 1, 1, 1, 1, 1, 1, 1, 4, 5, 5, 5, 0, 0])">
+  <body class="left right" onload="makeDataTable('all')">
 
     {% include 'navbar.html' %}
     
@@ -30,8 +22,8 @@
       {% for category, category_activities in activities.items %}
       <a href="#{{category}}" onclick="showDiv(this)">{{category}}</a>
       {% endfor %}
-      <a href="#PREDICTEDUNIPROT" onclick="showDiv(this)">UNIPROT(predicted)</a>
-      <a href="#INFERREDUNIPROT" onclick="showDiv(this)">UNIPROT(inferred)</a>
+      <a href="#UNIPROT" onclick="showDiv(this)">UNIPROT</a>
+      <!-- <a href="#INFERREDUNIPROT" onclick="showDiv(this)">UNIPROT(inferred)</a> -->
       <a href="#PATHWAYS" onclick="showDiv(this)">PATHWAYS</a>
       <a href="#REACTIONS" onclick="showDiv(this)">REACTIONS</a>
       <a href="#DRUG" onclick="showDiv(this)">DRUGS</a>
@@ -93,12 +85,12 @@
             </thead>
                     
             <tbody>
-              {% for target, target_encoded, pa, pi, diff in category_activities %}
+              {% for target, target_encoded, pa, pi, confidence in category_activities %}
               <tr>
                 <td><a href="/natural_products/targets/all/{{target_encoded}}">{{target}}</a></td>
                 <!-- <td>{{pa}}</td> -->
                 <!-- <td>{{pi}}</td> -->
-                <td>{{diff}}</td>
+                <td>{{confidence}}</td>
               </tr>
               {% endfor %}
             </tbody>
@@ -107,12 +99,12 @@
         {% endfor %}
         {% endif %}
 
-        <!-- predicted uniprots -->
+        <!-- uniprots -->
 
-        <div id="nav-#PREDICTEDUNIPROT"  style="display: none;">
+        <div id="nav-#UNIPROT"  style="display: none;">
         
-        <h2>Pathways</h2>
-          <table id="PREDICTEDUNIPROTTable" class="display table data"
+        <h2>Uniprot Targets</h2>
+          <table id="UNIPROTTable" class="display table data"
               style="width:100%;text-align:center;display:inline;">
               
             <thead>
@@ -122,57 +114,26 @@
                 <th>Genes</th>
                 <th>Organism</th>
                 <th>Confidence</th>
+                <th>Confidence Type</th>
+                <th>Targets</th>
               </tr>
             </thead>
               
             <tbody>
-              {% for acc, protein, gene, organism, confidence in predicted_uniprots %}
+              {% for uniprot in uniprots %}
               <tr>
-                <td>{{acc}}</td>
-                <td>{{protein}}</td>
-                <td>{{gene}}</td>
-                <td>{{organism}}</td>
-                <td>{{confidence}}</td>
+                <td>{{uniprot.acc}}</td>
+                <td>{{uniprot.protein}}</td>
+                <td>{{uniprot.gene}}</td>
+                <td>{{uniprot.organism}}</td>
+                <td>{{uniprot.confidence_score}}</td>
+                <td>{{uniprot.confidence_type}}</td>
+                <td>{{uniprot.targets}}</td>
               </tr>
               {% endfor %}
             </tbody>
           </table>
         </div>
-
-    <!-- inferred uniprots -->
-
-    <div id="nav-#INFERREDUNIPROT"  style="display: none;">
-        
-      <h2>Pathways</h2>
-        <table id="INFERREDUNIPROTTable" class="display table data"
-            style="width:100%;text-align:center;display:inline;">
-            
-          <thead>
-            <tr>
-              <th>Uniprot ACC</th>
-              <th>Protein</th>
-              <th>Genes</th>
-              <th>Organism</th>
-              <th>Associated Targets</th>
-              <th>Mean Confidence</th>
-            </tr>
-          </thead>
-            
-          <tbody>
-            {% for acc, protein, gene, organism, targets, confidence in inferred_uniprots %}
-            <tr>
-              <td>{{acc}}</td>
-              <td>{{protein}}</td>
-              <td>{{gene}}</td>
-              <td>{{organism}}</td>
-              <td>{{targets}}</td>
-              <td>{{confidence}}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-
 
         <!-- pathways -->
         <div id="nav-#PATHWAYS"  style="display: none;">

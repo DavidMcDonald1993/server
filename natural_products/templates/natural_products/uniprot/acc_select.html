@@ -1,0 +1,65 @@
+<!doctype html>
+
+<html lang="en">
+
+  {% include 'header.html' %}
+  {% load static %}
+
+  <body class="normal">
+
+    {% include 'navbar.html' %}
+
+    <header>
+      <h1>Multi-target ACC Screening</h1>
+      <h2>ACC selection</h2>
+    </header>
+
+    <main>
+
+      <div class="hiddenDiv" style="display: none;">
+
+        <form class="select-form" action="/natural_products/acc/screening/hits/" method="get">
+          <div>
+            <label for="accs">Select target(s):</label>
+            <select name="targets" id="targets" multiple>
+              {% for acc, protein, gene in targets %}
+                <option value="{{acc}}">{{Protein}} - GeneName:{{gene}} ({{acc}})</option>
+              {% endfor %}
+            </select> 
+
+          </div>
+
+          <br>
+          <br>
+
+          <label for="threshold">Threshold (Pa):</label>
+          <select name="threshold" id="threshold">
+            {% for threshold in thresholds %}
+              <option value={{threshold}}>{{threshold}}</option>
+            {% endfor %}
+          </select>
+
+          <br>
+          <br>
+
+          <label for="checkbox">Pa>Pi?</label>
+          <input id="checkbox" name="checkbox" type="checkbox" checked>
+
+          <br>
+          <br>
+
+          <input type="submit" id="submit" value="Submit" disabled="disabled">
+        </form> 
+
+      </div>
+
+    </main>
+
+    <footer>
+      <form action="/" >
+        <input type="submit" value="Go home">
+      </form>
+    </footer>
+
+  </body>
+</html>

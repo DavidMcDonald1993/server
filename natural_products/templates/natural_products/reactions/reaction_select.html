@@ -3,6 +3,9 @@
 <html lang="en">
 
   {% include 'header.html' %}
+  {% load static %}
+  <script type="text/javascript" src="{%static 'natural_products/js/options.js' %}"></script>
+
 
   <body class="normal">
 
@@ -17,31 +20,44 @@
     
       <div class="hiddenDiv">
         <form class="select-form" action="/natural_products/reactions/screening/hits/" method="get">
-        
+
           <div>
-            <label for="reactions">Select reaction(s):</label>
-            <select name="reactions" id="reactions" multiple>
-              {% for reaction, reaction_encoded, organism, organism_encoded in reactions %}
-              <option value="{{organism_encoded}}:_:{{reaction_encoded}}">{{organism}}: {{reaction}}</option>
+            <label for="organism">Select organism:</label>
+            <select name="organism" id="organism" onchange="showDiv(this)">
+              <option disabled selected value> -- select an option -- </option>
+              {% for organism in reactions %}
+              <option value="{{organism}}">{{organism}}</option>
               {% endfor %}
             </select> 
           </div>
-
+        
+          {% for organism, organism_reactions in reactions.items %}
+          <div id="div-{{organism}}" style="display: none;">
+            <label for="{{organism}}-reactions">Select reaction(s) for {{organism}}:</label>
+            <select name="{{organism}}-reactions" id="{{organism}}-reactions" multiple>
+              {% for reaction, reaction_encoded in organism_reactions %}
+              <option value="{{reaction_encoded}}">{{reaction}}</option>
+              {% endfor %}
+            </select> 
+          </div>
+                    
           <br>
           <br>
 
-          <label for="threshold">Threshold (Pa):</label>
+          {% endfor %}
+
+          <label for="threshold">Threshold (Confidence):</label>
           <select name="threshold" id="threshold">
             {% for threshold in thresholds %}
             <option value={{threshold}}>{{threshold}}</option>
             {% endfor %}
           </select>
 
-          <br>
-          <br>
+          <!-- <br> -->
+          <!-- <br> -->
 
-          <label for="checkbox">Pa>Pi?</label>
-          <input id="checkbox" name="checkbox" type="checkbox" checked readonly>
+          <!-- <label for="checkbox">Pa>Pi?</label>
+          <input id="checkbox" name="checkbox" type="checkbox" checked readonly> -->
 
           <br>
           <br>

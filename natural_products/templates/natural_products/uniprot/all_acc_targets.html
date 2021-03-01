@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+
+  {% include 'header.html' %}
+
+  <body class="normal" onload="makeDataTable(['allACCsTable'], [0])" >
+
+    {% include 'navbar.html' %}
+
+    <header>
+      <h1>All Uniprot Targets</h1>
+    </header>
+
+    <main>
+        
+      <div class="table-responsive results-table hiddenDiv" >
+        <table id="allACCsTable" class="display table data">
+
+          <thead>
+            <tr>
+              <th>ACC</th>
+              <th>Protein</th>
+              <th>Gene(s)</th>
+              <th>Organism</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for acc, protein, gene, organism in uniprot_targets %}
+              <tr>
+                <td> <a href="/natural_products/uniprot/all/{{acc}}"> 
+                {{ acc }} </a> </td>
+                <td>{{protein}}</td>
+                <td>{{gene}}</td>
+                <td>{{organism}}</td>
+              </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+      </div>
+
+    </main>
+
+    <footer>
+      <form action="/" >
+        <input type="submit" value="Return to home">
+      </form>
+    </footer>
+  
+  </body>
+</html>

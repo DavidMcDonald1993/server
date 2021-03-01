@@ -56,7 +56,9 @@ def perform_predicton_with_novel_classifier(
 
     # make prediction using pretrained model
     # return as n_targets x n_compounds
-    pred = model.predict(smiles).T 
+    
+    # pred = model.predict(smiles).T 
+    pred = None
     probs = model.predict_proba(smiles).T 
 
     # id_to_db_id = load_json("id_to_db_id.json")
@@ -64,11 +66,12 @@ def perform_predicton_with_novel_classifier(
     # id_to_chembl_id = load_json("models/id_to_chembl.json")
     id_to_acc = load_json("models/id_to_uniprot.json")
 
-    pred = pd.DataFrame(pred, 
-        index=[id_to_acc[str(i)] 
-            for i in range(pred.shape[0])],
-        columns=smiles.index, 
-    )
+    # pred = pd.DataFrame(pred, 
+    #     index=[id_to_acc[str(i)] 
+    #         for i in range(pred.shape[0])],
+    #     columns=smiles.index, 
+    # )
+    pred = None
 
     probs = pd.DataFrame(probs, 
         index=[id_to_acc[str(i)] 
@@ -110,10 +113,10 @@ if __name__ == "__main__":
         coconut_chunk_filename = f"../../ppb2/coconut_data/COCONUT_split_{chunk_no}.smi"
 
 
-        ppb2_predictions, ppb2_probs = perform_predicton_with_novel_classifier(
+        _, ppb2_probs = perform_predicton_with_novel_classifier(
             coconut_chunk_filename,
             model=model,
-            n_proc=8,
+            n_proc=6,
         )
 
         ppb2_probs = rescale_predicted_uniprot_confidences(ppb2_probs)

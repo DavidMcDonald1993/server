@@ -3,7 +3,7 @@ import os.path
 sys.path.insert(1, 
     os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 
-from utils.mysql_utils import mysql_create_table, mysql_insert_many, mysql_query, connect_to_mysqldb
+from utils.mysql_utils import mysql_create_table, mysql_insert_many, mysql_query, connect_to_mysqldb, mysql_execute
 from utils.pass_utils import (remove_invalid_characters, parse_pass_spectra, get_all_targets, 
     get_categories, get_targets_for_category, get_all_compounds)
 
@@ -107,42 +107,40 @@ def create_activities_table():
     `target_id` smallint NOT NULL,
     `Pa` smallint DEFAULT NULL,
     `Pi` smallint DEFAULT NULL,
-    `above_950` bit(1) GENERATED ALWAYS AS (((`Pa` > `Pi`) and (`Pa` > 950))) VIRTUAL NOT NULL,
-    `above_900` bit(1) GENERATED ALWAYS AS (((`Pa` > `Pi`) and (`Pa` > 900))) VIRTUAL NOT NULL,
-    `above_850` bit(1) GENERATED ALWAYS AS (((`Pa` > `Pi`) and (`Pa` > 850))) VIRTUAL NOT NULL,
-    `above_800` bit(1) GENERATED ALWAYS AS (((`Pa` > `Pi`) and (`Pa` > 800))) VIRTUAL NOT NULL,
-    `above_750` bit(1) GENERATED ALWAYS AS (((`Pa` > `Pi`) and (`Pa` > 750))) VIRTUAL NOT NULL,
-    `above_700` bit(1) GENERATED ALWAYS AS (((`Pa` > `Pi`) and (`Pa` > 700))) VIRTUAL NOT NULL,
-    `above_650` bit(1) GENERATED ALWAYS AS (((`Pa` > `Pi`) and (`Pa` > 650))) VIRTUAL NOT NULL,
-    `above_600` bit(1) GENERATED ALWAYS AS (((`Pa` > `Pi`) and (`Pa` > 600))) VIRTUAL NOT NULL,
-    `above_550` bit(1) GENERATED ALWAYS AS (((`Pa` > `Pi`) and (`Pa` > 550))) VIRTUAL NOT NULL,
-    `above_500` bit(1) GENERATED ALWAYS AS (((`Pa` > `Pi`) and (`Pa` > 500))) VIRTUAL NOT NULL,
-    `above_450` bit(1) GENERATED ALWAYS AS (((`Pa` > `Pi`) and (`Pa` > 450))) VIRTUAL NOT NULL,
-    `above_400` bit(1) GENERATED ALWAYS AS (((`Pa` > `Pi`) and (`Pa` > 400))) VIRTUAL NOT NULL,
-    `above_350` bit(1) GENERATED ALWAYS AS (((`Pa` > `Pi`) and (`Pa` > 350))) VIRTUAL NOT NULL,
-    `above_300` bit(1) GENERATED ALWAYS AS (((`Pa` > `Pi`) and (`Pa` > 300))) VIRTUAL NOT NULL,
-    `above_250` bit(1) GENERATED ALWAYS AS (((`Pa` > `Pi`) and (`Pa` > 250))) VIRTUAL NOT NULL,
-    `above_200` bit(1) GENERATED ALWAYS AS (((`Pa` > `Pi`) and (`Pa` > 200))) VIRTUAL NOT NULL,
-    `above_150` bit(1) GENERATED ALWAYS AS (((`Pa` > `Pi`) and (`Pa` > 150))) VIRTUAL NOT NULL,
-    `above_100` bit(1) GENERATED ALWAYS AS (((`Pa` > `Pi`) and (`Pa` > 100))) VIRTUAL NOT NULL,
-    `above_50` bit(1) GENERATED ALWAYS AS (((`Pa` > `Pi`) and (`Pa` > 50))) VIRTUAL NOT NULL,
     `confidence_score` smallint GENERATED ALWAYS AS ((`Pa` - `Pi`)) VIRTUAL NOT NULL,
     PRIMARY KEY (`compound_id`,`target_id`),
     KEY `target_id` (`target_id`),
-    KEY `above_950_target_id` (`above_950`,`target_id`),
-    KEY `above_900_target_id` (`above_900`,`target_id`),
-    KEY `above_850_target_id` (`above_850`,`target_id`),
-    KEY `above_800_target_id` (`above_800`,`target_id`),
-    KEY `above_750_target_id` (`above_750`,`target_id`),
-    KEY `above_700_target_id` (`above_700`,`target_id`),
-    KEY `above_650_target_id` (`above_650`,`target_id`),
     CONSTRAINT `activities_ibfk_1` FOREIGN KEY (`compound_id`) REFERENCES `compounds` (`compound_id`),
     CONSTRAINT `activities_ibfk_2` FOREIGN KEY (`target_id`) REFERENCES `targets` (`target_id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
     '''
-    mysql_create_table(create_activities_table_sql, )
+    return mysql_create_table(create_activities_table_sql, )
 
-    return 0
+def index_activities_table(thresholds=range(750, 1000, 50)):
+
+    # create columns
+    # columns = ", ".join(
+    #     (f"ADD `above_{threshold}` TINYINT(1) GENERATED ALWAYS AS (`confidence_score`>{threshold})  VIRTUAL NOT NULL " 
+    #         for threshold in thresholds))
+    # create_columns_sql = f'''
+    # ALTER TABLE `activities`
+    # {columns}
+    # '''
+
+    # mysql_execute(create_columns_sql)
+    
+    # create index 
+    indexes = ", ".join(
+        (f"ADD INDEX(above_{threshold}, target_id) " for threshold in thresholds)
+    )
+
+    create_index_sql = f'''
+    ALTER TABLE `activities`
+    {indexes}
+    '''
+
+    mysql_execute(create_index_sql)
+    
 
 def populate_activities_from_PASS_sdf_file(sdf_file):
     '''
@@ -1047,18 +1045,20 @@ def populate_drug_to_disease_table(existing_conn=None):
 
 if __name__ == "__main__":
 
-    for _ in range(100):
-        query = '''
-        SELECT acc FROM uniprot
-        WHERE filled=0
-        limit 500
-        '''
+    index_activities_table()
 
-        accs = mysql_query(query)
+    # for _ in range(100):
+    #     query = '''
+    #     SELECT acc FROM uniprot
+    #     WHERE filled=0
+    #     limit 500
+    #     '''
 
-        add_uniprot_accs(
-            sorted((acc[0] for acc in accs)),
-            fill_out=True)
+    #     accs = mysql_query(query)
+
+    #     add_uniprot_accs(
+    #         sorted((acc[0] for acc in accs)),
+    #         fill_out=True)
     
 
 

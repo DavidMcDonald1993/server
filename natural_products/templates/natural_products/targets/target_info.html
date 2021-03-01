@@ -4,10 +4,7 @@
   {% include 'header.html' %}
   {% load static %}
 
-  {% if show_images %}
-  <body class="right" onload="makeDataTable(['resultsTable'], [4, ])"> 
-  {% else %}
-  <body class="right" onload="makeDataTable(['resultsTable'], [3, ])">
+  <body class="left right" onload="makeDataTable('all')"> 
   {% endif %}
     
     {% include 'navbar.html' %}
@@ -22,45 +19,39 @@
     <main>
 
       <div class="table-responsive hiddenDiv">
-        <table id="resultsTable" class="display table data">
+        <table id=resultsTable class="display table data"
+          style="width:100%;text-align:center;display:inline;">
           <thead>
             <tr>
-              {% if show_images %}
-              <th class="bd-left">Image</th>
-              {% endif %}
-              <th  class="bd-left">ID</th>
-              <th>Compound Name</th>
-              <th class="bd-right">Molecular Formula</th>
-              <!-- <th>SMILES</th> -->
-              <!-- <th>Pa</th> -->
-              <!-- <th>Pi</th> -->
-              <th class="bd-right">Confidence Score</th>
+              {% for col in columns %}
+                <td>{{col}}</td>
+              {% endfor %}
             </tr>
           </thead>
           <tbody>
-          {% for hit in target_hits %}
-          <tr>
-            {% if show_images %}
-            <td class="bd-left"> 
-              <img src="{% static hit.image %}" alt=""
-                style="width: 100pt; height: 100pt;"></img> 
-            </td>
-            {% endif %}
-            <td class="bd-left"> <a href="/natural_products/compounds/all/{{hit.id}}"> {{ hit.id }} </a> </td>
-            <td> {{ hit.name }} </td>
-            <td class="bd-right"> {{ hit.formula }} </td>
-            <!-- <td> {{ hit.smiles }} </td> -->
-            {% for target in hit.targets %}
-            <!-- <td> {{ target.pa }} </td> -->
-            <!-- <td> {{ target.pi }} </td> -->
-            <td class="bd-right"> {{ target.confidence_score }} </td>
+            {% for hit in target_hits %}
+            <tr>
+              {% for col in columns %}
+                {% if col == 'id'%}
+                <td> <a href="/natural_products/compounds/all/{{ hit|get_item:col }}"> {{ hit|get_item:col }} </a> </td>
+                {% elif col == 'image' %}
+                  <td> 
+                    <img src="{% static hit|get_item:col %}" alt=""
+                    style="width: 100pt; height: 100pt;"></img> 
+                  </td>
+                {% elif col == 'url' %}
+                  <td> 
+                    <a href="{% static hit|get_item:col %}">{{ hit|get_item:col}}</a> 
+                  </td>
+                {% else %}
+                  <td> {{ hit|get_item:col }} </td>
+                {% endif %}
+              {% endfor %}
+            </tr>
             {% endfor %}
-          </tr>
-          {% endfor %}
           </tbody>
         </table>
       </div>
-  </main>
 
   <footer>
     <form action="/natural_products/targets/">

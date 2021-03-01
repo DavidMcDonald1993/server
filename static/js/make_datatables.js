@@ -9,7 +9,7 @@ function makeDataTable(args) {
         "pageLength": 10,
         "autoWidth": false,
         "fixedColumns": true,
-        "order": [sort_col, "desc" ],
+        "order": [],
       });
     });
   } else {
@@ -17,6 +17,7 @@ function makeDataTable(args) {
       "pageLength": 10,
       "autoWidth": false,
       "fixedColumns": true,
+      "order": [],
     });
 
   }

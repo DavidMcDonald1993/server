@@ -38,6 +38,24 @@ def connect_to_mysqldb(host=None, user=None, password=None, database=None):
     )
     return db
 
+def mysql_execute(cmd, existing_conn=None):
+
+
+    if existing_conn is None:
+        db = connect_to_mysqldb()
+    else:
+        db = existing_conn
+
+    print ("executing MySQL cmd:", cmd)
+
+    cursor = db.cursor()
+    cursor.execute(cmd)
+
+    if existing_conn is None:
+        db.close()
+
+    return 0
+
 def mysql_query(query, return_cols=False, existing_conn=None):
 
     if existing_conn is None:

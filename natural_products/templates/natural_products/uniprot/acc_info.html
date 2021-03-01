@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+
+  {% include 'header.html' %}
+  {% load static %}
+  <script type="text/javascript" src="{%static 'natural_products/js/uniprot.js' %}"></script>
+
+
+  <body class="left right" onload="makeDataTable('all')">
+
+    {% include 'navbar.html' %}
+
+    <nav id="categorySidebar" class="sidenav sidenav-right">
+      <div style="text-align: center;">
+        <h2>Info</h2>
+      </div>
+      {% for name in all_data %}
+      <a href="#{{name}}" onclick="showDiv(this)">{{name}}</a>
+      {% endfor %}
+    </nav>
+
+    <main>
+
+    <header>
+      {% for k, v in all_info.items %}
+      <h1>{{k}}: {{v}}</h1>
+      {% endfor %}
+      <p>Threshold: {{threshold}}</p>
+    </header>
+
+    <main>
+
+    {% for name, data in all_data.items %}
+      <div id="nav-#{{name}}" style="display: none;">
+        <h2>
+          {{name}}
+        </h2>
+        <div class="table-responsive hiddenDiv">
+          <table id=resultsTable class="display table data"
+            style="width:100%;text-align:center;display:inline;">
+            <thead>
+              <tr>
+                {% for col in data.0 %}
+                  <td>{{col}}</td>
+                {% endfor %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for hit in data.1 %}
+              <tr>
+                {% for col in data.0 %}
+                  {% if col == 'id'%}
+                  <td> <a href="/natural_products/compounds/all/{{ hit|get_item:col }}"> {{ hit|get_item:col }} </a> </td>
+                  {% elif col == 'image' %}
+                    <td> 
+                      <img src="{% static hit|get_item:col %}" alt=""
+                      style="width: 100pt; height: 100pt;"></img> 
+                    </td>
+                  {% elif col == 'url' %}
+                    <td> 
+                      <a href="{% static hit|get_item:col %}">{{ hit|get_item:col}}</a> 
+                    </td>
+                  {% else %}
+                    <td> {{ hit|get_item:col }} </td>
+                  {% endif %}
+                {% endfor %}
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    {% endfor %}
+    </main>
+
+    <footer>
+      <form action="/natural_products/reactions/">
+        <input type="submit" value="Back to all reactions">
+      </form>
+    </footer>
+
+  </body>
+</html>

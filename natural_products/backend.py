@@ -71,22 +71,22 @@ def draw_molecule(
 def write_records_to_file(
     user_id,
     targets, 
-    thresholds,
+    threshold,
     records,
     root_dir="user_files",
     ):
     assert isinstance(records, pd.DataFrame)
-    if "Image" in records.columns:
-        del records["Image"]
+    if "image" in records.columns:
+        del records["image"]
 
     output_dir = os.path.join(root_dir, f"user_id={user_id}", "hits")
     os.makedirs(output_dir, exist_ok=True)
 
     targets = ",".join(map(lambda s: re.sub(r"( |/)", "_", s), targets))
-    thresholds= ",".join(map(str, thresholds))
+    # thresholds= ",".join(map(str, thresholds))
 
     records_filename = os.path.join(output_dir,
-        f'''targets={targets}-thresholds={thresholds}-results.csv''')
+        f'''targets={targets}-threshold={threshold}-results.csv''')
     print ("writing records to", records_filename)
     records.to_csv(records_filename)
 
@@ -95,7 +95,7 @@ def write_records_to_file(
 def write_smiles_to_file(
     user_id,
     targets,
-    thresholds,
+    threshold,
     smiles,
     root_dir="user_files",
     ):  
@@ -104,10 +104,10 @@ def write_smiles_to_file(
     os.makedirs(output_dir, exist_ok=True)
 
     targets = ",".join(map(lambda s: re.sub(r"( |/)", "_", s), targets))
-    thresholds= ",".join(map(str, thresholds))
+    # thresholds= ",".join(map(str, thresholds))
 
     smiles_filename = os.path.join(output_dir,
-        f'''targets={targets}-thresholds={thresholds}-hits.smi''')
+        f'''targets={targets}-threshold={threshold}-hits.smi''')
     print ("writing smiles to", smiles_filename)
 
     write_smiles(smiles, smiles_filename)
