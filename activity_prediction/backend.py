@@ -356,18 +356,21 @@ def perform_drug_identificaton(
         filename = os.path.join(output_dir, compound,
             "similar_drugs.tsv")
 
-        drugs = get_drugs_for_uniprots(
-            list(compound_uniprot_confidences[compound].keys()))
+        drugs, cols = get_drugs_for_uniprots(
+            list(compound_uniprot_confidences[compound].keys()), as_dict=True)
+        idx = cols.index("acc") + 1
+        cols.insert(idx, "confidence_score")
 
         print ("writing drugs for compound", compound, "to file",
             filename)
         with open(filename, "w") as f:
-            f.write(f"DrugName\tINCHI\tSMILES\tType\t")
-            f.write(f"Class\tCompany\tDisease\tStatus\tACC\tConfidence\tActivity\tReference\n")
-            for name, inchi, smiles, drug_type, drug_class, company, disease, status, acc, activity, reference in drugs:
-                f.write(f"{name}\t{inchi}\t{smiles}\t{drug_type}\t")
-                f.write(f"{drug_class}\t{company}\t{disease}\t{status}\t")
-                f.write(f"{acc}\t{compound_uniprot_confidences[compound][acc]}\t{activity}\t{reference}\n")
+            f.write(f"\t".join(cols) + "\n")
+            for drug in drugs:
+                acc = drug["acc"]
+                confidence_score = compound_uniprot_confidences[compound][acc]
+                drug["confidence_score"] = confidence_score
+                f.write("\t".join(map(str, (drug[col] for col in cols)))
+                    + "\n")
 
 def perform_disease_identification(
     compound_uniprot_confidences,
@@ -384,15 +387,22 @@ def perform_disease_identification(
         filename = os.path.join(output_dir, compound,
             "associated_diseases.tsv")
 
-        diseases = get_diseases_for_uniprots(
-            list(compound_uniprot_confidences[compound].keys()))
+        diseases, cols = get_diseases_for_uniprots(
+            list(compound_uniprot_confidences[compound].keys()), as_dict=True)
         print ("writing diseases for compound", compound, "to file",
             filename)
+
+        idx = cols.index("acc") + 1
+        cols.insert(idx, "confidence_score")
+        
         with open(filename, "w") as f:
-            f.write(f"DiseaseName\tICD\tACC\tConfidence\tClinicalStatus\n")
-            for name, icd, acc, status in diseases:
-                f.write(f"{name}\t{icd}\t")
-                f.write(f"{acc}\t{compound_uniprot_confidences[compound][acc]}\t{status}\n")
+            f.write("\t".join(cols) + "\n")
+            for disease in diseases:
+                acc = disease["acc"]
+                confidence_score = compound_uniprot_confidences[compound][acc]
+                disease["confidence_score"] = confidence_score
+                f.write("\t".join(map(str, (disease[col] for col in cols)))
+                    + "\n")
 
 def activity_predict(
     user,
