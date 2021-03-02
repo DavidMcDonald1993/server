@@ -46,7 +46,7 @@
 
             {% for compound, compound_summary in summary.items %}
             <div id={{compound}}-results>
-              <h3>{{compound}}</h3>
+              <h3>SUBMITTED COMPOUND NAME: {{compound}}</h3>
               {% for result_name, df in compound_summary.items %}
                 <div id="nav-#{{compound}}-{{result_name}}" 
                   style="display: none;">

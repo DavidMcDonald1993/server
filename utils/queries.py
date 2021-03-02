@@ -1265,7 +1265,7 @@ def get_drugs_for_uniprots(accs, as_dict=True):
     # get all ossciated diseases for drugs
     disease_sql = f'''
         SELECT 
-        udis.uniprot_id,
+        u.acc,
         drd.drug_id, 
         drd.clinical_status, 
         disease.disease_name,
@@ -1278,6 +1278,8 @@ def get_drugs_for_uniprots(accs, as_dict=True):
                 AND ud.drug_id=drd.drug_id)
         INNER JOIN disease
             ON (udis.disease_id=disease.disease_id)
+        INNER JOIN uniprot AS u
+            ON (u.uniprot_id=udis.uniprot_id)
         WHERE {f"drd.drug_id IN {drug_ids}" if isinstance(drug_ids, tuple)
             else f'drd.drug_id="{drug_ids}"'}
         GROUP BY drug_id, disease_name
@@ -1318,13 +1320,13 @@ def get_drugs_for_uniprots(accs, as_dict=True):
                     'clinical_status', disease_link.clinical_status,
                     'target', 
                     CASE
-                        WHEN to_drug.uniprot_id = disease_link.uniprot_id THEN "THIS"
-                        ELSE disease_link.uniprot_id
+                        WHEN u.acc = disease_link.acc THEN CONCAT(u.acc, "(THIS TARGET)")
+                        ELSE disease_link.acc
                     END
                 )
             ) 
         ELSE NULL
-        END AS all_diseases
+        END AS all_diseases_for_drug
     FROM ({uniprot_to_drug_sql}) AS to_drug
     INNER JOIN uniprot AS u
         ON (to_drug.uniprot_id=u.uniprot_id)
