@@ -171,7 +171,7 @@ def get_targets_for_uniprot(accs, existing_conn=None, as_dict=True):
 
 #     get_predicted_compounds_sql = f'''
 #     SELECT c.coconut_id AS `id`, 
-#         c.image_path AS `image`,
+#         c.image AS `image`,
 #         c.name AS `name`, 
 #         c.formula AS `formula`, 
 #         c.smiles AS `smiles`,
@@ -203,7 +203,7 @@ def get_targets_for_uniprot(accs, existing_conn=None, as_dict=True):
 
     # get_inferred_compounds_sql = f'''
     # SELECT c.coconut_id AS `id`, 
-    #     c.image_path AS `image`,
+    #     c.image AS `image`,
     #     c.name AS `name`, 
     #     c.formula AS `formula`, 
     #     c.smiles AS `smiles`,
@@ -397,7 +397,7 @@ def get_target_hits(
 
     query = f'''
         SELECT c.coconut_id AS `id`, 
-        c.image_path AS `image`, 
+        c.image AS `image`, 
         c.name AS `name`, 
         c.formula AS `formula`, 
         c.smiles AS `smiles`,
@@ -517,7 +517,7 @@ def get_pathway_hits(
 
     # query = f'''
     #     SELECT c.coconut_id AS `id`, 
-    #         c.image_path AS `image`, 
+    #         c.image AS `image`, 
     #         c.name AS `name`, 
     #         c.formula AS `formula`, 
     #         c.smiles AS `smiles`,
@@ -751,7 +751,7 @@ def get_pathway_hits(
 
     query = f'''
         SELECT c.coconut_id AS `id`, 
-        c.image_path AS `image`, 
+        c.image AS `image`, 
         c.name AS `name`, 
         c.formula AS `formula`, 
         c.smiles AS `smiles`,
@@ -904,7 +904,7 @@ def get_reaction_hits(
     # ))
 
     # query = f'''
-    #     SELECT c.coconut_id AS `ID`, c.image_path AS `Image`, c.name AS `Molecule Name`, 
+    #     SELECT c.coconut_id AS `ID`, c.image AS `Image`, c.name AS `Molecule Name`, 
     #         c.formula AS `Molecular Formula`, c.smiles AS `SMILES`,
     #     {columns}
     #     FROM compounds AS c
@@ -1073,7 +1073,7 @@ def get_reaction_hits(
 
     query = f'''
         SELECT c.coconut_id AS `id`, 
-        c.image_path AS `image`, 
+        c.image AS `image`, 
         c.name AS `name`, 
         c.formula AS `formula`, 
         c.smiles AS `smiles`,
@@ -1567,7 +1567,7 @@ def get_combined_compound_confidences_for_uniprots(
 
     query = f'''
         SELECT c.coconut_id AS `id`, 
-        c.image_path AS `image`, 
+        c.image AS `image`, 
         c.name AS `name`, 
         c.formula AS `formula`, 
         c.smiles AS `smiles`,
