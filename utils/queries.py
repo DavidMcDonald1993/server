@@ -411,6 +411,7 @@ def get_target_hits(
         WHERE {f"t.target_name IN {targets}" if isinstance(targets, tuple)
             else f't.target_name="{targets}"'}
         AND a.above_{threshold}=(1)
+        ORDER BY confidence_score DESC
     '''
 
     if isinstance(targets, tuple):
@@ -727,9 +728,6 @@ def get_pathway_hits(
     '''
 
     combined_table_name = "temp_combined_pathway"
-    '''
-      
-    '''
     create_temp_combined_table_sql = f'''
     CREATE TEMPORARY TABLE {combined_table_name} (
         compound_id MEDIUMINT, 
@@ -776,6 +774,7 @@ def get_pathway_hits(
         INNER JOIN pathway AS p
             ON (predictions.pathway_id=p.pathway_id)
         GROUP BY id, image, name, formula, smiles, pathway_name
+        ORDER BY coverage DESC
     '''
 
     # records = mysql_query(query, existing_conn=existing_conn)
@@ -1099,6 +1098,7 @@ def get_reaction_hits(
         INNER JOIN reaction AS r
             ON (predictions.reaction_id=r.reaction_id)
         GROUP BY id, reaction_name
+        ORDER BY coverage DESC
     '''
 
     # records = mysql_query(combined_predictions_sql)
