@@ -81,7 +81,7 @@ def optimise_target_hits_view(request):
 
     # hits = pd.DataFrame(hits, columns=columns)
 
-    smiles = [(hit["id"], row["smiles"])
+    smiles = [(hit["id"], hit["smiles"])
         for hit in hits]
 
     smiles_filename = write_smiles_to_file(user_id, targets, threshold, smiles)
