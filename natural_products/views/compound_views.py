@@ -45,7 +45,7 @@ def all_compounds_view(request):
             smiles_like = None
 
         columns = [
-            "image_path",
+            "image",
             "coconut_id",
         ]
 
@@ -60,26 +60,31 @@ def all_compounds_view(request):
         if show_smiles:
             columns.append("smiles")
 
-        compounds = get_info_for_multiple_compounds(
+        compounds, cols = get_info_for_multiple_compounds(
             name_like=name_like,
             formula_like=formula_like,
             smiles_like=smiles_like,
             columns=columns,
+            as_dict=True,
         )
 
         num_hits = len(compounds)
+        cols = list(cols)
+        if num_hits > MAX_HITS_FOR_IMAGE:
+            cols.remove("image")
 
-        compounds = [
-            {k: v for k, v in zip(columns, hit)}
-            for hit in compounds
-        ]
+        # compounds = [
+        #     {k: v for k, v in zip(columns, hit)}
+        #     for hit in compounds
+        # ]
 
         context["show_results"] = True
         context["compounds"] = compounds
-        context["show_name"] = show_name
-        context["show_formula"] = show_formula
-        context["show_smiles"] = show_smiles
-        context["show_images"] = num_hits < MAX_HITS_FOR_IMAGE
+        context["columns"] = cols
+        # context["show_name"] = show_name
+        # context["show_formula"] = show_formula
+        # context["show_smiles"] = show_smiles
+        # context["show_images"] = num_hits < MAX_HITS_FOR_IMAGE
 
     return render(request, 
         "natural_products/compounds/all_compounds.html", context)
@@ -100,8 +105,9 @@ def compound_info_view(request, compound_id):
     assert "name" in compound_info 
     compound_name = compound_info["name"]
 
-    img_filename = get_info_for_multiple_compounds(
-        compound_id, columns=("image_path", ))[0][0]
+    img_filename, _ = get_info_for_multiple_compounds(
+        compound_id, columns=("image", ))
+    img_filename = img_filename[0][0]
     if os.path.exists(os.path.join("static", img_filename)):
         context["img_filename"] = img_filename
 
@@ -109,6 +115,15 @@ def compound_info_view(request, compound_id):
         compound_id, 
         threshold=threshold, 
     )
+
+    context.update(
+        {
+            "compound_name": compound_name,
+            "compound_info": compound_info,
+            "activities": activities,
+        }
+    )
+               
 
     uniprots, uniprot_cols = get_combined_uniprot_confidences_for_compounds(compound_id,
         threshold=threshold, as_dict=True)
@@ -119,13 +134,16 @@ def compound_info_view(request, compound_id):
     }
 
     if len(all_accs) > 0:
+        
         all_acc_list = list(all_accs)
-        pathways = get_all_pathways_for_uniprots(all_acc_list)
-        reactions = get_all_reactions_for_uniprots(all_acc_list)
+        
+        pathways, pathway_cols = get_all_pathways_for_uniprots(all_acc_list, as_dict=True)
+        reactions, reaction_cols = get_all_reactions_for_uniprots(all_acc_list, as_dict=True)
+      
         '''
         add confidences to drugs and diseases
         '''
-        drugs, drug_cols = get_drugs_for_uniprots(all_acc_list, as_dict=False)
+        drugs, drug_cols = get_drugs_for_uniprots(all_acc_list, as_dict=True)
         '''
         d.drug_name, d.inchi, 
         d.canonical_smiles, d.drug_type, d.drug_class, d.company, 
@@ -134,39 +152,55 @@ def compound_info_view(request, compound_id):
         ud.activity, 
         ud.reference
         '''
-        drugs = [
-            (drug_name, inchi, smiles, drug_type, drug_class, company,
-                disease_name, status, acc, f"{all_accs[acc][0]}", f"{all_accs[acc][1]}", activity, reference)
-            for drug_name, inchi, smiles, drug_type, drug_class, company,\
-                disease_name, status, acc, activity, reference in drugs
-        ]
-        diseases, disease_cols = get_diseases_for_uniprots(all_acc_list, as_dict=False)
+        drug_cols = list(drug_cols)
+        idx = drug_cols.index("acc") + 1
+        drug_cols.insert(idx, "confidence_type")
+        drug_cols.insert(idx, "confidence_score")
+
+        for drug in drugs:
+            acc = drug["acc"]
+            confidence_score, confidence_type = all_accs[acc]
+            drug.update({"confidence_score": confidence_score, "confidence_type": confidence_type})
+
+
+        # drugs = [
+        #     (drug_name, inchi, smiles, drug_type, drug_class, company,
+        #         disease_name, status, acc, f"{all_accs[acc][0]}", f"{all_accs[acc][1]}", activity, reference)
+        #     for drug_name, inchi, smiles, drug_type, drug_class, company,\
+        #         disease_name, status, acc, activity, reference in drugs
+        # ]
+
+
+
+        diseases, disease_cols = get_diseases_for_uniprots(all_acc_list, as_dict=True)
         '''
         d.disease_name, d.icd,
         u.acc, ud.clinical_status
         '''
-        diseases = [
-            (disease_name, icd, acc, f"{all_accs[acc][0]}", f"{all_accs[acc][1]}", status)
-            for disease_name, icd, acc, status in diseases
-        ]
-    else:
-        pathways = []
-        reactions = []
-        drugs = []
-        diseases = []
+        disease_cols = list(disease_cols)
+        idx = disease_cols.index("acc") + 1
+        disease_cols.insert(idx, "confidence_type")
+        disease_cols.insert(idx, "confidence_score")
 
-    context.update({
-        "compound_name": compound_name,
-        "compound_info": compound_info,
-        "activities": activities,
-        # "inferred_uniprots": inferred_uniprots,
-        # "predicted_uniprots": predicted_uniprots,
-        "uniprots": uniprots,
-        "pathways": pathways,
-        "reactions": reactions,
-        "drugs": drugs,
-        "diseases": diseases,
-    })
+        for disease in diseases:
+            acc = drug["acc"]
+            confidence_score, confidence_type = all_accs[acc]
+            disease.update({"confidence_score": confidence_score, "confidence_type": confidence_type})
+
+        # diseases = [
+        #     (disease_name, icd, acc, f"{all_accs[acc][0]}", f"{all_accs[acc][1]}", status)
+        #     for disease_name, icd, acc, status in diseases
+        # ]
+
+        context.update({
+            "uniprot_data": {
+                "UNIPROT": {"columns": uniprot_cols, "data": uniprots},
+                "PATHWAYS": {"columns": pathway_cols, "data": pathways},
+                "REACTIONS": {"columns": reaction_cols, "data": reactions},
+                "DRUGS": {"columns": drug_cols, "data": drugs},
+                "DISEASES": {"columns":disease_cols, "data": diseases},
+            }
+        })
 
     return render(request,
         "natural_products/compounds/compound_info.html", 

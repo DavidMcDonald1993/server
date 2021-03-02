@@ -1153,6 +1153,7 @@ def get_info_for_multiple_compounds(
     formula_like=None,
     smiles_like=None,
     columns=("coconut_id", "name", "formula", "smiles"),
+    as_dict=False,
     limit=None):
 
     if compound_ids is not None:
@@ -1180,7 +1181,10 @@ def get_info_for_multiple_compounds(
         {f"LIMIT {limit}" if limit is not None else ""}
     '''
 
-    return mysql_query(compound_query)
+    records, cols = mysql_query(compound_query, return_cols=True)
+    if as_dict:
+        records = convert_to_dict(records, cols)
+    return records, cols
 
 def get_categories():
     query = '''

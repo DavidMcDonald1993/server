@@ -4,7 +4,7 @@
   {% include 'header.html' %}
   {% load static %}
 
-  <body class="normal" onload="makeDataTable(['allCompoundsTable'], [1])" >
+  <body class="normal" onload="makeDataTable('all')" >
 
     {% include 'navbar.html' %}
 
@@ -26,39 +26,30 @@
         <table id="allCompoundsTable" class="display table data" style="width:100%;text-align:center;">
           <thead>
             <tr>
-              {% if show_images %}
-              <th>Image</th>
-              {% endif %}
-              <th>ID</th>
-              {% if show_name %}
-              <th>Name</th>
-              {% endif %}
-              {% if show_formula %}
-              <th>Molecular Formula</th>
-              {% endif %}
-              {% if show_smiles %}
-              <th>SMILES</th>
-              {% endif %}
+              {% for col in columns %}
+                <th>{{col}}</th>
+              {% endfor %}
             </tr>
           </thead>
           <tbody>
             {% for compound in compounds %}
             <tr>
-              {% if show_images %}
-              <td>  <img src="{% static compound.image_path %}" alt=""
-                style="width: 100pt; height: 100pt;"></img> </td>
-              {% endif %}
-              <td> <a href="/natural_products/compounds/all/{{compound.coconut_id}}"> 
-              {{ compound.coconut_id }} </a> </td>
-              {% if show_name %}
-              <td>{{compound.name}}</td> 
-              {% endif %}
-              {% if show_formula %}
-              <td>{{compound.formula}}</td>
-              {% endif %} 
-              {% if show_smiles %}
-              <td>{{compound.smiles}}</td> 
-              {% endif %}
+                {% for col in columns %}
+                  {% if col == 'coconut_id'%}
+                  <td> <a href="/natural_products/compounds/all/{{ compound|get_item:col }}"> {{ compound|get_item:col }} </a> </td>
+                  {% elif col == 'image' %}
+                    <td> 
+                      <img src="{% static compound|get_item:col %}" alt=""
+                      style="width: 100pt; height: 100pt;"></img> 
+                    </td>
+                  {% elif col == 'url' %}
+                    <td> 
+                      <a href="{% static compound|get_item:col %}">{{ compound|get_item:col}}</a> 
+                    </td>
+                  {% else %}
+                    <td> {{ compound|get_item:col }} </td>
+                  {% endif %}
+                {% endfor %}
             </tr>
             {% endfor %}
           </tbody>
@@ -100,13 +91,7 @@
             <td>
               <input type="text" id="smiles_like" name="smiles_like">
             </td>
-          <!-- <br> -->
           </tr>
-          <!-- <label for="formula_like">Molecular formula contains:</label>
-          <input type="text" id="formula_like" name="formula_like">
-          <br>
-          <label for="smiles_like">SMILES contains:</label>
-          <input type="text" id="smiles_like" name="smiles_like"> -->
         </table>
 
       </div>
