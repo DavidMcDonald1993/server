@@ -754,6 +754,8 @@ def get_pathway_hits(
         c.formula AS `formula`, 
         c.smiles AS `smiles`,
         p.pathway_name AS `pathway_name`,
+        COUNT(u.acc) AS num_targets_hit,
+        p.num_uniprot AS total_targets,
         CAST(COUNT(u.acc) / p.num_uniprot AS CHAR) AS `coverage`,
         JSON_ARRAYAGG(
             JSON_OBJECT(
@@ -805,6 +807,8 @@ def get_pathway_hits(
             JSON_ARRAYAGG(
                 JSON_OBJECT(
                     'pathway_name', predictions.pathway_name,
+                    'num_targets_hit', predictions.num_targets_hit,
+                    'total_targets', predictions.total_targets,
                     'target_coverage', predictions.coverage,
                     'associated_predicted_targets', predictions.associated_predicted_targets,
                     'url', predictions.url
@@ -1077,6 +1081,8 @@ def get_reaction_hits(
         c.formula AS `formula`, 
         c.smiles AS `smiles`,
         r.reaction_name,
+        COUNT(u.acc) AS num_targets_hit,
+        r.num_uniprot AS total_targets,
         CAST(COUNT(u.acc) / r.num_uniprot AS CHAR) AS `coverage`,
         JSON_ARRAYAGG(
             JSON_OBJECT(
@@ -1127,6 +1133,8 @@ def get_reaction_hits(
                 JSON_OBJECT(
                     'reaction_name', predictions.reaction_name,
                     'target_coverage', predictions.coverage,
+                    'num_targets_hit', predictions.num_targets_hit,
+                    'total_targets', predictions.total_targets,
                     'associated_predicted_targets', predictions.associated_predicted_targets,
                     'url', predictions.url
                 )
