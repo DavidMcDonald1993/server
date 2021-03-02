@@ -358,6 +358,8 @@ def perform_drug_identificaton(
 
         drugs, cols = get_drugs_for_uniprots(
             list(compound_uniprot_confidences[compound].keys()), as_dict=True)
+        
+        cols = list(cols)
         idx = cols.index("acc") + 1
         cols.insert(idx, "confidence_score")
 
@@ -388,10 +390,12 @@ def perform_disease_identification(
             "associated_diseases.tsv")
 
         diseases, cols = get_diseases_for_uniprots(
-            list(compound_uniprot_confidences[compound].keys()), as_dict=True)
+            list(compound_uniprot_confidences[compound].keys()), 
+            as_dict=True)
         print ("writing diseases for compound", compound, "to file",
             filename)
 
+        cols = list(cols)
         idx = cols.index("acc") + 1
         cols.insert(idx, "confidence_score")
         
