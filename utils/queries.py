@@ -1363,10 +1363,15 @@ def get_diseases_for_uniprots(accs, as_dict=True):
     else:
         assert isinstance(accs, str)
     sql = f'''
-    SELECT d.disease_name AS `disease`, 
-        d.icd AS `icd`,
+    SELECT 
         u.acc AS `acc`, 
-        ud.clinical_status AS `clinical_status`
+        JSON_ARRAYAGG(
+            JSON_OBJECT(
+                "disease_name", d.disease_name,
+                "icd", d.icd,
+                "clinical_status", ud.clinical_status
+            )
+        ) AS `all_associated_diseases_for_target`
     FROM uniprot AS `u`
     INNER JOIN uniprot_to_disease as `ud`
         ON (u.uniprot_id=ud.uniprot_id)
@@ -1374,6 +1379,7 @@ def get_diseases_for_uniprots(accs, as_dict=True):
         ON (ud.disease_id=d.disease_id)
     WHERE {f"u.acc IN {accs}" if isinstance(accs, tuple)
         else f'u.acc="{accs}"'}
+    GROUP BY acc
     '''
     records, cols = mysql_query(sql, return_cols=True)
     if as_dict:
@@ -1751,14 +1757,15 @@ if __name__ == "__main__":
 
     acc = "P00533"
 
-    records, cols = get_drugs_for_uniprots(acc)
+    # records, cols = get_drugs_for_uniprots(acc)
+    records, cols = get_diseases_for_uniprots(acc)
     # records, cols = get_diseases_for_drugs("N4-(3-chlorophenyl)quinazoline-4,6-diamine")
 
-    # for record in records[:5]:
-    #     print (record)
+    for record in records[:5]:
+        print (record)
 
-    # print (len(records))
-    pd.DataFrame(records, columns=cols).to_csv("drugs.csv")
+    print (len(records))
+    # pd.DataFrame(records, columns=cols).to_csv("drugs.csv")
 
     # pathways = "Signaling by EGFR"
     # reaction = "((1,6)-alpha-glucosyl)poly((1,4)-alpha-glucosyl)glycogenin => poly{(1,4)-alpha-glucosyl} glycogenin + alpha-D-glucose"
