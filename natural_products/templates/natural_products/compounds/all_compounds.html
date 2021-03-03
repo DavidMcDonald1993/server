@@ -101,6 +101,13 @@
           {% endfor %}
         </select> 
 
+        <label for="species">Select species: (leave blank for all)</label>
+        <select name="species" id="species" multiple>
+          {% for s in species %}
+            <option value="{{s}}">{{s}}</option>
+          {% endfor %}
+        </select> 
+
       </div>
 
       <div>

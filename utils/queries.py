@@ -1820,9 +1820,10 @@ def get_combined_uniprot_confidences_for_compounds(
 
 if __name__ == "__main__":
 
-    records, cols = get_info_for_multiple_compounds(columns=("compound_id", "kingdom_name", "species_name"), kingdom_name="Marine")
+    # records, cols = get_info_for_multiple_compounds(columns=("compound_id", "kingdom_name", "species_name"), kingdom_name="Marine")
+    records = get_all_species()
 
-    for record in records[:5]:
+    for record in records[:50]:
         print (record)
 
     print (len(records))

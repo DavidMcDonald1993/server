@@ -22,7 +22,8 @@ from utils.queries import (
     get_diseases_for_uniprots,
     get_all_pathways_for_uniprots,
     get_all_reactions_for_uniprots,
-    get_all_kingdoms
+    get_all_kingdoms,
+    get_all_species
 )
 
 from natural_products.views import DEFAULT_THRESHOLD, MAX_HITS_FOR_IMAGE
@@ -71,12 +72,18 @@ def all_compounds_view(request):
         if len(kingdoms) == 0:
             kingdoms = None
 
+        
+        species = request.POST.getlist("species")
+        if len(species) == 0:
+            species = None
+
         compounds, cols = get_info_for_multiple_compounds(
             name_like=name_like,
             formula_like=formula_like,
             smiles_like=smiles_like,
             columns=columns,
             kingdom_name=kingdoms,
+            species_name=species,
             as_dict=True,
         )
 
@@ -101,6 +108,7 @@ def all_compounds_view(request):
     else:
 
         context["kingdoms"] = get_all_kingdoms()
+        context["species"] = get_all_species()
 
     return render(request, 
         "natural_products/compounds/all_compounds.html", context)
