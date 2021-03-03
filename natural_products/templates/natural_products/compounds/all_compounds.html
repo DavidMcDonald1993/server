@@ -94,6 +94,13 @@
           </tr>
         </table>
 
+        <label for="kingdoms">Select kingdoms: (leave blank for all)</label>
+        <select name="kingdoms" id="kingdoms" multiple>
+          {% for kingdom in kingdoms %}
+            <option value="{{kingdom}}">{{kingdom}}</option>
+          {% endfor %}
+        </select> 
+
       </div>
 
       <div>
@@ -122,6 +129,24 @@
               </td>
               <td>
                 <input id="show_smiles" name="show_smiles" type="checkbox" checked>
+              </td>
+            </tr>
+
+            <tr>
+              <td>
+                <label for="show_kingdom">Kingdom</label>
+              </td>
+              <td>
+                <input id="show_kingdom" name="show_kingdom" type="checkbox" checked>
+              </td>
+            </tr>
+
+            <tr>
+              <td>
+                <label for="show_species">Species</label>
+              </td>
+              <td>
+                <input id="show_species" name="show_species" type="checkbox" checked>
               </td>
             </tr>
           </table>

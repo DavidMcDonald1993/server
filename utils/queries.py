@@ -1154,13 +1154,36 @@ def get_reaction_hits(
 
     return records, cols
 
+def get_all_kingdoms():
+
+    query = '''
+    SELECT kingdom_name
+    FROM kingdom
+    '''
+
+    return [
+        record[0] for record in mysql_query(query)
+    ]
+
+def get_all_species():
+
+    query = '''
+    SELECT species_name
+    FROM species
+    '''
+
+    return [
+        record[0] for record in mysql_query(query)
+    ]
 
 def get_info_for_multiple_compounds(
     compound_ids=None, 
     name_like=None,
     formula_like=None,
     smiles_like=None,
-    columns=("coconut_id", "name", "formula", "smiles"),
+    kingdom_name=None,
+    species_name=None,
+    columns=("coconut_id", "name", "formula", "smiles", "kingdom_name", "species_name", ),
     as_dict=False,
     limit=None):
 
@@ -1172,20 +1195,62 @@ def get_info_for_multiple_compounds(
             if len(compound_ids) == 1:
                 compound_ids = compound_ids[0]
 
+    if isinstance(kingdom_name, list) or isinstance(kingdom_name, set):
+        kingdom_name = tuple(kingdom_name)
+        if len(kingdom_name) == 1:
+            kingdom_name = kingdom_name[0]
+
+    if isinstance(species_name, list) or isinstance(species_name, set):
+        species_name = tuple(species_name)
+        if len(species_name) == 1:
+            species_name = species_name[0]
+
     conditions = [
         f"coconut_id IN {compound_ids}" if isinstance(compound_ids, tuple)
             else f'coconut_id="{compound_ids}"' if isinstance(compound_ids, str) else None,
         f'name LIKE "%{name_like}%"' if name_like is not None else None,
         f'formula LIKE "%{formula_like}%"' if formula_like is not None else None,
         f'smiles LIKE "%{smiles_like}%"' if smiles_like is not None else None,
+        f'kingdom_name = "{kingdom_name}"' if isinstance(kingdom_name, str)
+            else f"kingdom_name IN {kingdom_name}" if isinstance(kingdom_name, tuple) else None,
+        f'species_name = "{species_name}"' if isinstance(species_name, str)
+            else f"species_name IN {species_name}" if isinstance(species_name, tuple) else None,
     ]
-
     conditions = " AND ".join(filter(lambda x: x, conditions))
+
+    if "kingdom_name" or "species_name" in columns:
+        group_by = ",".join((c for c in columns
+            if c not in {"kingdom_name", "species_name"}))
+        
+        columns = [
+            f"GROUP_CONCAT(DISTINCT {c})"
+                if c in {"species_name", "kingdom_name"}
+                else c 
+            for c  in columns
+        ]
+
+    else: 
+        group_by = None
 
     compound_query = f'''
         SELECT {(", ".join(columns))}
-        FROM compounds
+        FROM compounds AS c
+        LEFT JOIN (
+            SELECT compound_id AS cid, kingdom_name
+            FROM kingdom AS k
+            INNER JOIN compound_to_kingdom AS ck
+                ON (k.kingdom_id=ck.kingdom_id)
+        ) AS kingdom_link 
+            ON (c.compound_id=kingdom_link.cid)
+        LEFT JOIN (
+            SELECT compound_id AS cid, species_name
+            FROM species AS s
+            INNER JOIN compound_to_species AS cs
+                ON (cs.species_id=s.species_id)
+        ) AS species_link
+            ON (c.compound_id=species_link.cid)
         {f"WHERE {conditions}" if conditions != "" else ""}
+        {f"GROUP BY {group_by}" if group_by is not None else ""}
         {f"LIMIT {limit}" if limit is not None else ""}
     '''
 
@@ -1755,17 +1820,24 @@ def get_combined_uniprot_confidences_for_compounds(
 
 if __name__ == "__main__":
 
-    acc = "P00533"
-
-    # records, cols = get_drugs_for_uniprots(acc)
-    records, cols = get_diseases_for_uniprots(acc)
-    # records, cols = get_diseases_for_drugs("N4-(3-chlorophenyl)quinazoline-4,6-diamine")
+    records, cols = get_info_for_multiple_compounds(columns=("compound_id", "kingdom_name", "species_name"), kingdom_name="Marine")
 
     for record in records[:5]:
         print (record)
 
     print (len(records))
-    # pd.DataFrame(records, columns=cols).to_csv("drugs.csv")
+
+    # acc = "P00533"
+
+    # # records, cols = get_drugs_for_uniprots(acc)
+    # records, cols = get_diseases_for_uniprots(acc)
+    # # records, cols = get_diseases_for_drugs("N4-(3-chlorophenyl)quinazoline-4,6-diamine")
+
+    # for record in records[:5]:
+    #     print (record)
+
+    # print (len(records))
+    # # pd.DataFrame(records, columns=cols).to_csv("drugs.csv")
 
     # pathways = "Signaling by EGFR"
     # reaction = "((1,6)-alpha-glucosyl)poly((1,4)-alpha-glucosyl)glycogenin => poly{(1,4)-alpha-glucosyl} glycogenin + alpha-D-glucose"

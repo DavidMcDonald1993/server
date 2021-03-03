@@ -10,6 +10,7 @@ from utils.pass_utils import (remove_invalid_characters, parse_pass_spectra, get
 from natural_products.backend import get_coconut_compound_info_from_mongo
 from utils.queries import get_info_for_multiple_compounds
 from utils.uniprot_utils import query_uniprot
+from utils.io import load_json
 
 from functools import partial
 
@@ -1042,10 +1043,115 @@ def populate_drug_to_disease_table(existing_conn=None):
     return mysql_insert_many(insert_sql, rows)
 
 
+def create_and_populate_kingdom_table():
+
+    create_table_sql = '''
+    CREATE TABLE `kingdom` (
+       kingdom_id TINYINT NOT NULL UNIQUE AUTO_INCREMENT,
+       kingdom_name VARCHAR(10) NOT NULL UNIQUE,
+       PRIMARY KEY(kingdom_id)
+    )
+    '''
+    mysql_create_table(create_table_sql)
+
+    kingdom_to_id = load_json("kingdom_to_id.json")
+    kingdoms = sorted(kingdom_to_id, key=kingdom_to_id.get)
+
+    insert_sql = f'''
+    INSERT INTO kingdom (kingdom_name)
+    VALUES (%s)
+    '''
+
+    mysql_insert_many(insert_sql,
+    ((kingdom,) for kingdom in kingdoms))
+
+
+
+def create_and_populate_species_table():
+
+    create_table_sql = '''
+    CREATE TABLE `species` (
+       species_id SMALLINT UNSIGNED NOT NULL UNIQUE AUTO_INCREMENT,
+       species_name VARCHAR(100) NOT NULL UNIQUE,
+       PRIMARY KEY(species_id)
+    )
+    '''
+    mysql_create_table(create_table_sql)
+
+    species_to_id = load_json("species_to_id.json")
+    species = sorted(species_to_id, key=species_to_id.get)
+
+    insert_sql = f'''
+    INSERT INTO species (species_name)
+    VALUES (%s)
+    '''
+
+    mysql_insert_many(insert_sql,
+        ((s,) for s in species))
+
+def create_and_populate_compound_to_kingdom():
+
+    create_table = '''
+    CREATE TABLE compound_to_kingdom(
+        compound_id MEDIUMINT UNSIGNED NOT NULL,
+        kingdom_id TINYINT UNSIGNED NOT NULL,
+        PRIMARY KEY(compound_id, kingdom_id)
+    )
+    '''
+
+    mysql_create_table(create_table)
+
+    insert_sql = '''
+    INSERT INTO compound_to_kingdom(compound_id, kingdom_id)
+    VALUES (%s, %s)
+    ON DUPLICATE KEY UPDATE compound_id=compound_id
+    '''
+
+    compound_to_kingdom = load_json("compound_to_kingdom.json")
+
+    rows = [
+        (c, k)
+        for c, kingdoms in compound_to_kingdom.items()
+        for k in kingdoms
+    ]
+    mysql_insert_many(insert_sql, rows)
+
+def create_and_populate_compound_to_species():
+
+    create_table = '''
+    CREATE TABLE compound_to_species(
+        compound_id MEDIUMINT UNSIGNED NOT NULL,
+        species_id SMALLINT UNSIGNED NOT NULL,
+        PRIMARY KEY(compound_id, species_id)
+    )
+    '''
+
+    mysql_create_table(create_table)
+
+    insert_sql = '''
+    INSERT INTO compound_to_species(compound_id, species_id)
+    VALUES (%s, %s)
+    ON DUPLICATE KEY UPDATE compound_id=compound_id
+    '''
+
+    compound_to_species = load_json("compound_to_species.json")
+
+    rows = [
+        (c, s)
+        for c, species in compound_to_species.items()
+        for s in species
+    ]
+    mysql_insert_many(insert_sql, rows)
 
 if __name__ == "__main__":
 
-    index_activities_table()
+    # create_and_populate_kingdom_table()
+    # create_and_populate_species_table()
+
+    # create_and_populate_compound_to_kingdom()
+    create_and_populate_compound_to_species()
+
+    # index_activities_table()
 
     # for _ in range(100):
     #     query = '''

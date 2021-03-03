@@ -22,6 +22,7 @@ from utils.queries import (
     get_diseases_for_uniprots,
     get_all_pathways_for_uniprots,
     get_all_reactions_for_uniprots,
+    get_all_kingdoms
 )
 
 from natural_products.views import DEFAULT_THRESHOLD, MAX_HITS_FOR_IMAGE
@@ -52,6 +53,8 @@ def all_compounds_view(request):
         show_name = request.POST.get("show_name") == "on"
         show_formula = request.POST.get("show_formula") == "on"
         show_smiles = request.POST.get("show_smiles") == "on"
+        show_kingdom = request.POST.get("show_kingdom") == "on"
+        show_species = request.POST.get("show_species") == "on"
 
         if show_name:
             columns.append("name")
@@ -59,12 +62,21 @@ def all_compounds_view(request):
             columns.append("formula")
         if show_smiles:
             columns.append("smiles")
+        if show_kingdom:
+            columns.append("kingdom_name")
+        if show_species:
+            columns.append("species_name")
+
+        kingdoms = request.POST.getlist("kingdoms")
+        if len(kingdoms) == 0:
+            kingdoms = None
 
         compounds, cols = get_info_for_multiple_compounds(
             name_like=name_like,
             formula_like=formula_like,
             smiles_like=smiles_like,
             columns=columns,
+            kingdom_name=kingdoms,
             as_dict=True,
         )
 
@@ -86,6 +98,10 @@ def all_compounds_view(request):
         # context["show_smiles"] = show_smiles
         # context["show_images"] = num_hits < MAX_HITS_FOR_IMAGE
 
+    else:
+
+        context["kingdoms"] = get_all_kingdoms()
+
     return render(request, 
         "natural_products/compounds/all_compounds.html", context)
 
@@ -105,9 +121,10 @@ def compound_info_view(request, compound_id):
     assert "name" in compound_info 
     compound_name = compound_info["name"]
 
-    img_filename, _ = get_info_for_multiple_compounds(
-        compound_id, columns=("image", ))
-    img_filename = img_filename[0][0]
+    records, _ = get_info_for_multiple_compounds(
+        compound_id, columns=("image", "kingdom_name", "species_name", ))
+    assert len(records) == 1
+    img_filename, kingdom_name, species_name = records[0]
     if os.path.exists(os.path.join("static", img_filename)):
         context["img_filename"] = img_filename
 
@@ -118,7 +135,10 @@ def compound_info_view(request, compound_id):
 
     context.update(
         {
+
             "compound_name": compound_name,
+            "kingdom_name": kingdom_name,
+            "species_name": species_name,
             "compound_info": compound_info,
             "activities": activities,
         }
