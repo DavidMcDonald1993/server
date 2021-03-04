@@ -1803,7 +1803,9 @@ def get_combined_uniprot_confidences_for_compounds(
         u.acc,
         u.protein,
         u.gene,
-        u.organism,
+        u.organism_common,
+        u.organism_scientific,
+        u.organism_synonym,
         predictions.confidence_score,
         predictions.confidence_type,
         predictions.all_targets

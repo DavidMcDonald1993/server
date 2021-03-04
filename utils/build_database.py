@@ -158,7 +158,7 @@ def populate_activities_from_PASS_sdf_file(sdf_file):
     # from rdkit.Chem.PandasTools import LoadSDF
     from utils.rdkit_utils import LoadSDF
 
-    chunks = LoadSDF(sdf_file, smilesName="SMILES", molColName=None, chunksize=5000)
+    chunks = LoadSDF(sdf_file, smilesName="SMILES", molColName=None, chunksize=500)
 
     insert_activities_sql = '''
     INSERT INTO activities (compound_id, target_id, Pa, Pi) 
@@ -204,9 +204,10 @@ def populate_activities_from_PASS_sdf_file(sdf_file):
             del category_col
 
             rows = (
-                (compound, target_id, *row) 
+                (compound, target_id, pa, pi) 
                 for target_id in targets
-                for compound, row in zip(compound_ids, targets[target_id])
+                for compound, (pa, pi) in zip(compound_ids, targets[target_id])
+                if pa > pi and pa - pi <= 750
             )
 
             mysql_insert_many(insert_activities_sql, rows, )
@@ -1145,11 +1146,72 @@ def create_and_populate_compound_to_species():
 
 if __name__ == "__main__":
 
+    import re
+
+    pattern = r"[-]?(scientific|common|synonym):"
+
+    sql = f'''
+    SELECT uniprot_id, acc, organism
+    FROM uniprot
+    WHERE organism IS NOT NULL
+    '''
+
+    records = mysql_query(sql)
+
+    rows = []
+    for uniprot_id, acc, organism in records:
+        # print (organism)
+        # scientific, common = organism.split("-")
+        # scientific = scientific.split(":")[1]
+        # common = common.split(":")[1]
+        # print (organism)
+        # print (organism.split("-"))
+        # organism_dict = { s.split(":")[0]: s.split(":")[1]
+        #     for s in organism.split("-")
+        # }
+        split = re.split(pattern, organism)
+
+        organism_dict = {}
+        key = None 
+        for s in filter(lambda s: s != "", split):
+            if key is None:
+                key = s 
+            else:
+                organism_dict[key] = s 
+                key = None
+
+        if "scientific" in organism_dict:
+            scientific = organism_dict["scientific"]
+        else:
+            scientific = None 
+        if "common" in organism_dict:
+            common = organism_dict["common"]
+        else:
+            common = None
+        if "synonym" in organism_dict:
+            synonym = organism_dict["synonym"]
+        else:
+            synonym = None
+        # print (uniprot_id, acc, scientific, common, synonym)
+        # print ()
+        rows.append( (uniprot_id, acc, scientific, common, synonym) )
+
+    insert_sql = '''
+    INSERT INTO uniprot(uniprot_id, acc, organism_scientific, organism_common, organism_synonym)
+    VALUES (%s, %s, %s, %s, %s)
+    ON DUPLICATE KEY UPDATE 
+        organism_scientific=VALUES(organism_scientific),
+       organism_common=VALUES(organism_common),
+       organism_synonym=VALUES(organism_synonym)
+    '''
+
+    mysql_insert_many(insert_sql, rows)
+
     # create_and_populate_kingdom_table()
     # create_and_populate_species_table()
 
     # create_and_populate_compound_to_kingdom()
-    create_and_populate_compound_to_species()
+    # create_and_populate_compound_to_species()
 
     # index_activities_table()
 
@@ -1166,6 +1228,10 @@ if __name__ == "__main__":
     #         sorted((acc[0] for acc in accs)),
     #         fill_out=True)
     
+    # for chunk_no in range(10):
+    #     sdf_file = f"/mnt/e/coconut/out/COCONUT_{chunk_no} (PASS2019).SDF"
+    #     assert os.path.exists(sdf_file)
+    #     populate_activities_from_PASS_sdf_file(sdf_file)
 
 
     # model = "morg3-xgc"
