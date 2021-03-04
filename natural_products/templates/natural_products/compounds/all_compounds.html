@@ -58,6 +58,8 @@
 
     {% else %}
 
+    <div class="hiddenDiv" style="display: none;">
+
     <form enctype="multipart/form-data" action="/natural_products/compounds/" method="post">
       {% csrf_token %}
 
@@ -163,6 +165,8 @@
       <input type="submit" value="Submit">
 
     </form>
+
+  </div>
 
 
     {% endif %}
