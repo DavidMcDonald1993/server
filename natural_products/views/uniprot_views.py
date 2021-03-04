@@ -31,10 +31,11 @@ def all_accs_view(request):
 
     # organisms = VALID_ORGANISMS
 
-    uniprot_targets = get_all_uniprot(filter_valid=True)
+    uniprot_targets, cols = get_all_uniprot(filter_valid=True, as_dict=True)
 
     context = {
-        "uniprot_targets": uniprot_targets
+        "uniprot_targets": uniprot_targets,
+        "columns": cols
     }
 
     return render(request,
@@ -83,8 +84,8 @@ def acc_info_view(request, acc):
     reactions, reaction_cols = get_all_reactions_for_uniprots(acc, as_dict=True)
 
     all_data = {
-        "AssociatedTargets": (target_cols, targets),
-        "NaturalProducts": (np_cols, nps),
+        "Associated Targets": (target_cols, targets),
+        "Natural Products": (np_cols, nps),
         "Drugs": (drug_cols, drugs),
         "Diseases": (disease_cols, diseases),
         "Pathways": (pathway_cols, pathways),

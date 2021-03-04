@@ -1269,7 +1269,7 @@ def get_categories():
 
 def get_all_activities_for_compound(
     coconut_id, 
-    threshold=0,
+    threshold=750,
     filter_pa_pi=True):
     assert filter_pa_pi
     print ("getting all activities for compound", coconut_id)
@@ -1282,7 +1282,7 @@ def get_all_activities_for_compound(
     INNER JOIN activities AS a ON (t.target_id=a.target_id)
     INNER JOIN compounds AS c ON (a.compound_id=c.compound_id)
     WHERE c.coconut_id="{coconut_id}"
-    {f"AND a.above_{threshold}=(1)" if threshold > 0 and filter_pa_pi else ""}
+    {f"AND a.above_{threshold}=(1)" if threshold is not None and threshold > 0 and filter_pa_pi else ""}
     ORDER BY confidence_score DESC
     '''
     compound_hits = mysql_query(all_targets_query)
@@ -1327,6 +1327,9 @@ def get_drugs_for_uniprots(accs, as_dict=True):
     drug_ids = tuple(drug_ids)
     if len(drug_ids) == 1:
         drug_ids = drug_ids[0]
+
+    if len(drug_ids) == 0:
+        return None, None
 
     # disease_sql = f'''
     #     SELECT udis.uniprot_id, 
@@ -1501,7 +1504,7 @@ def get_protein_gene_from_acc(accs, as_dict=False):
         records = convert_to_dict(records, cols)
     return records
 
-def get_all_uniprot(filter_valid=True):
+def get_all_uniprot(as_dict=True, filter_valid=True):
 
     filter_valid_sql = '''
     WHERE u.uniprot_id IN
@@ -1520,11 +1523,16 @@ def get_all_uniprot(filter_valid=True):
     SELECT u.acc AS `acc`, 
         u.protein AS `protein`, 
         u.gene AS `gene`, 
-        u.organism AS `organism`
+        u.organism_common,
+        u.organism_scientific,
+        u.organism_synonym
     FROM uniprot as `u`
     {filter_valid_sql if filter_valid else ""}
     '''
-    return mysql_query(query)
+    records, cols =  mysql_query(query, return_cols=True)
+    if as_dict:
+        records = convert_to_dict(records, cols)
+    return records, cols
 
 def get_combined_compound_confidences_for_uniprots(
     accs, 
@@ -1828,17 +1836,18 @@ def get_combined_uniprot_confidences_for_compounds(
 if __name__ == "__main__":
 
     # records, cols = get_info_for_multiple_compounds(columns=("compound_id", "kingdom_name", "species_name"), kingdom_name="Marine")
-    records = get_all_species()
+    # records = get_all_species()
 
-    for record in records[:50]:
-        print (record)
+    # for record in records[:50]:
+    #     print (record)
 
-    print (len(records))
+    # print (len(records))
 
-    # acc = "P00533"
-
-    # # records, cols = get_drugs_for_uniprots(acc)
+    acc = "O42713"
+    records, cols = get_drugs_for_uniprots(acc)
     # records, cols = get_diseases_for_uniprots(acc)
+
+
     # # records, cols = get_diseases_for_drugs("N4-(3-chlorophenyl)quinazoline-4,6-diamine")
 
     # for record in records[:5]:

@@ -138,7 +138,7 @@ def compound_info_view(request, compound_id):
 
     activities = get_all_activities_for_compound(
         compound_id, 
-        threshold=threshold, 
+        threshold=None, 
     )
 
     context.update(
@@ -152,7 +152,6 @@ def compound_info_view(request, compound_id):
         }
     )
                
-
     uniprots, uniprot_cols = get_combined_uniprot_confidences_for_compounds(compound_id,
         threshold=threshold, as_dict=True)
 

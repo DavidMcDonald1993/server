@@ -18,20 +18,24 @@
 
           <thead>
             <tr>
-              <th>ACC</th>
-              <th>Protein</th>
-              <th>Gene(s)</th>
-              <th>Organism</th>
+              {% for col in columns %}
+              <th>{{col}}</th>
+              {% endfor %}
             </tr>
           </thead>
           <tbody>
-            {% for acc, protein, gene, organism in uniprot_targets %}
+            {% for record in uniprot_targets %}
               <tr>
-                <td> <a href="/natural_products/uniprot/all/{{acc}}"> 
-                {{ acc }} </a> </td>
-                <td>{{protein}}</td>
-                <td>{{gene}}</td>
-                <td>{{organism}}</td>
+                {% for col in columns %}
+
+                  {% if col == "acc" %}
+                    <td> <a href="/natural_products/uniprot/all/{{ record|get_item:col }}"> 
+                      {{ record|get_item:col }} </a> </td>
+                  {% else %}
+                      <td>  {{ record|get_item:col }}  </td>
+                  {% endif %}
+
+                {% endfor %}
               </tr>
             {% endfor %}
             </tbody>
