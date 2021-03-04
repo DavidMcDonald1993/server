@@ -1223,7 +1223,7 @@ def get_info_for_multiple_compounds(
             if c not in {"kingdom_name", "species_name"}))
         
         columns = [
-            f"GROUP_CONCAT(DISTINCT {c})"
+            f"GROUP_CONCAT(DISTINCT {c}) AS `all_{c}s`"
                 if c in {"species_name", "kingdom_name"}
                 else c 
             for c  in columns
@@ -1271,6 +1271,7 @@ def get_all_activities_for_compound(
     coconut_id, 
     threshold=0,
     filter_pa_pi=True):
+    assert filter_pa_pi
     print ("getting all activities for compound", coconut_id)
 
     all_targets_query = f'''
@@ -1282,6 +1283,7 @@ def get_all_activities_for_compound(
     INNER JOIN compounds AS c ON (a.compound_id=c.compound_id)
     WHERE c.coconut_id="{coconut_id}"
     {f"AND a.above_{threshold}=(1)" if threshold > 0 and filter_pa_pi else ""}
+    ORDER BY confidence_score DESC
     '''
     compound_hits = mysql_query(all_targets_query)
 
@@ -1292,11 +1294,14 @@ def get_all_activities_for_compound(
             in compound_hits
     ]
     
-    category_activities = defaultdict(set)
+    category_activities = defaultdict(list)
+    prev_hit = None # duplicates will appear next to each other
     for category, *hit in compound_hits:
         hit = tuple(hit)
-        category_activities["ALL_TARGETS"].add(hit)
-        category_activities[category].add(hit)
+        if prev_hit is None or prev_hit != hit:
+            category_activities["ALL_TARGETS"].append(hit)
+            prev_hit = hit
+        category_activities[category].append(hit)
    
     return dict(category_activities)
 

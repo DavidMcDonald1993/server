@@ -11,7 +11,7 @@
     
     <header>
       <h1>{{compound_name}}</h1>
-      <h3>Kingdom: {{kingdom_name}}</h3>
+      <h3>Found in kingdom(s): {{kingdom_name}}</h3>
       <h3>Found in species: {{species_name}}</h3>
       <p>Activities for confidence threshold: {{threshold}}</p>
     </header>
@@ -122,7 +122,11 @@
                 {% for row in data.data %}
                 <tr>
                   {% for col in data.columns %}
+                  {% if col == "url" and row|get_item:col is not None or col == "reference" and row|get_item:col is not None %}
+                  <td> <a href="{{ row|get_item:col }}">{{ row|get_item:col }}</a> </td>
+                  {% else %}
                   <td> {{ row|get_item:col }} </td>
+                  {% endif %}
                   {% endfor %}
                 </tr>
                 {% endfor %}
@@ -134,90 +138,6 @@
         {% endif %}
 
       </div>
-
-      <!-- drug -->
-
-      <div id="nav-#DRUG" style="display: none;">
-  
-        <h2>Drug</h2>
-        <table id="DRUGTable" class="display table data"
-          style="width:100%;text-align:center;display:inline;">
-          
-          <thead>
-            <tr>
-              <th>Drug Name</th>
-              <!-- <th>Drug INCHI</th> -->
-              <!-- <th>Drug SMILES</th> -->
-              <th>Drug Type</th>
-              <th>Drug Class</th>
-              <th>Drug Company</th>
-              <th>Disease</th>
-              <th>Drug Highest Status</th>
-              <th>Target ACC</th>
-              <th>Confidence</th>
-              <th>Confidence Type</th>
-              <th>Activity</th>
-              <th>Reference</th>
-            </tr>
-          </thead>
-          
-          <tbody>
-            {% for name, inchi, smiles, type, class, company, disease, status, acc, confidence, confidence_type, activity, reference in drugs %}
-            <tr>
-              <td>{{name}}</td>
-              <!-- <td>{{inchi}}</td> -->
-              <!-- <td>{{smiles}}</td> -->
-              <td>{{type}}</td>
-              <td>{{class}}</td>
-              <td>{{company}}</td>
-              <td>{{disease}}</td>
-              <td>{{status}}</td>
-              <td>{{acc}}</td>
-              <td>{{confidence}}</td>
-              <td>{{confidence_type}}</td>
-              <td>{{activity}}</td>
-              <td>{{reference}}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- disease -->
-
-    <div id="nav-#DISEASE" style="display: none;">
-
-      <h2>Diseases</h2>
-      <table id="DISEASETable" class="display table data"
-        style="width:100%;text-align:center;display:inline;">
-        
-        <thead>
-          <tr>
-            <th>Disease Name</th>
-            <th>ICD</th>
-            <th>Target ACC</th>
-            <th>Confidence</th>
-            <th>Confidence Type</th>
-            <th>Clinical Status</th>
-          </tr>
-        </thead>
-        
-        <tbody>
-          {% for name, icd, acc, confidence, confidence_type, status in diseases %}
-          <tr>
-            <td>{{name}}</td>
-            <td>{{icd}}</td>
-            <td>{{acc}}</td>
-            <td>{{confidence}}</td>
-            <td>{{confidence_type}}</td>
-            <td>{{status}}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
 
     </main>
 
