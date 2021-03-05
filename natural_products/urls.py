@@ -8,8 +8,10 @@ urlpatterns = [
         compound_views.all_compounds_view, name="all_compounds"),
     path("compounds/all/CNP<str:compound_id>",
         compound_views.compound_info_view, name="compound_info"),
+    path("compounds/species",
+        compound_views.species_view, name="species_view"),
 
-    path("targets",
+    path("targets/",
         target_views.all_targets_view, name="all_targets"),
     path("targets/all/<str:target>",
         target_views.target_info_view, name="target_info"),
@@ -18,7 +20,7 @@ urlpatterns = [
     path('targets/screening/hits/', 
         target_views.show_target_hits_view, name='target_hits'),
   
-    path("pathways",
+    path("pathways/",
         pathway_views.all_pathways_view, name="all_pathways"),
     path('pathways/screening/select/', 
         pathway_views.pathway_select_view, name='pathway_select'),
@@ -27,7 +29,7 @@ urlpatterns = [
     re_path(r"pathways/all/(?P<pathway_organism>.*)$",
         pathway_views.pathway_info_view, name="pathway_info"),
 
-    path("reactions",
+    path("reactions/",
         reaction_views.all_reactions_view, name="all_reactions"),
     path('reactions/screening/select/', 
         reaction_views.reaction_select_view, name='reaction_select'),
@@ -36,7 +38,7 @@ urlpatterns = [
     re_path(r"reactions/all/(?P<reaction_organism>.*)$",
         reaction_views.reaction_info_view, name="reaction_info"),
     
-    path("uniprot",
+    path("uniprot/",
         uniprot_views.all_accs_view, name="all_uniprot"),
     path("uniprot/all/<str:acc>",
         uniprot_views.acc_info_view, name="reaction_info"),

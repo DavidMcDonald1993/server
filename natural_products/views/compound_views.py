@@ -6,6 +6,7 @@ import pandas as pd
 from django.shortcuts import render
 
 from django.http import HttpResponse, HttpResponseRedirect
+from django.http import JsonResponse
 from django.views.static import serve
 
 import html
@@ -23,7 +24,8 @@ from utils.queries import (
     get_all_pathways_for_uniprots,
     get_all_reactions_for_uniprots,
     get_all_kingdoms,
-    get_all_species
+    get_all_species,
+    get_all_species_groups,
 )
 
 from natural_products.views import DEFAULT_THRESHOLD, MAX_HITS_FOR_IMAGE
@@ -72,10 +74,13 @@ def all_compounds_view(request):
         if len(kingdoms) == 0:
             kingdoms = None
 
-        
-        species = request.POST.getlist("species")
-        if len(species) == 0:
-            species = None
+        species_group = request.POST.getlist("species_group")
+        if len(species_group) == 0:
+            species_group = None
+
+        species_name = request.POST.getlist("species_name")
+        if len(species_name) == 0:
+            species_name = None
 
         compounds, cols = get_info_for_multiple_compounds(
             name_like=name_like,
@@ -83,7 +88,8 @@ def all_compounds_view(request):
             smiles_like=smiles_like,
             columns=columns,
             kingdom_name=kingdoms,
-            species_name=species,
+            species_group=species_group,
+            species_name=species_name,
             as_dict=True,
         )
 
@@ -92,26 +98,33 @@ def all_compounds_view(request):
         if num_hits > MAX_HITS_FOR_IMAGE:
             cols.remove("image")
 
-        # compounds = [
-        #     {k: v for k, v in zip(columns, hit)}
-        #     for hit in compounds
-        # ]
-
         context["show_results"] = True
         context["compounds"] = compounds
         context["columns"] = cols
-        # context["show_name"] = show_name
-        # context["show_formula"] = show_formula
-        # context["show_smiles"] = show_smiles
-        # context["show_images"] = num_hits < MAX_HITS_FOR_IMAGE
 
     else:
 
         context["kingdoms"] = get_all_kingdoms()
-        context["species"] = get_all_species()
+        context["species_group"] = get_all_species_groups(limit=None)
 
     return render(request, 
         "natural_products/compounds/all_compounds.html", context)
+
+def species_view(request):
+
+    print (request.GET)
+    species_group = request.GET.getlist("species_group[]")
+    print (species_group)
+
+
+    species = get_all_species(species_group=species_group, limit=None)
+
+    response = [
+        {"value": s, "text": s}
+        for s in species
+    ]
+
+    return JsonResponse(response, safe=False)
 
 def compound_info_view(request, compound_id):
 

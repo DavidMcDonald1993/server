@@ -3,6 +3,7 @@
 
   {% include 'header.html' %}
   {% load static %}
+  <script type="text/javascript" src="{% static 'natural_products/js/selectize_species.js' %}"></script>
 
   <body class="normal" onload="makeDataTable('all')" >
 
@@ -96,19 +97,46 @@
           </tr>
         </table>
 
-        <label for="kingdoms">Select kingdoms: (leave blank for all)</label>
+        <label for="kingdoms">Select kingdom(s): (leave blank for all)</label>
         <select name="kingdoms" id="kingdoms" multiple>
           {% for kingdom in kingdoms %}
             <option value="{{kingdom}}">{{kingdom}}</option>
           {% endfor %}
         </select> 
 
-        <label for="species">Select species: (leave blank for all)</label>
-        <select name="species" id="species" multiple>
-          {% for s in species %}
+        <label for="species_group">Select species group(s): (leave blank for all)</label>
+        <select name="species_group" id="species_group" multiple>
+          <!-- <option disabled selected value> -- select species(s) -- </option> -->
+          {% for s in species_group %}
             <option value="{{s}}">{{s}}</option>
           {% endfor %}
         </select> 
+
+        <script>
+          $("#species_group").change(function () {
+            var species_group = $(this).val();
+            console.log(species_group);
+
+            var selectize = $('#species_name')[0].selectize;
+            
+            $.ajax({
+              url: '/natural_products/compounds/species',
+              data: {
+                'species_group': species_group
+              },
+              dataType: 'json',
+              success: function (data) {
+                selectize.clearOptions();
+                selectize.addOption(data);
+                selectize.refreshOptions();
+              }
+            });
+          });
+        </script>
+
+      <label for="species_name">Select species name(s): (select group first) (leave blank for all)</label>
+      <select name="species_name" id="species_name" multiple>
+      </select> 
 
       </div>
 
@@ -166,7 +194,7 @@
 
     </form>
 
-  </div>
+    </div>
 
 
     {% endif %}

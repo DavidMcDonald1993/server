@@ -22,5 +22,8 @@ models/*.pkl.gz*
 
 oe_license.txt
 
+natural_products/static/natural_products/php/
+natural_products/static/natural_products/js/selectize_species.js
+
 main.py
 models.py

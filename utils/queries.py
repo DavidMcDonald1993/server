@@ -1165,16 +1165,39 @@ def get_all_kingdoms():
         record[0] for record in mysql_query(query)
     ]
 
-def get_all_species():
+def get_all_species(species_group=None, limit=None):
 
-    query = '''
+    if species_group is not None:
+        if isinstance(species_group, list) or isinstance(species_group, set):
+            species_group = tuple(species_group)
+            if len(species_group) == 1:
+                species_group = species_group[0]
+
+    query = f'''
     SELECT species_name
     FROM species
+    {f"WHERE species_group IN {species_group}" if isinstance(species_group, tuple)
+        else f'WHERE species_group="{species_group}"' if isinstance(species_group, str)
+        else ""}
+    {f"LIMIT {limit}" if limit is not None else ""}
     '''
 
     return [
         record[0] for record in mysql_query(query)
     ]
+
+def get_all_species_groups(limit=None):
+
+    query = f'''
+    SELECT DISTINCT species_group
+    FROM species
+    {f"LIMIT {limit}" if limit is not None else ""}
+    '''
+
+    return [
+        record[0] for record in mysql_query(query)
+    ]
+
 
 def get_info_for_multiple_compounds(
     compound_ids=None, 
@@ -1182,6 +1205,7 @@ def get_info_for_multiple_compounds(
     formula_like=None,
     smiles_like=None,
     kingdom_name=None,
+    species_group=None,
     species_name=None,
     columns=("coconut_id", "name", "formula", "smiles", "kingdom_name", "species_name", ),
     as_dict=False,
@@ -1200,6 +1224,11 @@ def get_info_for_multiple_compounds(
         if len(kingdom_name) == 1:
             kingdom_name = kingdom_name[0]
 
+    if isinstance(species_group, list) or isinstance(species_group, set):
+        species_group = tuple(species_group)
+        if len(species_group) == 1:
+            species_group = species_group[0]
+
     if isinstance(species_name, list) or isinstance(species_name, set):
         species_name = tuple(species_name)
         if len(species_name) == 1:
@@ -1213,6 +1242,8 @@ def get_info_for_multiple_compounds(
         f'smiles LIKE "%{smiles_like}%"' if smiles_like is not None else None,
         f'kingdom_name = "{kingdom_name}"' if isinstance(kingdom_name, str)
             else f"kingdom_name IN {kingdom_name}" if isinstance(kingdom_name, tuple) else None,
+        f'species_group = "{species_group}"' if isinstance(species_group, str)
+            else f"species_group IN {species_group}" if isinstance(species_group, tuple) else None,
         f'species_name = "{species_name}"' if isinstance(species_name, str)
             else f"species_name IN {species_name}" if isinstance(species_name, tuple) else None,
     ]
@@ -1243,7 +1274,7 @@ def get_info_for_multiple_compounds(
         ) AS kingdom_link 
             ON (c.compound_id=kingdom_link.cid)
         LEFT JOIN (
-            SELECT compound_id AS cid, species_name
+            SELECT compound_id AS cid, species_name, species_group
             FROM species AS s
             INNER JOIN compound_to_species AS cs
                 ON (cs.species_id=s.species_id)
@@ -1836,15 +1867,15 @@ def get_combined_uniprot_confidences_for_compounds(
 if __name__ == "__main__":
 
     # records, cols = get_info_for_multiple_compounds(columns=("compound_id", "kingdom_name", "species_name"), kingdom_name="Marine")
-    # records = get_all_species()
+    records = get_all_species(species_group="Aconitum")
 
-    # for record in records[:50]:
-    #     print (record)
+    for record in records[:5]:
+        print (record)
 
-    # print (len(records))
+    print (len(records))
 
-    acc = "O42713"
-    records, cols = get_drugs_for_uniprots(acc)
+    # acc = "O42713"
+    # records, cols = get_drugs_for_uniprots(acc)
     # records, cols = get_diseases_for_uniprots(acc)
 
 
