@@ -112,17 +112,16 @@ def all_compounds_view(request):
 
 def species_view(request):
 
-    print (request.GET)
     species_group = request.GET.getlist("species_group[]")
-    print (species_group)
 
-
-    species = get_all_species(species_group=species_group, limit=None)
-
-    response = [
-        {"value": s, "text": s}
-        for s in species
-    ]
+    if len(species_group) > 0:
+        species = get_all_species(species_group=species_group, limit=None)
+        response = [
+            {"value": s, "text": s}
+            for s in species
+        ]
+    else:
+        response = []
 
     return JsonResponse(response, safe=False)
 
