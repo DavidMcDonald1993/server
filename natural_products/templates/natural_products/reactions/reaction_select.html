@@ -6,19 +6,18 @@
   {% load static %}
   <script type="text/javascript" src="{%static 'natural_products/js/options.js' %}"></script>
 
-
   <body class="normal">
 
     {% include 'navbar.html' %}
 
     <header>
       <h1>Multi-reaction Screening</h1>
-      <h2>Reaction selection</h2>
+      <h2>reaction selection</h2>
     </header>
 
     <main>
     
-      <div class="hiddenDiv">
+      <div class="hiddenDiv" style="display: none;">
         <form class="select-form" action="/natural_products/reactions/screening/hits/" method="get">
 
           <div>
@@ -32,14 +31,30 @@
           </div>
         
           {% for organism, organism_reactions in reactions.items %}
-          <div id="div-{{organism}}" style="display: none;">
-            <label for="{{organism}}-reactions">Select reaction(s) for {{organism}}:</label>
-            <select name="{{organism}}-reactions" id="{{organism}}-reactions" multiple>
-              {% for reaction, reaction_encoded in organism_reactions %}
+          <div id="div-{{organism_reactions.id}}" style="display: none;">
+            <label for="{{organism_reactions.id}}-reactions">Select reaction(s) for {{organism}}:</label>
+            <select name="{{organism_reactions.id}}-reactions" id="{{organism_reactions.id}}-reactions" multiple>
+              <option disabled selected value> -- select an option -- </option>
+              {% for reaction, reaction_encoded in organism_reactions.reactions %}
               <option value="{{reaction_encoded}}">{{reaction}}</option>
               {% endfor %}
             </select> 
           </div>
+
+          <script>
+            $("#{{organism_reactions.id}}-reactions").change(function () { 
+              var reactions = $(this).val();
+              console.log("{{organism.id}}", reactions.length);
+  
+              var selectize = $('#min_reactions_hit')[0].selectize;
+             
+              selectize.clearOptions();
+
+              for (var i=0; i<reactions.length; i++){
+                selectize.addOption({"value":i+1, "text": i+1});
+              }
+            });
+          </script>
                     
           <br>
           <br>
@@ -53,8 +68,22 @@
             {% endfor %}
           </select>
 
-          <!-- <br> -->
-          <!-- <br> -->
+
+          <label for="min_target_coverage">Minimum target coverage (proportion [0, 1]):</label>
+          <!-- <select name="min_target_coverage" id="min_target_coverage">
+            {% for threshold in thresholds %}
+            <option value={{threshold}}>{{threshold}}</option>
+            {% endfor %}
+          </select> -->
+          <input type="text" name="min_target_coverage" id="min_target_coverage" value="0.1">
+
+          <br>
+          <br>
+
+          <label for="min_reactions_hit">Minimum reactions hit:</label>
+          <select name="min_reactions_hit" id="min_reactions_hit">
+            <option value=1>1</option>
+          </select>
 
           <!-- <label for="checkbox">Pa>Pi?</label>
           <input id="checkbox" name="checkbox" type="checkbox" checked readonly> -->

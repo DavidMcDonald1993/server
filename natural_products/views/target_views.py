@@ -12,7 +12,7 @@ from django.views.static import serve
 import html
 import urllib.parse as urlparse
 
-from natural_products.views import MIN_VAL, MAX_VAL, MAX_HITS_FOR_IMAGE, STEP, DEFAULT_THRESHOLD, filter_columns
+from natural_products.views import  MAX_HITS_FOR_IMAGE, DEFAULT_THRESHOLD, THRESHOLDS, filter_columns
 
 from utils.queries import get_all_targets_for_categories, get_target_hits
 
@@ -81,11 +81,12 @@ def target_select_view(request):
         for c, t in targets
     )
 
-    thresholds = range(MAX_VAL, MIN_VAL-1, STEP)
+    # thresholds = range(MAX_VAL, MIN_VAL-1, STEP)
 
     context = {
         "targets": targets,
-        "thresholds": thresholds}
+        "thresholds": THRESHOLDS
+    }
     return render(request,
         "natural_products/targets/target_select.html", 
         context)
@@ -94,6 +95,8 @@ def show_target_hits_view(request, ):
 
     targets = request.GET.getlist("targets")
     threshold = request.GET["threshold"]
+    min_targets_hit = request.GET["min_targets_hit"]
+
     # filter_pa_pi = request.GET.get("checkbox") == "on" #TODO
     filter_pa_pi = True
 
@@ -101,13 +104,19 @@ def show_target_hits_view(request, ):
         threshold = int(threshold)
     except ValueError:
         return HttpResponse("Invalid threshold")
+    try:
+        min_targets_hit = int(min_targets_hit)
+    except ValueError:
+        return HttpResponse("Invalid min_targets_hit")
 
     # query database
     targets = [urlparse.unquote(target) 
         for target in targets]
 
     target_hits, columns = get_target_hits(
-        targets, threshold, filter_pa_pi=filter_pa_pi,
+        targets, threshold, 
+        min_target_hits=min_target_hits,
+        filter_pa_pi=filter_pa_pi,
         as_dict=True)
     num_hits = len(target_hits)
     show_images = num_hits<MAX_HITS_FOR_IMAGE
@@ -119,12 +128,11 @@ def show_target_hits_view(request, ):
     request.session["targets"] = targets
     request.session["threshold"] = threshold
     request.session["hits"] = target_hits
-    # request.session["columns"] = columns
 
     context = {
         "targets": targets,
         "threshold": threshold,
-        "target_hits": target_hits,#[:MAX_RECORDS],
+        "target_hits": target_hits,
         "num_hits": num_hits,
         "columns": columns,
         "allow_optimise": True

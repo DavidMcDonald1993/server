@@ -13,12 +13,14 @@
     <header>
       <h1>Hits for pathways(s): {{pathways}}</h1>
       <p>Using threshold: {{threshold}}</p> 
+      <p>Minimum number of pathways hit: {{min_pathways_hit}}</p> 
+      <p>Minimum target coverage: {{min_target_coverage}}</p> 
       <p>Number of hits: {{num_hits}}</p> 
     </header>
 
     <main>
 
-      <div class="table-responsive hiddenDiv">
+      <div class="table-responsive hiddenDiv" style="display: none;">
         <table id=resultsTable class="display table data"
           style="width:100%;text-align:center;display:inline;">
           <thead>

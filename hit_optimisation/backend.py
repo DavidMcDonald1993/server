@@ -217,7 +217,8 @@ def hit_optimisation(
     print ("outputting to directory", output_dir)
 
     # download file if file is a GET request
-    input_file = download_from_client(input_file, output_dir)
+    if not isinstance(input_file, str):
+        input_file = download_from_client(input_file, output_dir)
 
     # convert if necessary
     input_smiles_file = convert_file(input_file, 

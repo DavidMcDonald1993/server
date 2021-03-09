@@ -16,7 +16,7 @@ from utils.queries import (
     get_reaction_hits
 )
 
-from natural_products.views import (VALID_ORGANISMS, MIN_VAL, MAX_VAL, STEP, 
+from natural_products.views import (VALID_ORGANISMS, THRESHOLDS, DEFAULT_TARGET_COVERAGE,
     DEFAULT_THRESHOLD, MAX_HITS_FOR_IMAGE, filter_columns)
 
 from collections import defaultdict
@@ -55,6 +55,7 @@ def reaction_info_view(request, reaction_organism):
         reactions, 
         threshold=threshold, filter_pa_pi=filter_pa_pi,
         organism=organism, 
+        min_target_coverage=DEFAULT_TARGET_COVERAGE,
         as_dict=True,
         )
     num_hits = len(reaction_hits)
@@ -88,39 +89,43 @@ def reaction_select_view(request):
     organisms = VALID_ORGANISMS
 
     all_reactions = get_all_reactions(organisms=organisms, )
-    reactions = defaultdict(list)
+    reactions = dict()
     for p, o in all_reactions:
-        reactions[o].append((p, urlparse.quote(p)))
+        if o not in reactions:
+            reactions[o] = {"id": o.replace(" ", "_"), "reactions":[]}
+        reactions[o]["reactions"].append((p, urlparse.quote(p)))
 
-    # reactions = (
-    #         (p, urlparse.quote(p), o, urlparse.quote(o))
-    #     for p, o in reactions
-    # )
-
-    thresholds = range(MAX_VAL, MIN_VAL-1, STEP)
     context = {
-        # "organisms": organisms,
-        "reactions": dict(reactions),
-        "thresholds": thresholds}
+        "reactions": reactions,
+        "thresholds": THRESHOLDS
+    }
     return render(request,
         "natural_products/reactions/reaction_select.html", context)
-
-def make_column_header(s):
-    return s.replace("_", " ").title()
 
 def show_reaction_hits_view(request, ):
 
     organism = request.GET["organism"]
-    reactions = request.GET.getlist(f"{organism}-reactions")
+    organism_safe = organism.replace(" ", "_")
+    reactions = request.GET.getlist(f"{organism_safe}-reactions")
     threshold = request.GET["threshold"]
-    # filter_pa_pi = request.GET.get("checkbox") == "on"
-    filter_pa_pi = True 
+    min_reactions_hit = request.GET["min_reactions_hit"]
+    min_target_coverage = request.GET["min_target_coverage"]
+
+    # filter_pa_pi = request.GET.get("checkbox") == "on" #TODO
+    filter_pa_pi = True
 
     try:
         threshold = int(threshold)
     except ValueError:
         return HttpResponse("Invalid threshold")
-
+    try:
+        min_reactions_hits = int(min_reactions_hit)
+    except ValueError:
+        return HttpResponse("Invalid min_reactions_hit")
+    try:
+        min_target_coverage = float(min_target_coverage)
+    except ValueError:
+        return HttpResponse("Invalid min_target_coverage")
     # query database
     # organisms = [urlparse.unquote(organism) 
         # for organism in organisms]
@@ -130,6 +135,8 @@ def show_reaction_hits_view(request, ):
     reaction_hits, columns = get_reaction_hits(
         reactions, 
         threshold=threshold, 
+        min_target_coverage=min_target_coverage,
+        min_reactions_hit=min_reactions_hit,
         filter_pa_pi=filter_pa_pi,
         organism=organism, 
         as_dict=True,
@@ -149,6 +156,8 @@ def show_reaction_hits_view(request, ):
     context = {
         "reactions": reactions,
         "threshold": threshold,
+        "min_reactions_hit": min_reactions_hit,
+        "min_target_coverage": min_target_coverage,
         "reaction_hits": reaction_hits,#[:MAX_RECORDS],
         "num_hits": num_hits,
         # "show_images": show_images

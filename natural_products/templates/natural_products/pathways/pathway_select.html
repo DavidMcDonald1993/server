@@ -17,7 +17,7 @@
 
     <main>
     
-      <div class="hiddenDiv">
+      <div class="hiddenDiv" style="display: none;">
         <form class="select-form" action="/natural_products/pathways/screening/hits/" method="get">
 
           <div>
@@ -31,15 +31,30 @@
           </div>
         
           {% for organism, organism_pathways in pathways.items %}
-          <div id="div-{{organism}}" style="display: none;">
-            <label for="{{organism}}-pathways">Select pathway(s) for {{organism}}:</label>
-            <select name="{{organism}}-pathways" id="{{organism}}-pathways" multiple>
+          <div id="div-{{organism_pathways.id}}" style="display: none;">
+            <label for="{{organism_pathways.id}}-pathways">Select pathway(s) for {{organism}}:</label>
+            <select name="{{organism_pathways.id}}-pathways" id="{{organism_pathways.id}}-pathways" multiple>
               <option disabled selected value> -- select an option -- </option>
-              {% for pathway, pathway_encoded in organism_pathways %}
+              {% for pathway, pathway_encoded in organism_pathways.pathways %}
               <option value="{{pathway_encoded}}">{{pathway}}</option>
               {% endfor %}
             </select> 
           </div>
+
+          <script>
+            $("#{{organism_pathways.id}}-pathways").change(function () { 
+              var pathways = $(this).val();
+              console.log("{{organism.id}}", pathways.length);
+  
+              var selectize = $('#min_pathways_hit')[0].selectize;
+             
+              selectize.clearOptions();
+
+              for (var i=0; i<pathways.length; i++){
+                selectize.addOption({"value":i+1, "text": i+1});
+              }
+            });
+          </script>
                     
           <br>
           <br>
@@ -53,8 +68,22 @@
             {% endfor %}
           </select>
 
-          <!-- <br> -->
-          <!-- <br> -->
+
+          <label for="min_target_coverage">Minimum target coverage (proportion [0, 1]):</label>
+          <!-- <select name="min_target_coverage" id="min_target_coverage">
+            {% for threshold in thresholds %}
+            <option value={{threshold}}>{{threshold}}</option>
+            {% endfor %}
+          </select> -->
+          <input type="text" name="min_target_coverage" id="min_target_coverage" value="0.1">
+
+          <br>
+          <br>
+
+          <label for="min_pathways_hit">Minimum pathways hit:</label>
+          <select name="min_pathways_hit" id="min_pathways_hit">
+            <option value=1>1</option>
+          </select>
 
           <!-- <label for="checkbox">Pa>Pi?</label>
           <input id="checkbox" name="checkbox" type="checkbox" checked readonly> -->

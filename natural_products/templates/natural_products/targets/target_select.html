@@ -27,12 +27,26 @@
               {% endfor %}
             </select> 
 
+            <script>
+              $("#targets").change(function () {
+                var targets = $(this).val();
+    
+                var selectize = $('#min_targets_hit')[0].selectize;
+               
+                selectize.clearOptions();
+
+                for (var i=0; i<targets.length; i++){
+                  selectize.addOption({"value":i+1, "text": i+1});
+                }
+              });
+            </script>
+
           </div>
 
           <br>
           <br>
 
-          <label for="threshold">Threshold (Pa):</label>
+          <label for="threshold">Threshold (Confidence):</label>
           <select name="threshold" id="threshold">
             {% for threshold in thresholds %}
               <option value={{threshold}}>{{threshold}}</option>
@@ -41,6 +55,11 @@
 
           <br>
           <br>
+
+          <label for="min_targets_hit">Minimum targets hit:</label>
+          <select name="min_targets_hit" id="min_targets_hit">
+            <option value=1>1</option>
+          </select>
 
           <!-- <label for="checkbox">Pa>Pi?</label>
           <input id="checkbox" name="checkbox" type="checkbox" checked>

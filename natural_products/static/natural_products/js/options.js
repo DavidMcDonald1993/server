@@ -2,7 +2,8 @@ currentCategory = null;
 
 function showDiv(option){
 
-    category = option.value;
+    category = option.value.replace(" ", "_");
+    console.log(category);
     if (currentCategory != null) {
         document.getElementById("div-" + currentCategory).style.cssText = "display: none;";
     }

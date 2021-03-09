@@ -13,12 +13,12 @@
     <header>
       <h1>{{reaction}}</h1>
       <p>Number of hit(s): {{num_hits}}</p> 
-      <p>Threshold: {{threshold}}</p>
+      <p>Confidence threshold: {{threshold}}</p>
     </header>
 
   <main>
 
-    <div class="table-responsive hiddenDiv">
+    <div class="table-responsive hiddenDiv" style="display: none;">
         <table id=resultsTable class="display table data"
         style="width:100%;text-align:center;display:inline;">
         <thead>
@@ -52,6 +52,7 @@
         </tbody>
       </table>
     </div>
+  </div>
 
     </main>
 
