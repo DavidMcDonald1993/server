@@ -398,7 +398,7 @@ def get_all_reactions_for_uniprots(
 def get_target_hits(
     targets, 
     threshold=750,
-    min_target_hits=None,
+    min_targets_hit=None,
     as_dict=True,
     filter_pa_pi=True,
     limit=None
@@ -410,7 +410,8 @@ def get_target_hits(
     if len(targets)==1:
         targets = targets[0]
     assert isinstance(threshold, int)
-    assert isinstance(min_target_hits, int)
+    if min_targets_hit is not None:
+        assert isinstance(min_targets_hit, int)
 
     query = f'''
         SELECT 
@@ -445,7 +446,7 @@ def get_target_hits(
         ) AS all_confidences
         FROM ({query}) AS predictions
         GROUP BY id, image, name, formula, smiles
-        {f"HAVING num_targets_hit>={min_target_hits}" if min_target_hits is not None else ""}
+        {f"HAVING num_targets_hit>={min_targets_hit}" if min_targets_hit is not None else ""}
         ORDER BY num_targets_hit DESC, mean_confidence DESC
         '''
 
@@ -474,116 +475,6 @@ def get_pathway_hits(
             pathways = pathways[0]
     else:
         assert isinstance(pathways, str)
-
-        # pathways = [pathways]
-    # if not isinstance(organisms, list):
-        # assert isinstance(organisms, str)
-        # organisms = [organisms]
-
-    # pathway_names = sanitise_names(
-    #     [   f"{pathway}_{organism}"
-    #         for pathway, organism in zip(pathways, organisms)]
-    # )
-
-    # columns = ", ".join((
-    #     f'''
-    #     GROUP_CONCAT(DISTINCT(`{pathway}_target`.target_name) SEPARATOR '-') AS `{pathway}_targets`, 
-    #     COUNT(DISTINCT(`{pathway}_target`.target_name)) AS `{pathway}_num_targets`, 
-    #     GROUP_CONCAT(DISTINCT(`{pathway}_uniprot`.acc) SEPARATOR '-') AS `{pathway}_accs`, 
-    #     COUNT(DISTINCT(`{pathway}_uniprot`.acc)) AS `{pathway}_num_accs`, 
-    #     `{pathway}_pathway`.num_uniprot AS `{pathway}_total_accs`,
-    #     CAST(COUNT(DISTINCT(`{pathway}_uniprot`.acc)) / `{pathway}_pathway`.num_uniprot AS CHAR)
-    #         AS `{pathway}_acc_coverage`,   
-    #     `{pathway}_pathway`.pathway_name AS `{pathway}`,
-    #     `{pathway}_pathway`.organism AS `{pathway}_organism`,
-    #     `{pathway}_pathway`.pathway_url AS `{pathway}_url`
-    #     '''
-    #     for pathway in pathway_names
-    # ))
-
-    # tables = "\n".join((
-    #     f'''
-    #     INNER JOIN activities AS `{pathway}_activity` 
-    #         ON (c.compound_id=`{pathway}_activity`.compound_id)
-    #     INNER JOIN targets AS `{pathway}_target` 
-    #         ON (`{pathway}_activity`.target_id=`{pathway}_target`.target_id)
-    #     INNER JOIN targets_to_uniprot AS `{pathway}_targets_to_uniprot` 
-    #         ON (`{pathway}_activity`.target_id=`{pathway}_targets_to_uniprot`.target_id)
-    #     INNER JOIN uniprot AS `{pathway}_uniprot` 
-    #         ON (`{pathway}_targets_to_uniprot`.uniprot_id=`{pathway}_uniprot`.uniprot_id)
-    #     INNER JOIN uniprot_to_pathway AS `{pathway}_uniprot_to_pathway` 
-    #         ON (`{pathway}_targets_to_uniprot`.uniprot_id=`{pathway}_uniprot_to_pathway`.uniprot_id)
-    #     INNER JOIN pathway AS `{pathway}_pathway`
-    #         ON (`{pathway}_uniprot_to_pathway`.pathway_id={pathway}_pathway.pathway_id)
-    #     '''
-    #     for pathway in pathway_names
-    # ))
-
-    # conditions = "\n".join((
-    #     f'''
-    #     AND `{pathway_name}_activity`.confidence_score > {threshold}
-    #     AND `{pathway_name}_pathway`.pathway_name="{pathway}"
-    #     AND `{pathway_name}_pathway`.organism="{organism}"
-    #     '''
-    #     for pathway_name, pathway, organism in zip(pathway_names[1:], pathways[1:], organisms[1:])
-    # ))
-
-    # group_by = ",".join((
-    #     f'''
-    #         `{pathway_name}_pathway`.pathway_name,
-    #         `{pathway_name}_pathway`.organism,
-    #         `{pathway_name}_pathway`.pathway_url
-    #    '''
-    #     for pathway_name in pathway_names
-    # ))
-
-    # query = f'''
-    #     SELECT c.coconut_id AS `id`, 
-    #         c.image AS `image`, 
-    #         c.name AS `name`, 
-    #         c.formula AS `formula`, 
-    #         c.smiles AS `smiles`,
-    #     {columns}
-    #     FROM compounds AS c
-    #     {tables}
-    #     WHERE `{pathway_names[0]}_activity`.confidence_score > {threshold}
-    #     AND `{pathway_names[0]}_pathway`.pathway_name="{pathways[0]}"
-    #     AND `{pathway_names[0]}_pathway`.organism="{organisms[0]}"
-    #     {conditions}
-    #     GROUP BY c.compound_id, c.coconut_id, c.name, c.formula, c.smiles, {group_by}
-    #     ORDER BY `{pathway_names[0]} Uniprot Coverage` DESC
-    #     {f"LIMIT {limit}" if limit is not None else ""}
-    # '''
-
-    # get_uniprot_accs_sql = f'''
-    #     SELECT u.acc, p.num_uniprot, p.pathway_name, p.organism, p.pathway_url
-    #     FROM pathway AS p
-    #     INNER JOIN uniprot_to_pathway AS up
-    #         ON (up.pathway_id=p.pathway_id)
-    #     INNER JOIN uniprot AS u
-    #         ON (up.uniprot_id=u.uniprot_id)
-    #     WHERE {f"p.pathway_name IN {pathways}" if isinstance(pathways, tuple)
-    #         else f'p.pathway_name="{pathways}"'}
-    #     AND p.organism="{organism}"
-    # '''
-
-    # records, cols = mysql_query(get_uniprot_accs_sql, return_cols=True)
-
-    # uniprot_accs = pd.DataFrame(records, columns=cols)
-
-    # print (uniprot_accs.head())
-
-    # print (uniprot_accs.shape)
-
-
-    # uniprot_to_compounds = get_combined_compound_confidences_for_uniprots(
-    #     set(uniprot_accs["acc"]), threshold=threshold)
-
-    # uniprot_to_compounds = pd.DataFrame(uniprot_to_compounds,)
-
-    # print (uniprot_to_compounds.head())
-
-    # raise Exception
 
     if existing_conn is None:
         existing_conn = connect_to_mysqldb()
@@ -618,33 +509,16 @@ def get_pathway_hits(
         AND cu.above_{threshold}=(1)
     '''
 
-    # predicted_table_name = "predicted"
-    # create_predicted_temp_table = f'''
-    # CREATE TABLE {predicted_table_name} (
-    #     predicted_compound_id MEDIUMINT,
-    #     predicted_uniprot_id MEDIUMINT,
-    #     predicted_confidence_score SMALLINT,
-    #     predicted_pathway_id SMALLINT,
-    #     predicted_pathway_evidence VARCHAR(5),
-    #     PRIMARY KEY(predicted_compound_id, predicted_uniprot_id, predicted_pathway_id)
-    # )
-    # {predicted_query}
-    # '''
-    # mysql_create_table(create_predicted_temp_table, existing_conn=existing_conn)
-
-    # records = mysql_query(predicted_query)
-
-    # for record in records[:5]:
-    #     print (record)
-    # raise Exception
-
     inferred_query = f'''
         SELECT a.compound_id AS `inferred_compound_id`, 
             tu.uniprot_id AS `inferred_uniprot_id`, 
             FLOOR(MAX(a.confidence_score)) AS `inferred_confidence_score`, 
+            GROUP_CONCAT(t.target_name) AS `inferred_relevant_targets`,
             up.pathway_id AS `inferred_pathway_id`,
             up.evidence AS `inferred_pathway_evidence`
         FROM activities AS a
+        INNER JOIN targets AS t
+            ON (a.target_id=t.target_id)
         INNER JOIN targets_to_uniprot as tu 
             on (a.target_id=tu.target_id) 
         INNER JOIN uniprot_to_pathway AS up
@@ -655,43 +529,6 @@ def get_pathway_hits(
         AND a.above_{threshold}=(1) 
         GROUP BY inferred_compound_id, inferred_uniprot_id, inferred_pathway_id, inferred_pathway_evidence
     '''
-
-    # inferred_table_name = "inferred"
-    # create_inferred_temp_table = f'''
-    # CREATE TABLE {inferred_table_name} (
-    #     inferred_compound_id MEDIUMINT,
-    #     inferred_uniprot_id MEDIUMINT,
-    #     inferred_confidence_score SMALLINT,
-    #     inferred_pathway_id SMALLINT,
-    #     inferred_pathway_evidence VARCHAR(5),
-    #     PRIMARY KEY(inferred_compound_id, inferred_uniprot_id, inferred_pathway_id)
-    # )
-    # {inferred_query}
-    # '''
-    # mysql_create_table(create_inferred_temp_table, existing_conn=existing_conn)
-
-    # records = mysql_query(inferred_query)
-
-    # for record in records[:5]:
-    #     print (record)
-    # raise Exception
-
-        #  GROUP_CONCAT( 
-#                 CASE 
-#                     WHEN predictions.predicted_confidence_score IS NOT NULL AND 
-#                         predictions.inferred_confidence_score IS NOT NULL 
-#                     THEN CONCAT("(", predictions.predicted_uniprot_acc, ",", predictions.predicted_confidence_score, ",CONFIRMED)")
-#                     WHEN predictions.predicted_confidence_score IS NOT NULL
-#                     THEN CONCAT("(", predictions.predicted_uniprot_acc, ",", predictions.predicted_confidence_score, ",PREDICTED)")
-#                     ELSE CONCAT("(", predictions.inferred_uniprot_acc, ",", predictions.inferred_confidence_score, ",INFERRED)")
-#                 END 
-#             SEPARATOR "-") AS `accs`
-
-#  GROUP_CONCAT( 
-#             CONCAT( "(", u.acc, ",", predictions.confidence_score, ",",  predictions.confidence_type, ")" )
-#             ORDER BY predictions.confidence_score DESC, predictions.confidence_type ASC
-#             SEPARATOR "-"
-#         ) AS `accs`
 
     create_combined_sql = f'''
         SELECT
@@ -726,7 +563,8 @@ def get_pathway_hits(
                 WHEN predictions.predicted_confidence_score IS NOT NULL
                     THEN "PREDICTED"
                 ELSE "INFERRED"
-            END AS `confidence_type`
+            END AS `confidence_type`,
+            predictions.inferred_relevant_targets
         FROM (
             WITH predicted AS ({predicted_query}), inferred AS ({inferred_query})
             SELECT *
@@ -785,7 +623,8 @@ def get_pathway_hits(
                 'target_gene', u.gene,
                 'prediction_confidence', predictions.confidence_score,
                 'annotation_type', predictions.confidence_type,
-                'evidence', predictions.evidence
+                'evidence', predictions.evidence,
+                'relevant_targets', predictions.inferred_relevant_targets
             )
         ) AS associated_predicted_targets,
         p.pathway_url AS url
@@ -910,11 +749,14 @@ def get_reaction_hits(
         SELECT a.compound_id AS `inferred_compound_id`, 
             tu.uniprot_id AS `inferred_uniprot_id`, 
             FLOOR(MAX(a.confidence_score)) AS `inferred_confidence_score`, 
+            GROUP_CONCAT(t.target_name) AS `inferred_relevant_targets`,
             ur.reaction_id AS `inferred_reaction_id`,
             ur.evidence AS `inferred_reaction_evidence`
         FROM activities AS a
         INNER JOIN targets_to_uniprot as tu 
             on (a.target_id=tu.target_id) 
+        INNER JOIN targets AS t
+            ON (a.target_id=t.target_id)
         INNER JOIN uniprot_to_reaction AS ur
             ON (tu.uniprot_id=ur.uniprot_id)
         WHERE {f'ur.reaction_id={ids}'
@@ -957,7 +799,8 @@ def get_reaction_hits(
                 WHEN predictions.predicted_confidence_score IS NOT NULL
                     THEN "PREDICTED"
                 ELSE "INFERRED"
-            END AS `confidence_type`
+            END AS `confidence_type`,
+            predictions.inferred_relevant_targets
         FROM (
             WITH predicted AS ({predicted_query}), inferred AS ({inferred_query})
             SELECT *
@@ -1014,7 +857,8 @@ def get_reaction_hits(
                     'target_gene', u.gene,
                     'prediction_confidence', predictions.confidence_score,
                     'annotation_type', predictions.confidence_type,
-                    'evidence', predictions.evidence
+                    'evidence', predictions.evidence,
+                    'relevant_targets', predictions.inferred_relevant_targets
                 )
             ) AS associated_predicted_targets,
             r.reaction_url AS url

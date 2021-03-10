@@ -115,7 +115,7 @@ def show_target_hits_view(request, ):
 
     target_hits, columns = get_target_hits(
         targets, threshold, 
-        min_target_hits=min_target_hits,
+        min_targets_hit=min_targets_hit,
         filter_pa_pi=filter_pa_pi,
         as_dict=True)
     num_hits = len(target_hits)
